@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI API Design"
+  short_description: "Express REST API guidance for OSAI"
+  default_prompt: "Use $osai-api-design to design or implement an OSAI backend API change."

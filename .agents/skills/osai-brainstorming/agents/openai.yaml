@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI Brainstorming"
+  short_description: "Product strategy and roadmap ideas"
+  default_prompt: "Use $osai-brainstorming to explore OSAI product ideas and pick a practical next direction."

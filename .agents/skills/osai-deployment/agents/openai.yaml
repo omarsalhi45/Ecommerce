@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI Deployment"
+  short_description: "Netlify and Render release guidance"
+  default_prompt: "Use $osai-deployment to prepare or review OSAI deployment configuration."

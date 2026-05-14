@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI Security Review"
+  short_description: "Auth, Stripe, and data security"
+  default_prompt: "Use $osai-security-review to review or implement a security-sensitive OSAI change."

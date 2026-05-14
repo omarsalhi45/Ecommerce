@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI QA Testing"
+  short_description: "Vitest and ecommerce QA coverage"
+  default_prompt: "Use $osai-qa-testing to add or review tests for an OSAI feature."

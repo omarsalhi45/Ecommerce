@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI UI Design"
+  short_description: "Frontend UX for OSAI ecommerce"
+  default_prompt: "Use $osai-ui-design to build a polished OSAI ecommerce frontend flow."

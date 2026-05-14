@@ -1,0 +1,21 @@
+{
+  "name": "osai",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:frontend": "pnpm --filter @osai/frontend dev",
+    "dev:api": "pnpm --filter @osai/api dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "format": "pnpm -r format",
+    "format:write": "pnpm -r format:write",
+    "check": "pnpm -r check",
+    "test": "pnpm -r test"
+  },
+  "packageManager": "pnpm@8.10.0"
+}

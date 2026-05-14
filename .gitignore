@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# production
+/dist/
+/build/
+dist/
+build/
+apps/**/dist/
+apps/**/build/
+
+# local env files
+.env
+.env.local
+.env.*.local
+
+# Vite
+node_modules/
+.vite/
+
+# pnpm local store/cache
+.pnpm-store/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db

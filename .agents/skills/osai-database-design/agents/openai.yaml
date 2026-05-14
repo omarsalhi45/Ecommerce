@@ -1,0 +1,4 @@
+interface:
+  display_name: "OSAI Database Design"
+  short_description: "PostgreSQL modeling for OSAI"
+  default_prompt: "Use $osai-database-design to plan OSAI PostgreSQL schema or migration work."
