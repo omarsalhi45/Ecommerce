@@ -10,6 +10,7 @@ dist/
 build/
 apps/**/dist/
 apps/**/build/
+*.tsbuildinfo
 
 # local env files
 .env
