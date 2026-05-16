@@ -6,7 +6,7 @@ VALUES
     'Heavy cotton tee with a relaxed shape and clean OSAI mark.',
     29.99,
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
-    'clothes'
+    'tees'
   ),
   (
     'jacket-001',
@@ -14,7 +14,7 @@ VALUES
     'Lightweight shell with a crisp finish for city weather.',
     79.99,
     'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=80',
-    'clothes'
+    'outerwear'
   ),
   (
     'hoodie-001',
@@ -22,7 +22,7 @@ VALUES
     'Soft fleece hoodie cut for layering without feeling bulky.',
     59.99,
     'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80',
-    'clothes'
+    'hoodies'
   )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,

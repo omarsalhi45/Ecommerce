@@ -6,8 +6,8 @@ A React + TypeScript + Vite ecommerce starter project using `pnpm`.
 
 This repository is intended to become the OSAI ecommerce application with:
 
-- Modern frontend using React + TypeScript + Vite.
-- Redux Toolkit and RTK Query for frontend state and API data.
+- Separate customer storefront and admin apps using React + TypeScript + Vite.
+- Redux Toolkit and RTK Query for app state and API data.
 - Separate Node/Express backend service for REST APIs.
 - PostgreSQL for product, order, and user data.
 - Stripe payment integration after order persistence exists.
@@ -50,6 +50,9 @@ This repository is intended to become the OSAI ecommerce application with:
 - Backend order creation endpoint with mocked payment status.
 - Backend-side total recalculation from trusted product prices.
 - Order confirmation route and checkout failure handling.
+- Shared checkout/order DTOs live in `packages/shared`.
+- Backend Stripe PaymentIntent creation, frontend Stripe Elements confirmation, and webhook payment status handling are available.
+- Local Stripe webhook forwarding has been verified with test-mode successful payments.
 
 ### Completed: Phase 3 User Authentication
 
@@ -70,20 +73,23 @@ This repository is intended to become the OSAI ecommerce application with:
 
 ### Completed: Phase 5 Admin Dashboard
 
-- Admin route and dashboard at `/admin`.
+- Separate admin app in `apps/admin`, running locally on port `5174`.
 - Admin API routes protected by JWT and admin role checks.
 - Order management with status updates.
+- Payment status visibility for admin order review.
 - Product management with create/delete support and backend update support.
 - Inventory stock editing.
 - Sales analytics and user list views.
+- Customer storefront no longer bundles admin routes or admin RTK Query code.
 
-### Next Priority: Phase 6 Enhanced Product Features
+### In Progress: Phase 6 Enhanced Product Features
 
-- Product categories and filtering.
-- Product search and sorting.
-- Product detail pages.
+- Product categories, filtering, search, and product detail pages are available.
+- Catalog sorting currently supports featured order, latest catalog position, price, and name.
+- Related product suggestions are available on product detail pages.
+- Remaining Phase 6 work includes true product variants, image upload, reviews, ratings, popularity metadata, and richer recommendations.
 - Variants for sizes and colors.
-- Product reviews, ratings, and related products.
+- Product reviews, ratings, popularity metadata, and richer recommendations.
 
 ## Development Roadmap
 
@@ -101,17 +107,23 @@ See `AGENTS.md` for the complete phased development plan covering:
 
 ## Monorepo Structure
 
-- `apps/frontend` - React frontend app.
+- `apps/frontend` - React customer storefront app.
   - `src/components` - reusable UI components.
   - `src/store` - Redux store setup.
   - `src/slices` - feature slices.
-  - `src/api` - RTK Query API controllers.
+  - `src/api` - storefront RTK Query API controllers.
+- `apps/admin` - React admin back office app.
+  - `src/components` - admin shell and shared admin UI.
+  - `src/pages` - admin login and dashboard pages.
+  - `src/api` - admin/auth RTK Query API controllers.
+  - `src/store` - admin-only Redux store and auth persistence.
 - `apps/api` - Express backend app.
   - `src/controllers` - request handlers.
   - `src/routes` - route definitions.
   - `src/services` - business logic and database access.
   - `src/db.ts` - database connection setup.
   - `tests` - API unit tests.
+- `packages/shared` - shared checkout and order DTOs consumed by the frontend and API.
 
 ## Setup
 
@@ -121,10 +133,18 @@ See `AGENTS.md` for the complete phased development plan covering:
    pnpm install
    ```
 
-2. Start both apps in development:
+2. Start all apps in development:
 
    ```bash
    pnpm dev
+   ```
+
+   Or start them independently:
+
+   ```bash
+   pnpm dev:frontend
+   pnpm dev:admin
+   pnpm dev:api
    ```
 
 3. Build for production:
@@ -142,7 +162,7 @@ See `AGENTS.md` for the complete phased development plan covering:
 
 ## Environment
 
-Copy `.env.example` to `.env` and add any required values.
+Copy `.env.example` to `.env` at the repository root and add any required values. The API and frontend scripts both load this root env file during local development.
 
 ## Local Admin Access
 
@@ -155,7 +175,7 @@ curl -X POST http://localhost:4000/api/auth/bootstrap-admin \
   -d "{\"name\":\"OSAI Admin\",\"email\":\"admin@osai.dev\",\"password\":\"password123\"}"
 ```
 
-Then log in at `/login` with `admin@osai.dev` / `password123` and open `/admin`. The endpoint is disabled in production and refuses to create another admin once one exists.
+Then start the admin app with `pnpm dev:admin` and log in at `http://localhost:5174/login` with `admin@osai.dev` / `password123`. The endpoint is disabled in production and refuses to create another admin once one exists.
 
 ## Database
 
@@ -168,13 +188,15 @@ Apply them to your PostgreSQL database with your preferred SQL client before run
 
 ## Architecture Decisions
 
-- Runtime config is centralized in `apps/frontend/src/config.ts` and `apps/api/src/config.ts`; avoid reading environment variables directly from feature code.
+- Runtime config is centralized in `apps/frontend/src/config.ts`, `apps/admin/src/config.ts`, and `apps/api/src/config.ts`; avoid reading environment variables directly from feature code.
+- Customer and admin are separate Vite apps. Storefront-specific cart, checkout, Stripe Elements, and product browsing code lives in `apps/frontend`; admin order, product, inventory, analytics, and user management code lives in `apps/admin`.
 - API health checks live at `/api/health` and `/api/health/ready`.
 - Backend errors should return consistent JSON with `code` and `message`.
 - Request validation strategy: use schema validation at the controller boundary before checkout/auth write endpoints are added. Prefer adding a dedicated validator library such as Zod when the first real write contract is implemented, then keep parsed payload types close to the route/controller.
 - Shared DTO strategy: keep types app-local while product browsing is simple. Introduce `packages/shared` when checkout/order request and response shapes are stable enough to be reused by both frontend and backend.
 - Checkout totals displayed by the frontend are estimates. The API recalculates order totals from product data when creating the mocked order.
 - Auth and orders use PostgreSQL-backed repositories when `DATABASE_URL` is configured, with in-memory fallback for tests and no-database local development.
+- Stripe secret-key operations stay on the API. The storefront requests `/api/orders/payment-intent` and confirms payment with Stripe Elements when a publishable key is configured.
 
 ## Project Skills
 

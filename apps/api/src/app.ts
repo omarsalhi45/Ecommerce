@@ -6,6 +6,7 @@ import router from './routes'
 
 const app = express()
 
+app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
 app.use(
   cors({

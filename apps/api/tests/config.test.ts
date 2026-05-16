@@ -7,6 +7,9 @@ describe('api config', () => {
       port: 4000,
       corsOrigins: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
       adminBootstrapSecret: undefined,
+      stripePublishableKey: undefined,
+      stripeSecretKey: undefined,
+      stripeWebhookSecret: undefined,
       nodeEnv: 'development',
     })
   })

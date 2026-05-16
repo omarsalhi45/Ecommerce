@@ -14,12 +14,17 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
 import { type FormEvent, useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
-import { useCreateOrderMutation } from '../api/ordersApi'
+import { useCreateCheckoutPaymentIntentMutation, useCreateOrderMutation } from '../api/ordersApi'
 import { useGetProductsQuery } from '../api/productsApi'
+import StripePaymentForm from '../components/StripePaymentForm'
+import { frontendConfig } from '../config'
 import { calculateCartSummary, clearCart, selectCartItems } from '../slices/cartSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+import type { CreateCheckoutPaymentIntentResponse, CreateOrderRequest } from '../types'
 
 const initialFormState = {
   email: '',
@@ -36,23 +41,55 @@ const initialFormState = {
 
 type CheckoutFormState = typeof initialFormState
 
+const stripePromise = frontendConfig.stripePublishableKey
+  ? loadStripe(frontendConfig.stripePublishableKey)
+  : null
+
 export default function CheckoutPage() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const cartItems = useAppSelector(selectCartItems)
   const { data: products = [] } = useGetProductsQuery()
-  const [createOrder, { isLoading }] = useCreateOrderMutation()
+  const [createOrder, { isLoading: isMockOrderLoading }] = useCreateOrderMutation()
+  const [createCheckoutPaymentIntent, { isLoading: isPaymentIntentLoading }] =
+    useCreateCheckoutPaymentIntentMutation()
   const [formState, setFormState] = useState<CheckoutFormState>(initialFormState)
   const [errorMessage, setErrorMessage] = useState<string>()
+  const [paymentIntentResponse, setPaymentIntentResponse] =
+    useState<CreateCheckoutPaymentIntentResponse>()
   const summary = useMemo(() => calculateCartSummary(cartItems, products), [cartItems, products])
+  const isStripeConfigured = Boolean(stripePromise)
+  const isSubmitting = isMockOrderLoading || isPaymentIntentLoading
 
   const updateField = (field: keyof CheckoutFormState, value: string) => {
     setFormState((current) => ({ ...current, [field]: value }))
+    setPaymentIntentResponse(undefined)
+  }
+
+  const buildCheckoutPayload = (): CreateOrderRequest => {
+    return {
+      customer: {
+        email: formState.email,
+        firstName: formState.firstName,
+        lastName: formState.lastName,
+        phone: formState.phone || undefined,
+      },
+      shippingAddress: {
+        line1: formState.line1,
+        line2: formState.line2 || undefined,
+        city: formState.city,
+        state: formState.state,
+        postalCode: formState.postalCode,
+        country: formState.country,
+      },
+      items: cartItems,
+    }
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setErrorMessage(undefined)
+    setPaymentIntentResponse(undefined)
 
     if (cartItems.length === 0) {
       setErrorMessage('Add at least one item to your cart before checking out.')
@@ -60,23 +97,15 @@ export default function CheckoutPage() {
     }
 
     try {
-      const order = await createOrder({
-        customer: {
-          email: formState.email,
-          firstName: formState.firstName,
-          lastName: formState.lastName,
-          phone: formState.phone || undefined,
-        },
-        shippingAddress: {
-          line1: formState.line1,
-          line2: formState.line2 || undefined,
-          city: formState.city,
-          state: formState.state,
-          postalCode: formState.postalCode,
-          country: formState.country,
-        },
-        items: cartItems,
-      }).unwrap()
+      const checkoutPayload = buildCheckoutPayload()
+
+      if (isStripeConfigured) {
+        const paymentIntent = await createCheckoutPaymentIntent(checkoutPayload).unwrap()
+        setPaymentIntentResponse(paymentIntent)
+        return
+      }
+
+      const order = await createOrder(checkoutPayload).unwrap()
 
       dispatch(clearCart())
       navigate(`/order-confirmation?orderId=${order.id}`)
@@ -204,10 +233,10 @@ export default function CheckoutPage() {
               type="submit"
               colorScheme="brand"
               size="lg"
-              isLoading={isLoading}
+              isLoading={isSubmitting}
               isDisabled={cartItems.length === 0}
             >
-              Place mocked order
+              {isStripeConfigured ? 'Continue to payment' : 'Place mocked order'}
             </Button>
           </Stack>
         </Box>
@@ -240,12 +269,52 @@ export default function CheckoutPage() {
               <Divider />
               <Text fontWeight="black">Estimated total ${summary.total.toFixed(2)}</Text>
               <Text color="neutral.500" fontSize="sm">
-                Payment is mocked for now. Stripe comes after persisted orders.
+                {isStripeConfigured
+                  ? 'The API will recalculate the trusted total before creating payment.'
+                  : 'Stripe is not configured locally, so checkout will create a mocked paid order.'}
               </Text>
             </Stack>
           )}
         </Box>
       </Stack>
+
+      {paymentIntentResponse && stripePromise ? (
+        <Box
+          mt={8}
+          bg="white"
+          border="1px solid"
+          borderColor="neutral.200"
+          borderRadius="lg"
+          p={{ base: 6, md: 8 }}
+          maxW="3xl"
+        >
+          <Stack spacing={5}>
+            <Box>
+              <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
+                Payment
+              </Text>
+              <Heading as="h2" size="lg">
+                Secure payment
+              </Heading>
+              <Text color="neutral.600" mt={2}>
+                Order {paymentIntentResponse.order.id} is ready for payment.
+              </Text>
+            </Box>
+            <Elements
+              stripe={stripePromise}
+              options={{ clientSecret: paymentIntentResponse.paymentIntent.clientSecret }}
+            >
+              <StripePaymentForm
+                orderId={paymentIntentResponse.order.id}
+                onPaymentReady={() => {
+                  dispatch(clearCart())
+                  navigate(`/order-confirmation?orderId=${paymentIntentResponse.order.id}`)
+                }}
+              />
+            </Elements>
+          </Stack>
+        </Box>
+      ) : null}
     </Container>
   )
 }

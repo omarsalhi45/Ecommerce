@@ -1,5 +1,4 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { adminApi } from '../api/adminApi'
 import { authApi } from '../api/authApi'
 import { ordersApi } from '../api/ordersApi'
 import { productsApi } from '../api/productsApi'
@@ -16,7 +15,6 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     cart: cartReducer,
-    [adminApi.reducerPath]: adminApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
     [ordersApi.reducerPath]: ordersApi.reducer,
     [productsApi.reducerPath]: productsApi.reducer,
@@ -26,12 +24,7 @@ export const store = configureStore({
     cart: loadPersistedCart(),
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      adminApi.middleware,
-      authApi.middleware,
-      ordersApi.middleware,
-      productsApi.middleware
-    ),
+    getDefaultMiddleware().concat(authApi.middleware, ordersApi.middleware, productsApi.middleware),
 })
 
 store.subscribe(() => {

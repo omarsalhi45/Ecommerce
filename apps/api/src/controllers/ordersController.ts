@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import { createOrder, getOrderById, getOrderList } from '../services/orderService'
+import { createCheckoutPaymentIntent } from '../services/paymentService'
 import { validateCheckoutRequest } from '../validation/requestValidation'
 
 export const getOrders = async (_req: Request, res: Response) => {
@@ -25,4 +26,14 @@ export const createCheckoutOrder = async (req: Request, res: Response) => {
   })
 
   res.status(201).json(order)
+}
+
+export const createCheckoutPayment = async (req: Request, res: Response) => {
+  const payload = validateCheckoutRequest(req.body)
+  const paymentIntent = await createCheckoutPaymentIntent({
+    ...payload,
+    userId: req.auth?.userId,
+  })
+
+  res.status(201).json(paymentIntent)
 }

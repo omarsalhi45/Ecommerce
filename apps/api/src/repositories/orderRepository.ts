@@ -1,5 +1,5 @@
+import type { Order, OrderItem } from '@osai/shared'
 import { query, withTransaction } from '../db'
-import type { Order, OrderItemSnapshot } from '../services/orderService'
 
 interface OrderRow {
   readonly id: string
@@ -31,7 +31,7 @@ interface OrderItemRow {
   readonly line_total: string
 }
 
-const mapOrderItem = (row: OrderItemRow): OrderItemSnapshot => ({
+const mapOrderItem = (row: OrderItemRow): OrderItem => ({
   productId: row.product_id,
   name: row.product_name,
   quantity: row.quantity,
@@ -39,7 +39,7 @@ const mapOrderItem = (row: OrderItemRow): OrderItemSnapshot => ({
   lineTotal: Number(row.line_total),
 })
 
-const mapOrder = (row: OrderRow, items: OrderItemSnapshot[]): Order => ({
+const mapOrder = (row: OrderRow, items: OrderItem[]): Order => ({
   id: row.id,
   status: row.status,
   paymentStatus: row.payment_status,
@@ -68,7 +68,7 @@ const mapOrder = (row: OrderRow, items: OrderItemSnapshot[]): Order => ({
   createdAt: row.created_at.toISOString(),
 })
 
-const getItemsForOrder = async (orderId: string): Promise<OrderItemSnapshot[]> => {
+const getItemsForOrder = async (orderId: string): Promise<OrderItem[]> => {
   const result = await query<OrderItemRow>(
     `SELECT product_id, product_name, quantity, unit_price, line_total
      FROM order_items
@@ -183,6 +183,25 @@ export const updateOrderStatusInDb = async (
   return mapOrder(result.rows[0], await getItemsForOrder(orderId))
 }
 
+export const updateOrderPaymentStatusInDb = async (
+  orderId: string,
+  paymentStatus: Order['paymentStatus']
+): Promise<Order | undefined> => {
+  const result = await query<OrderRow>(
+    `UPDATE orders
+     SET payment_status = $2, updated_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [orderId, paymentStatus]
+  )
+
+  if (!result.rows[0]) {
+    return undefined
+  }
+
+  return mapOrder(result.rows[0], await getItemsForOrder(orderId))
+}
+
 export const getOrderAnalyticsFromDb = async () => {
   const result = await query<{
     readonly order_count: string
@@ -191,7 +210,7 @@ export const getOrderAnalyticsFromDb = async () => {
   }>(
     `SELECT
        COUNT(*)::text AS order_count,
-       COALESCE(SUM(total), 0)::text AS revenue,
+       COALESCE(SUM(total) FILTER (WHERE payment_status IN ('paid', 'mock_paid')), 0)::text AS revenue,
        COUNT(*) FILTER (WHERE status = 'pending')::text AS pending_count
      FROM orders`
   )

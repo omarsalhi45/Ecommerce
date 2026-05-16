@@ -1,33 +1,9 @@
+import type { CreateOrderRequest } from '@osai/shared'
 import { ApiError } from '../middleware/errorMiddleware'
 
 interface CheckoutLineItemInput {
   readonly productId?: unknown
   readonly quantity?: unknown
-}
-
-export interface CheckoutCustomerInput {
-  readonly email: string
-  readonly firstName: string
-  readonly lastName: string
-  readonly phone?: string
-}
-
-export interface CheckoutAddressInput {
-  readonly line1: string
-  readonly line2?: string
-  readonly city: string
-  readonly state: string
-  readonly postalCode: string
-  readonly country: string
-}
-
-export interface CheckoutRequestInput {
-  readonly customer: CheckoutCustomerInput
-  readonly shippingAddress: CheckoutAddressInput
-  readonly items: Array<{
-    readonly productId: string
-    readonly quantity: number
-  }>
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -54,7 +30,7 @@ const readOptionalString = (value: unknown): string | undefined => {
   return value.trim()
 }
 
-export const validateCheckoutRequest = (body: unknown): CheckoutRequestInput => {
+export const validateCheckoutRequest = (body: unknown): CreateOrderRequest => {
   if (!isRecord(body)) {
     throw new ApiError(400, 'Checkout payload is required', 'VALIDATION_ERROR')
   }

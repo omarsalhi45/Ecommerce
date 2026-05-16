@@ -52,7 +52,7 @@ const products: Product[] = [
     price: 29.99,
     imageUrl:
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
-    category: 'clothes',
+    category: 'tees',
   },
   {
     id: 'jacket-001',
@@ -61,7 +61,7 @@ const products: Product[] = [
     price: 79.99,
     imageUrl:
       'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=80',
-    category: 'clothes',
+    category: 'outerwear',
   },
   {
     id: 'hoodie-001',
@@ -70,7 +70,7 @@ const products: Product[] = [
     price: 59.99,
     imageUrl:
       'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80',
-    category: 'clothes',
+    category: 'hoodies',
   },
 ]
 

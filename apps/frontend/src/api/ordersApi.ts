@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { frontendConfig } from '../config'
-import type { CreateOrderRequest, Order } from '../types'
+import type { CreateCheckoutPaymentIntentResponse, CreateOrderRequest, Order } from '../types'
 
 export const ordersApi = createApi({
   reducerPath: 'ordersApi',
@@ -24,10 +24,21 @@ export const ordersApi = createApi({
         body,
       }),
     }),
+    createCheckoutPaymentIntent: builder.mutation<
+      CreateCheckoutPaymentIntentResponse,
+      CreateOrderRequest
+    >({
+      query: (body) => ({
+        url: '/orders/payment-intent',
+        method: 'POST',
+        body,
+      }),
+    }),
     getOrder: builder.query<Order, string>({
       query: (orderId) => `/orders/${orderId}`,
     }),
   }),
 })
 
-export const { useCreateOrderMutation, useGetOrderQuery } = ordersApi
+export const { useCreateCheckoutPaymentIntentMutation, useCreateOrderMutation, useGetOrderQuery } =
+  ordersApi

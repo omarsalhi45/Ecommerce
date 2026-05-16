@@ -1,5 +1,7 @@
+import path from 'node:path'
 import dotenv from 'dotenv'
 
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') })
 dotenv.config()
 
 const DEFAULT_PORT = 4000
@@ -15,6 +17,9 @@ export interface ApiConfig {
   readonly databaseUrl?: string
   readonly jwtSecret: string
   readonly adminBootstrapSecret?: string
+  readonly stripeSecretKey?: string
+  readonly stripePublishableKey?: string
+  readonly stripeWebhookSecret?: string
   readonly nodeEnv: string
 }
 
@@ -61,6 +66,9 @@ export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
     databaseUrl: env.DATABASE_URL,
     jwtSecret,
     adminBootstrapSecret: env.ADMIN_BOOTSTRAP_SECRET,
+    stripeSecretKey: env.STRIPE_SECRET_KEY,
+    stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY,
+    stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
     nodeEnv,
   }
 }

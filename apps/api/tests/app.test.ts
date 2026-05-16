@@ -52,6 +52,18 @@ describe('api app', () => {
     })
   })
 
+  it('rejects Stripe webhooks without a signature', async () => {
+    const response = await fetch(`${baseUrl}/api/stripe/webhook`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ type: 'payment_intent.succeeded' }),
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(body.code).toBe('STRIPE_SIGNATURE_REQUIRED')
+  })
+
   it('registers, authenticates, and returns the current user', async () => {
     const registerResponse = await fetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
@@ -150,6 +162,18 @@ describe('api app', () => {
         tax: 4.8,
         total: 72.29,
       },
+    })
+  })
+
+  it('returns a single product for product detail pages', async () => {
+    const response = await fetch(`${baseUrl}/api/products/hoodie-001`)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body).toMatchObject({
+      id: 'hoodie-001',
+      name: 'Everyday Weight Hoodie',
+      category: 'hoodies',
     })
   })
 

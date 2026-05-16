@@ -9,10 +9,11 @@
     "lint:fix": "biome check --write .",
     "format": "biome format .",
     "format:write": "biome format --write .",
-    "check": "biome check . && tsc --noEmit",
+    "check": "pnpm --dir ../.. --filter @osai/shared build && biome check . && tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@osai/shared": "workspace:*",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.0",

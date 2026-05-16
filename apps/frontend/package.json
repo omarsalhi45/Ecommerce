@@ -10,7 +10,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format .",
     "format:write": "biome format --write .",
-    "check": "biome check . && tsc --noEmit",
+    "check": "pnpm --dir ../.. --filter @osai/shared build && biome check . && tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
@@ -18,7 +18,10 @@
     "@chakra-ui/react": "^2.8.0",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
+    "@osai/shared": "workspace:*",
     "@reduxjs/toolkit": "^1.9.5",
+    "@stripe/react-stripe-js": "^6.3.0",
+    "@stripe/stripe-js": "^9.5.0",
     "framer-motion": "^10.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

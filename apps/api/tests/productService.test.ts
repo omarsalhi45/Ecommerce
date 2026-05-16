@@ -15,7 +15,7 @@ describe('productService', () => {
     expect(product).toMatchObject({
       id: 'hoodie-001',
       name: 'Everyday Weight Hoodie',
-      category: 'clothes',
+      category: 'hoodies',
     })
   })
 

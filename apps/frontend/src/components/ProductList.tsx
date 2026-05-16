@@ -1,4 +1,5 @@
 import { Badge, Box, Button, HStack, Image, Text, VStack, useToast } from '@chakra-ui/react'
+import { Link as RouterLink } from 'react-router-dom'
 import { addItem } from '../slices/cartSlice'
 import { useAppDispatch } from '../store/hooks'
 import type { Product } from '../types'
@@ -85,20 +86,31 @@ export default function ProductList({ products }: { products: Product[] }) {
               <Text fontSize="2xl" fontWeight="black" color="neutral.900" letterSpacing="tight">
                 ${product.price.toFixed(2)}
               </Text>
-              <Button
-                colorScheme="brand"
-                size="md"
-                borderRadius="full"
-                fontWeight="semibold"
-                px={5}
-                _hover={{
-                  transform: 'translateY(-1px)',
-                  boxShadow: 'md',
-                }}
-                onClick={() => handleAddToCart(product)}
-              >
-                Add
-              </Button>
+              <HStack spacing={2}>
+                <Button
+                  as={RouterLink}
+                  to={`/products/${product.id}`}
+                  variant="outline"
+                  size="sm"
+                  borderRadius="full"
+                >
+                  Details
+                </Button>
+                <Button
+                  colorScheme="brand"
+                  size="sm"
+                  borderRadius="full"
+                  fontWeight="semibold"
+                  px={5}
+                  _hover={{
+                    transform: 'translateY(-1px)',
+                    boxShadow: 'md',
+                  }}
+                  onClick={() => handleAddToCart(product)}
+                >
+                  Add
+                </Button>
+              </HStack>
             </HStack>
           </VStack>
         </Box>

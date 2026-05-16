@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   calculateOrderTotals,
   createOrder,
+  getOrderAnalytics,
   resetOrderStoreForTests,
 } from '../src/services/orderService'
 
@@ -75,5 +76,45 @@ describe('orderService', () => {
         items: [{ productId: 'missing-product', quantity: 1 }],
       })
     ).rejects.toThrow('Product not found: missing-product')
+  })
+
+  it('recognizes revenue only for paid and mocked paid orders', async () => {
+    await createOrder({
+      customer: {
+        email: 'mocked-shopper@example.com',
+        firstName: 'Mocked',
+        lastName: 'Shopper',
+      },
+      shippingAddress: {
+        line1: '1 Main Street',
+        city: 'Austin',
+        state: 'TX',
+        postalCode: '78701',
+        country: 'US',
+      },
+      items: [{ productId: 'shirt-001', quantity: 1 }],
+    })
+
+    await createOrder({
+      customer: {
+        email: 'stripe-shopper@example.com',
+        firstName: 'Stripe',
+        lastName: 'Shopper',
+      },
+      shippingAddress: {
+        line1: '1 Main Street',
+        city: 'Austin',
+        state: 'TX',
+        postalCode: '78701',
+        country: 'US',
+      },
+      items: [{ productId: 'hoodie-001', quantity: 1 }],
+      paymentStatus: 'payment_required',
+    })
+
+    const analytics = await getOrderAnalytics()
+
+    expect(analytics.orderCount).toBe(2)
+    expect(analytics.revenue).toBe(39.89)
   })
 })

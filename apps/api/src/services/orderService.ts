@@ -1,3 +1,12 @@
+import type {
+  CartSummary,
+  CreateOrderRequest,
+  Order,
+  OrderItem,
+  OrderListResponse,
+  OrderPaymentStatus,
+  OrderStatus,
+} from '@osai/shared'
 import { isDatabaseConfigured } from '../db'
 import { ApiError } from '../middleware/errorMiddleware'
 import {
@@ -5,69 +14,16 @@ import {
   getOrderFromDb,
   insertOrderIntoDb,
   listOrdersFromDb,
+  updateOrderPaymentStatusInDb,
   updateOrderStatusInDb,
 } from '../repositories/orderRepository'
 import { getProduct } from './productService'
 
-export interface OrderLineItemInput {
-  readonly productId: string
-  readonly quantity: number
-}
+export type { OrderStatus } from '@osai/shared'
 
-export interface CheckoutCustomer {
-  readonly email: string
-  readonly firstName: string
-  readonly lastName: string
-  readonly phone?: string
-}
-
-export interface ShippingAddress {
-  readonly line1: string
-  readonly line2?: string
-  readonly city: string
-  readonly state: string
-  readonly postalCode: string
-  readonly country: string
-}
-
-export interface CreateOrderInput {
-  readonly customer: CheckoutCustomer
-  readonly shippingAddress: ShippingAddress
-  readonly items: OrderLineItemInput[]
+export interface CreateOrderInput extends CreateOrderRequest {
   readonly userId?: string
-}
-
-export interface OrderItemSnapshot {
-  readonly productId: string
-  readonly name: string
-  readonly quantity: number
-  readonly unitPrice: number
-  readonly lineTotal: number
-}
-
-export interface OrderTotals {
-  readonly subtotal: number
-  readonly shipping: number
-  readonly tax: number
-  readonly total: number
-}
-
-export type OrderStatus = 'pending' | 'shipped' | 'delivered' | 'cancelled'
-
-export interface Order {
-  readonly id: string
-  readonly status: OrderStatus
-  readonly paymentStatus: 'mock_paid'
-  readonly customer: CheckoutCustomer
-  readonly shippingAddress: ShippingAddress
-  readonly items: OrderItemSnapshot[]
-  readonly totals: OrderTotals
-  readonly userId?: string
-  readonly createdAt: string
-}
-
-export interface OrderListResponse {
-  readonly orders: Order[]
+  readonly paymentStatus?: OrderPaymentStatus
 }
 
 export interface OrderAnalytics {
@@ -82,7 +38,11 @@ const orders: Order[] = []
 
 const roundMoney = (value: number): number => Math.round(value * 100) / 100
 
-export const calculateOrderTotals = (subtotal: number): OrderTotals => {
+export const isRevenueRecognizedPaymentStatus = (paymentStatus: OrderPaymentStatus): boolean => {
+  return paymentStatus === 'paid' || paymentStatus === 'mock_paid'
+}
+
+export const calculateOrderTotals = (subtotal: number): CartSummary => {
   const shipping = subtotal > 0 ? SHIPPING_RATE : 0
   const tax = roundMoney(subtotal * TAX_RATE)
 
@@ -95,7 +55,7 @@ export const calculateOrderTotals = (subtotal: number): OrderTotals => {
 }
 
 export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
-  const items: OrderItemSnapshot[] = []
+  const items: OrderItem[] = []
 
   for (const item of input.items) {
     const product = await getProduct(item.productId)
@@ -118,7 +78,7 @@ export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
   const order: Order = {
     id: `order_${Date.now()}_${orders.length + 1}`,
     status: 'pending',
-    paymentStatus: 'mock_paid',
+    paymentStatus: input.paymentStatus ?? 'mock_paid',
     customer: input.customer,
     shippingAddress: input.shippingAddress,
     items,
@@ -175,6 +135,25 @@ export const updateOrderStatus = async (
   return order
 }
 
+export const updateOrderPaymentStatus = async (
+  orderId: string,
+  paymentStatus: OrderPaymentStatus
+): Promise<Order | undefined> => {
+  if (isDatabaseConfigured) {
+    return updateOrderPaymentStatusInDb(orderId, paymentStatus)
+  }
+
+  const order = orders.find((candidate) => candidate.id === orderId)
+
+  if (!order) {
+    return undefined
+  }
+
+  Object.assign(order, { paymentStatus })
+
+  return order
+}
+
 export const getOrderAnalytics = async (): Promise<OrderAnalytics> => {
   if (isDatabaseConfigured) {
     return getOrderAnalyticsFromDb()
@@ -182,7 +161,9 @@ export const getOrderAnalytics = async (): Promise<OrderAnalytics> => {
 
   return {
     orderCount: orders.length,
-    revenue: orders.reduce((total, order) => total + order.totals.total, 0),
+    revenue: orders
+      .filter((order) => isRevenueRecognizedPaymentStatus(order.paymentStatus))
+      .reduce((total, order) => total + order.totals.total, 0),
     pendingCount: orders.filter((order) => order.status === 'pending').length,
   }
 }

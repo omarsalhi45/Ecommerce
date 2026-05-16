@@ -21,17 +21,18 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - Payment provider: Stripe.
 - Styling system: Chakra UI with a custom OSAI design system theme.
 - Code quality: Biome for formatting and linting instead of ESLint.
-- Deployment target: Netlify for frontend, with separate Node/Express backend hosting.
+- Deployment target: Netlify for the storefront and admin apps, with separate Node/Express backend hosting.
 - Testing requirement: unit tests first using Vitest, with E2E planned later.
 
 ## Architecture Considerations
 
-- Repository: monorepo with separate app folders, `apps/frontend` and `apps/api`.
-- Frontend: React + TypeScript + Vite + Chakra UI + Redux Toolkit + RTK Query.
+- Repository: monorepo with separate app folders, `apps/frontend`, `apps/admin`, and `apps/api`.
+- Storefront: React + TypeScript + Vite + Chakra UI + Redux Toolkit + RTK Query.
+- Admin: separate React + TypeScript + Vite app with admin-only routes, state, and API slices.
 - Backend: Express REST API in TypeScript, hosted separately from the frontend.
 - Data: PostgreSQL for orders, products, users, and inventory.
 - Auth: email/password plus optional OAuth for both customers and admin roles, with role-based access managed in the same auth system.
-- Deployment: frontend on Netlify, backend as a separate Node/Express service.
+- Deployment: storefront and admin on Netlify, backend as a separate Node/Express service.
 - Checkout: start with simple flat-rate shipping and a fixed tax rate.
 - Product catalog: initial clothing categories with flexible attributes for easy expansion.
 - Recommended backend hosting options: Render, Railway, or Fly.io for Express + PostgreSQL.
@@ -94,9 +95,11 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Create backend order creation endpoint with mocked payment status.
 - [x] Implement order confirmation page.
 - [x] Add order success/failure handling.
-- [ ] Add shared checkout/order DTOs once the request and response shapes stabilize.
-- [ ] Integrate Stripe PaymentIntent after order persistence exists.
-- [ ] Configure Stripe webhook handling after database-backed orders exist.
+- [x] Add shared checkout/order DTOs once the request and response shapes stabilize.
+- [x] Add backend Stripe PaymentIntent creation after order persistence exists.
+- [x] Wire frontend Stripe Elements confirmation to the PaymentIntent endpoint.
+- [x] Configure backend Stripe webhook handling after database-backed orders exist.
+- [x] Verify local Stripe webhook forwarding with test-mode `payment_intent.succeeded` events.
 
 ### Phase 3: User Authentication - Complete
 
@@ -129,9 +132,11 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 ### Phase 5: Admin Dashboard (Back Office) - Complete
 
 - [x] Create admin layout with navigation.
+- [x] Split admin into a separate `apps/admin` Vite app instead of bundling back office routes into the storefront.
 - [x] Build order management page for viewing all orders.
 - [x] Add admin empty, loading, and error states for order/product management.
 - [x] Add order status updates from pending to shipped to delivered.
+- [x] Show payment status in order management.
 - [x] Create product management with CRUD-capable API operations and initial admin UI.
 - [x] Add inventory management.
 - [x] Implement sales analytics dashboard.
@@ -140,19 +145,20 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 
 ### Phase 6: Enhanced Product Features
 
-- [ ] Add product categories and filtering.
+- [x] Add product categories and filtering.
 - [ ] Add product sorting by newest, price, and popularity once product metadata supports it.
-- [ ] Implement search functionality.
-- [ ] Add product detail pages (`/products/:id`).
+- [x] Implement search functionality.
+- [x] Add product detail pages (`/products/:id`).
 - [ ] Create product image upload using local or cloud storage.
 - [ ] Add product variants such as sizes and colors.
 - [ ] Implement product reviews and ratings.
-- [ ] Add related products suggestions.
+- [x] Add related products suggestions.
 
 ### Phase 7: Testing & Quality Assurance
 
 - [x] Add first Vitest tests for existing frontend and API logic.
 - [x] Add tests around Phase 1.5 architecture helpers such as config parsing and cart selectors.
+- [x] Add tests for Phase 6 catalog search, filtering, sorting, and related-product logic.
 - [ ] Write unit tests for React components with Vitest + Testing Library.
 - [x] Add API endpoint tests.
 - [x] Test Redux actions, reducers, and selectors.
@@ -169,6 +175,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 ### Phase 8: Deployment & Production
 
 - [ ] Configure Netlify deployment for frontend.
+- [ ] Configure Netlify deployment for the separate admin app.
 - [ ] Add Netlify config file when frontend deployment settings stabilize.
 - [ ] Set up backend deployment on Render, Railway, or Fly.io.
 - [ ] Add backend hosting config such as `render.yaml` once the API runtime and database are defined.
@@ -176,8 +183,9 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add production env matrix for frontend, backend, database, auth, Stripe, and CORS secrets.
 - [ ] Configure production CORS origins through environment variables.
 - [ ] Set up PostgreSQL database in production.
-- [ ] Add `STRIPE_WEBHOOK_SECRET` and public Stripe publishable key handling to env docs before live Stripe work.
-- [ ] Configure Stripe webhooks.
+- [x] Add `STRIPE_WEBHOOK_SECRET` and public Stripe publishable key handling to env docs before live Stripe work.
+- [x] Add backend Stripe webhook signature verification and payment status handling.
+- [ ] Configure Stripe webhooks in the Stripe dashboard for production.
 - [ ] Add error monitoring such as Sentry.
 - [ ] Implement logging system.
 - [ ] Add GitHub Actions or equivalent CI for check, test, and build.
@@ -216,6 +224,12 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - Use for UI, product browsing, cart, checkout, customer account pages, and frontend state.
 - Owns: `apps/frontend/src/components`, `apps/frontend/src/pages`, `apps/frontend/src/api`, `apps/frontend/src/slices`, and `apps/frontend/src/store`.
 - Expected output: small React components, typed Redux/RTK Query logic, responsive Chakra UI, and focused frontend tests.
+
+### `admin-agent`
+
+- Use for back office UI, admin authentication flow, order management, product management, inventory, analytics, and user management.
+- Owns: `apps/admin/src/components`, `apps/admin/src/pages`, `apps/admin/src/api`, `apps/admin/src/slices`, and `apps/admin/src/store`.
+- Expected output: admin-only React components, typed RTK Query admin operations, role-aware UI states, and focused admin tests.
 
 ### `backend-agent`
 
@@ -292,12 +306,14 @@ Project-local Codex skills live in `.agents/skills/` so they travel with this re
 - Do not modify public APIs without asking.
 - Add tests for new logic.
 - Keep `AGENTS.md` and `README.md` aligned with major architecture changes.
+- Keep storefront and admin UI code separated between `apps/frontend` and `apps/admin`.
 - Prefer mocked checkout/order flow before integrating live Stripe behavior.
 - Do not commit secrets; use `.env.example` for documented environment variables.
 
 ## Next Steps
 
-- Start Phase 6 enhanced product browsing: categories, search, sorting, product details, and variants.
+- Continue Phase 6 with product variants, image upload, reviews, ratings, popularity metadata, and richer recommendations.
+- Add admin-app focused component tests and deployment config after the split stabilizes.
 - Add shared checkout/order DTO package if API/frontend contract duplication starts to drift.
 - Move toward Phase 8 deployment once database hosting and production env values are selected.
 - Keep `.agents/skills/` updated as OSAI conventions evolve.

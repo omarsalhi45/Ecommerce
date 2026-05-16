@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertIcon,
   Badge,
   Box,
   Button,
@@ -36,42 +38,63 @@ import {
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
 } from '../api/adminApi'
-import { selectCurrentUser } from '../slices/authSlice'
-import { useAppSelector } from '../store/hooks'
+import { logout, selectCurrentUser } from '../slices/authSlice'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Order } from '../types'
 
 const orderStatuses: Order['status'][] = ['pending', 'shipped', 'delivered', 'cancelled']
+const paymentStatusColorSchemes: Record<Order['paymentStatus'], string> = {
+  mock_paid: 'green',
+  paid: 'green',
+  payment_failed: 'red',
+  payment_required: 'yellow',
+}
+const paymentStatusLabels: Record<Order['paymentStatus'], string> = {
+  mock_paid: 'mock paid',
+  paid: 'paid',
+  payment_failed: 'failed',
+  payment_required: 'awaiting payment',
+}
 const emptyProductForm = {
   id: '',
   name: '',
   description: '',
   price: '',
   imageUrl: '',
-  category: 'clothes',
+  category: 'tees',
   sku: '',
   stockQuantity: '0',
 }
 
 export default function AdminDashboardPage() {
+  const dispatch = useAppDispatch()
   const currentUser = useAppSelector(selectCurrentUser)
   const [inventoryDrafts, setInventoryDrafts] = useState<Record<string, string>>({})
   const [productForm, setProductForm] = useState(emptyProductForm)
-  const { data: analytics, isLoading: isAnalyticsLoading } = useGetAdminAnalyticsQuery()
-  const { data: ordersData } = useGetAdminOrdersQuery()
-  const { data: productsData } = useGetAdminProductsQuery()
-  const { data: inventoryData } = useGetAdminInventoryQuery()
-  const { data: usersData } = useGetAdminUsersQuery()
+  const {
+    data: analytics,
+    isError: isAnalyticsError,
+    isLoading: isAnalyticsLoading,
+  } = useGetAdminAnalyticsQuery()
+  const { data: ordersData, isError: isOrdersError } = useGetAdminOrdersQuery(undefined, {
+    pollingInterval: 5000,
+  })
+  const { data: productsData, isError: isProductsError } = useGetAdminProductsQuery()
+  const { data: inventoryData, isError: isInventoryError } = useGetAdminInventoryQuery()
+  const { data: usersData, isError: isUsersError } = useGetAdminUsersQuery()
   const [createProduct] = useCreateProductMutation()
   const [deleteProduct] = useDeleteProductMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
   const [updateInventory] = useUpdateInventoryMutation()
+  const hasAdminDataError =
+    isAnalyticsError || isOrdersError || isProductsError || isInventoryError || isUsersError
 
   if (!currentUser) {
     return <Navigate to="/login" replace />
   }
 
   if (currentUser.role !== 'admin') {
-    return <Navigate to="/profile" replace />
+    return <Navigate to="/login" replace />
   }
 
   return (
@@ -83,6 +106,22 @@ export default function AdminDashboardPage() {
           </Text>
           <Heading>Admin dashboard</Heading>
         </Box>
+
+        {hasAdminDataError ? (
+          <Alert status="error" borderRadius="md" alignItems="start">
+            <AlertIcon />
+            <Box flex="1">
+              <Text fontWeight="bold">Admin data could not be loaded.</Text>
+              <Text color="neutral.700" fontSize="sm">
+                Your session may be expired, or the local API may have restarted. Sign in again with
+                an admin account and retry.
+              </Text>
+            </Box>
+            <Button size="sm" variant="outline" onClick={() => dispatch(logout())}>
+              Sign out
+            </Button>
+          </Alert>
+        ) : null}
 
         <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
           {isAnalyticsLoading ? (
@@ -113,13 +152,16 @@ export default function AdminDashboardPage() {
           <Heading as="h2" size="md" mb={4}>
             Orders
           </Heading>
-          {ordersData?.orders.length ? (
+          {isOrdersError ? (
+            <Text color="error.600">Orders could not be loaded.</Text>
+          ) : ordersData?.orders.length ? (
             <Table size="sm">
               <Thead>
                 <Tr>
                   <Th>Order</Th>
                   <Th>Customer</Th>
                   <Th>Total</Th>
+                  <Th>Payment</Th>
                   <Th>Status</Th>
                 </Tr>
               </Thead>
@@ -129,6 +171,11 @@ export default function AdminDashboardPage() {
                     <Td fontWeight="bold">{order.id}</Td>
                     <Td>{order.customer.email}</Td>
                     <Td>${order.totals.total.toFixed(2)}</Td>
+                    <Td>
+                      <Badge colorScheme={paymentStatusColorSchemes[order.paymentStatus]}>
+                        {paymentStatusLabels[order.paymentStatus]}
+                      </Badge>
+                    </Td>
                     <Td>
                       <Select
                         size="sm"
@@ -227,6 +274,14 @@ export default function AdminDashboardPage() {
                   isRequired
                 />
                 <Input
+                  placeholder="Category"
+                  value={productForm.category}
+                  onChange={(event) =>
+                    setProductForm((current) => ({ ...current, category: event.target.value }))
+                  }
+                  isRequired
+                />
+                <Input
                   placeholder="Initial stock"
                   type="number"
                   min={0}
@@ -244,6 +299,9 @@ export default function AdminDashboardPage() {
               </Button>
             </Box>
             <VStack align="stretch" spacing={3}>
+              {isProductsError ? (
+                <Text color="error.600">Products could not be loaded.</Text>
+              ) : null}
               {productsData?.products.map((product) => (
                 <HStack key={product.id} justify="space-between">
                   <Box>
@@ -268,6 +326,9 @@ export default function AdminDashboardPage() {
               Inventory
             </Heading>
             <VStack align="stretch" spacing={4}>
+              {isInventoryError ? (
+                <Text color="error.600">Inventory could not be loaded.</Text>
+              ) : null}
               {inventoryData?.inventory.map((item) => (
                 <Box key={item.product.id}>
                   <HStack justify="space-between" align="end">
@@ -317,6 +378,7 @@ export default function AdminDashboardPage() {
             Users
           </Heading>
           <VStack align="stretch" spacing={3}>
+            {isUsersError ? <Text color="error.600">Users could not be loaded.</Text> : null}
             {usersData?.users.map((user) => (
               <HStack key={user.id} justify="space-between">
                 <Box>

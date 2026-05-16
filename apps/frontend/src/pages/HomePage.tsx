@@ -1,3 +1,4 @@
+import { SearchIcon } from '@chakra-ui/icons'
 import {
   Badge,
   Box,
@@ -6,19 +7,51 @@ import {
   Flex,
   HStack,
   Heading,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Select,
   SimpleGrid,
   Skeleton,
   Stack,
   Text,
   VStack,
 } from '@chakra-ui/react'
+import { useMemo, useState } from 'react'
 import { useGetProductsQuery } from '../api/productsApi'
+import {
+  ALL_CATEGORIES,
+  type ProductSort,
+  applyProductDiscovery,
+  formatCategoryLabel,
+  getProductCategories,
+} from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 
-const collections = ['New drops', 'Street layers', 'Everyday tees', 'Weekend fits']
+const sortOptions: { label: string; value: ProductSort }[] = [
+  { label: 'Featured', value: 'featured' },
+  { label: 'Latest drops', value: 'newest' },
+  { label: 'Price: low to high', value: 'price-asc' },
+  { label: 'Price: high to low', value: 'price-desc' },
+  { label: 'Name', value: 'name' },
+]
 
 export default function HomePage() {
   const { data, isLoading, error, refetch } = useGetProductsQuery()
+  const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sort, setSort] = useState<ProductSort>('featured')
+  const products = data ?? []
+  const categories = useMemo(() => getProductCategories(products), [products])
+  const visibleProducts = useMemo(
+    () =>
+      applyProductDiscovery(products, {
+        category: activeCategory,
+        searchTerm,
+        sort,
+      }),
+    [activeCategory, products, searchTerm, sort]
+  )
 
   if (isLoading) {
     return (
@@ -43,8 +76,6 @@ export default function HomePage() {
       </VStack>
     )
   }
-
-  const products = data ?? []
 
   return (
     <Box>
@@ -95,22 +126,41 @@ export default function HomePage() {
           </Flex>
 
           <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-            {collections.map((collection) => (
-              <Box
-                key={collection}
-                bg="white"
+            {[ALL_CATEGORIES, ...categories].map((category) => (
+              <Button
+                key={category}
+                minH={24}
+                h="auto"
+                justifyContent="flex-start"
+                alignItems="flex-start"
+                flexDirection="column"
+                bg={activeCategory === category ? 'black' : 'white'}
+                color={activeCategory === category ? 'white' : 'neutral.900'}
                 border="1px solid"
-                borderColor="neutral.200"
+                borderColor={activeCategory === category ? 'black' : 'neutral.200'}
                 borderRadius="lg"
                 p={5}
+                onClick={() => setActiveCategory(category)}
+                _hover={{
+                  bg: activeCategory === category ? 'black' : 'neutral.50',
+                  borderColor: 'accent.400',
+                }}
               >
-                <Text fontWeight="black" color="neutral.900">
-                  {collection}
+                <Text
+                  fontWeight="black"
+                  color={activeCategory === category ? 'white' : 'neutral.900'}
+                >
+                  {category === ALL_CATEGORIES ? 'All pieces' : formatCategoryLabel(category)}
                 </Text>
-                <Text color="neutral.500" fontSize="sm">
-                  Explore now
+                <Text
+                  color={activeCategory === category ? 'whiteAlpha.800' : 'neutral.500'}
+                  fontSize="sm"
+                >
+                  {category === ALL_CATEGORIES
+                    ? `${products.length} products`
+                    : 'Filter collection'}
                 </Text>
-              </Box>
+              </Button>
             ))}
           </SimpleGrid>
         </VStack>
@@ -130,10 +180,58 @@ export default function HomePage() {
             </Text>
           </Flex>
 
-          {products.length > 0 ? (
+          <Flex
+            gap={3}
+            align={{ base: 'stretch', md: 'center' }}
+            direction={{ base: 'column', md: 'row' }}
+          >
+            <InputGroup maxW={{ base: 'full', md: 'md' }}>
+              <InputLeftElement pointerEvents="none">
+                <SearchIcon color="neutral.500" />
+              </InputLeftElement>
+              <Input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search tees, jackets, hoodies"
+                aria-label="Search products"
+                bg="white"
+              />
+            </InputGroup>
+
+            <Select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as ProductSort)}
+              maxW={{ base: 'full', md: '64' }}
+              bg="white"
+              aria-label="Sort products"
+            >
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </Flex>
+
+          {products.length > 0 && visibleProducts.length > 0 ? (
             <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} w="full">
-              <ProductList products={products} />
+              <ProductList products={visibleProducts} />
             </SimpleGrid>
+          ) : products.length > 0 ? (
+            <VStack py={16} border="1px solid" borderColor="neutral.200" borderRadius="lg">
+              <Text fontWeight="bold">No products match those filters.</Text>
+              <Text color="neutral.600">Try a different search or category.</Text>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setActiveCategory(ALL_CATEGORIES)
+                  setSearchTerm('')
+                  setSort('featured')
+                }}
+              >
+                Clear filters
+              </Button>
+            </VStack>
           ) : (
             <VStack py={16} border="1px solid" borderColor="neutral.200" borderRadius="lg">
               <Text fontWeight="bold">No products available yet.</Text>

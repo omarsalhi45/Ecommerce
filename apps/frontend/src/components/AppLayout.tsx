@@ -58,18 +58,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {currentUser?.role === 'admin' ? (
-                <Link
-                  as={RouterLink}
-                  to="/admin"
-                  color="neutral.800"
-                  fontSize="sm"
-                  fontWeight="bold"
-                  _hover={{ color: 'accent.600', textDecoration: 'none' }}
-                >
-                  Admin
-                </Link>
-              ) : null}
             </HStack>
 
             <Button
