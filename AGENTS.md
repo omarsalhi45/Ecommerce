@@ -178,10 +178,10 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Configure Netlify deployment for the separate admin app.
 - [ ] Add Netlify config file when frontend deployment settings stabilize.
 - [ ] Set up backend deployment on Render, Railway, or Fly.io.
-- [ ] Add backend hosting config such as `render.yaml` once the API runtime and database are defined.
-- [ ] Configure environment variables for production.
-- [ ] Add production env matrix for frontend, backend, database, auth, Stripe, and CORS secrets.
-- [ ] Configure production CORS origins through environment variables.
+- [x] Add backend hosting config such as `render.yaml` once the API runtime and database are defined.
+- [x] Configure environment variables for production.
+- [x] Add production env matrix for frontend, backend, database, auth, Stripe, and CORS secrets.
+- [x] Configure production CORS origins through environment variables.
 - [ ] Set up PostgreSQL database in production.
 - [x] Add `STRIPE_WEBHOOK_SECRET` and public Stripe publishable key handling to env docs before live Stripe work.
 - [x] Add backend Stripe webhook signature verification and payment status handling.

@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: osai-api
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @osai/shared build && pnpm --filter @osai/api build
+    startCommand: pnpm --filter @osai/api start
+    healthCheckPath: /api/health/ready
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: osai-postgres
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+
+databases:
+  - name: osai-postgres
+    databaseName: osai
+    user: osai
+    plan: free
+    postgresMajorVersion: "15"
+    ipAllowList: []
