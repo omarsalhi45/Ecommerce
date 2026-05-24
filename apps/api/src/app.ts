@@ -6,6 +6,8 @@ import router from './routes'
 
 const app = express()
 
+app.disable('etag')
+
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
 app.use(
@@ -13,6 +15,10 @@ app.use(
     origin: apiConfig.corsOrigins,
   })
 )
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store')
+  next()
+})
 app.use('/api', router)
 
 app.get('/', (_, res) => {

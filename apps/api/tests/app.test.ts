@@ -33,6 +33,14 @@ describe('api app', () => {
     expect(typeof body.timestamp).toBe('string')
   })
 
+  it('does not cache API JSON responses', async () => {
+    const response = await fetch(`${baseUrl}/api/products`)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('cache-control')).toBe('no-store')
+    expect(response.headers.get('etag')).toBeNull()
+  })
+
   it('returns readiness status', async () => {
     const response = await fetch(`${baseUrl}/api/health/ready`)
     const body = await response.json()
