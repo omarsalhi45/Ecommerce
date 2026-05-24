@@ -164,6 +164,16 @@ See `AGENTS.md` for the complete phased development plan covering:
 
 Copy `.env.example` to `.env` at the repository root and add any required values. The API and frontend scripts both load this root env file during local development.
 
+## Local Stripe Webhooks
+
+When testing real Stripe test-mode payments locally, keep the Stripe CLI forwarding webhooks to the API while the app is running:
+
+```bash
+stripe listen --forward-to http://localhost:4000/api/stripe/webhook
+```
+
+Use the `whsec_...` secret printed by that command as `STRIPE_WEBHOOK_SECRET` in `.env`, then restart the API. Without the listener, local orders can stay on `awaiting payment` because Stripe cannot reach `localhost:4000` directly.
+
 ## Local Admin Access
 
 Public signup always creates customer accounts. For local development, create the first admin through the dev-only bootstrap endpoint while the API is running:
