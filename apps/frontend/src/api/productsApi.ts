@@ -9,10 +9,16 @@ export const productsApi = createApi({
   }),
   endpoints: (builder) => ({
     getProducts: builder.query<Product[], void>({
-      query: () => '/products',
+      query: () => ({
+        url: '/products',
+        cache: 'no-store',
+      }),
     }),
     getProduct: builder.query<Product, string>({
-      query: (productId) => `/products/${productId}`,
+      query: (productId) => ({
+        url: `/products/${productId}`,
+        cache: 'no-store',
+      }),
     }),
   }),
 })
