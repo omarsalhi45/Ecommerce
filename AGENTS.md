@@ -168,7 +168,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add role-guard tests before admin features rely on them.
 - [ ] Add accessibility checks for keyboard navigation, focus states, labels, and color contrast.
 - [x] Add empty/loading/error state tests for key frontend flows.
-- [ ] Implement E2E tests with Playwright or Cypress.
+- [x] Implement E2E tests with Playwright or Cypress.
 - [ ] Add integration tests for critical flows.
 - [x] Set up CI/CD pipeline with testing.
 - [ ] Add code coverage reporting.

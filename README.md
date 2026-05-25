@@ -159,9 +159,16 @@ See `AGENTS.md` for the complete phased development plan covering:
    pnpm test
    ```
 
+5. Run browser E2E smoke tests:
+
+   ```bash
+   pnpm exec playwright install chromium
+   pnpm test:e2e
+   ```
+
 ## CI
 
-GitHub Actions runs `pnpm check`, `pnpm test`, and `pnpm build` on pushes to `main` and pull requests using Node 20 with pnpm 8.10.0.
+GitHub Actions runs `pnpm check`, `pnpm test`, `pnpm build`, and the Playwright E2E smoke suite on pushes to `main` and pull requests using Node 20 with pnpm 8.10.0.
 
 ## Environment
 

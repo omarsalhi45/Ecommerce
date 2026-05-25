@@ -1,0 +1,48 @@
+import { expect, test } from '@playwright/test'
+import { mockProductApi, storefrontUrl } from './fixtures/products'
+
+test('shopper can browse products, add to cart, and reach checkout', async ({ page }) => {
+  await mockProductApi(page)
+
+  await page.goto(storefrontUrl)
+
+  await expect(
+    page.getByRole('heading', { name: 'Clothes made for fast days and late nights.' })
+  ).toBeVisible()
+  await expect(page.getByText('Everyday Weight Hoodie')).toBeVisible()
+
+  await page
+    .locator('div')
+    .filter({ hasText: /^Everyday Weight Hoodie/ })
+    .getByRole('button', { name: 'Add' })
+    .click()
+
+  await page.getByRole('link', { name: 'Cart' }).first().click()
+
+  await expect(page.getByRole('heading', { name: 'Cart' })).toBeVisible()
+  await expect(page.getByText('Everyday Weight Hoodie', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('Estimated total')).toBeVisible()
+  await expect(page.getByText('$72.29')).toBeVisible()
+
+  await page.getByRole('link', { name: 'Checkout' }).last().click()
+
+  await expect(page.getByRole('heading', { name: 'Finish your order' })).toBeVisible()
+  await expect(page.getByText('Estimated total $72.29')).toBeVisible()
+})
+
+test('shopper can open product details with variants and related products', async ({ page }) => {
+  await mockProductApi(page)
+
+  await page.goto(storefrontUrl)
+  await page
+    .locator('div')
+    .filter({ hasText: /^Everyday Weight Hoodie/ })
+    .getByRole('link', { name: 'Details' })
+    .click()
+
+  await expect(page).toHaveURL(/\/products\/hoodie-001$/)
+  await expect(page.getByRole('heading', { name: 'Everyday Weight Hoodie' })).toBeVisible()
+  await expect(page.getByText('hoodie-001-black-m')).toBeVisible()
+  await expect(page.getByText('M / Black')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Related pieces' })).toBeVisible()
+})
