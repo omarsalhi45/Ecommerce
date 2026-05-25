@@ -245,7 +245,7 @@ Netlify hosts the storefront and admin as separate sites from the same repositor
 
 Both Vite apps include a `public/_redirects` file so direct reloads on client-side routes such as `/cart`, `/checkout`, `/products/:id`, and admin `/login` return `index.html`.
 
-Each app also has its own `netlify.toml` for file-based configuration. If Netlify is configured with an app base directory, use:
+Each app also has its own `netlify.toml` for file-based configuration. Keep the Netlify site base directory empty when using those files, because their build and publish paths are relative to the repository root. If Netlify is configured with an app base directory instead, override the settings in the Netlify dashboard with:
 
 | App | Base directory | Publish directory |
 | --- | --- | --- |

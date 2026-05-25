@@ -1,6 +1,6 @@
 [build]
-  command = "pnpm --dir ../.. --filter @osai/frontend build"
-  publish = "dist"
+  command = "pnpm --filter @osai/frontend build"
+  publish = "apps/frontend/dist"
 
 [build.environment]
   NODE_VERSION = "20"

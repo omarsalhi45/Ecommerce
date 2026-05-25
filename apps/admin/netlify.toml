@@ -1,6 +1,6 @@
 [build]
-  command = "pnpm --dir ../.. --filter @osai/admin build"
-  publish = "dist"
+  command = "pnpm --filter @osai/admin build"
+  publish = "apps/admin/dist"
 
 [build.environment]
   NODE_VERSION = "20"
