@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createApiConfig, parseCorsOrigins, parsePort } from '../src/config'
+import {
+  createApiConfig,
+  parseCorsOrigins,
+  parsePort,
+  parseSentryTracesSampleRate,
+} from '../src/config'
 
 describe('api config', () => {
   it('uses local defaults when env values are missing', () => {
@@ -10,6 +15,8 @@ describe('api config', () => {
       stripePublishableKey: undefined,
       stripeSecretKey: undefined,
       stripeWebhookSecret: undefined,
+      sentryDsn: undefined,
+      sentryTracesSampleRate: 0,
       nodeEnv: 'development',
     })
   })
@@ -27,5 +34,14 @@ describe('api config', () => {
     expect(
       parseCorsOrigins('https://osai.test, http://localhost:5173, https://osai.test ')
     ).toEqual(['https://osai.test', 'http://localhost:5173'])
+  })
+
+  it('parses optional Sentry traces sample rates', () => {
+    expect(parseSentryTracesSampleRate(undefined)).toBe(0)
+    expect(parseSentryTracesSampleRate('0.25')).toBe(0.25)
+    expect(parseSentryTracesSampleRate('1')).toBe(1)
+    expect(() => parseSentryTracesSampleRate('2')).toThrow(
+      'Invalid SENTRY_TRACES_SAMPLE_RATE value: 2'
+    )
   })
 })

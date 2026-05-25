@@ -160,6 +160,10 @@ See `AGENTS.md` for the complete phased development plan covering:
    pnpm test
    ```
 
+## CI
+
+GitHub Actions runs `pnpm check`, `pnpm test`, and `pnpm build` on pushes to `main` and pull requests using Node 20 with pnpm 8.10.0.
+
 ## Environment
 
 Copy `.env.example` to `.env` at the repository root and add any required values. The API and frontend scripts both load this root env file during local development.
@@ -224,6 +228,8 @@ Production environment matrix:
 | Stripe | `STRIPE_SECRET_KEY` | Render Dashboard | Secret key for server-side Stripe calls. |
 | Stripe | `STRIPE_PUBLISHABLE_KEY` | Render Dashboard | Returned by API checkout config responses. |
 | Stripe | `STRIPE_WEBHOOK_SECRET` | Render Dashboard | Webhook signing secret from the Stripe Dashboard. |
+| Monitoring | `SENTRY_DSN` | Render Dashboard | Optional Sentry DSN for API error reporting. |
+| Monitoring | `SENTRY_TRACES_SAMPLE_RATE` | Render Dashboard | Optional trace sample rate from `0` to `1`; defaults to `0`. |
 | Storefront | `VITE_API_BASE_URL` | Netlify | Public API URL plus `/api`. |
 | Storefront | `VITE_STRIPE_PUBLISHABLE_KEY` | Netlify | Browser-safe Stripe publishable key. |
 | Admin | `VITE_API_BASE_URL` | Netlify | Same public API URL plus `/api`. |
@@ -239,6 +245,15 @@ Netlify hosts the storefront and admin as separate sites from the same repositor
 
 Both Vite apps include a `public/_redirects` file so direct reloads on client-side routes such as `/cart`, `/checkout`, `/products/:id`, and admin `/login` return `index.html`.
 
+Each app also has its own `netlify.toml` for file-based configuration. If Netlify is configured with an app base directory, use:
+
+| App | Base directory | Publish directory |
+| --- | --- | --- |
+| Storefront | `apps/frontend` | `dist` |
+| Admin | `apps/admin` | `dist` |
+
+Render and Netlify provide HTTPS certificates for their managed service domains.
+
 ## Architecture Decisions
 
 - Runtime config is centralized in `apps/frontend/src/config.ts`, `apps/admin/src/config.ts`, and `apps/api/src/config.ts`; avoid reading environment variables directly from feature code.
@@ -250,6 +265,8 @@ Both Vite apps include a `public/_redirects` file so direct reloads on client-si
 - Checkout totals displayed by the frontend are estimates. The API recalculates order totals from product data when creating the mocked order.
 - Auth and orders use PostgreSQL-backed repositories when `DATABASE_URL` is configured, with in-memory fallback for tests and no-database local development.
 - Stripe secret-key operations stay on the API. The storefront requests `/api/orders/payment-intent` and confirms payment with Stripe Elements when a publishable key is configured.
+- The API emits structured request logs with method, path, status code, duration, timestamp, and level. It does not log request bodies or secrets.
+- Sentry API error monitoring is optional and activates only when `SENTRY_DSN` is configured. The API captures server errors and leaves validation/auth errors out of Sentry noise.
 
 ## Project Skills
 

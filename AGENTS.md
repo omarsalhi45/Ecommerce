@@ -176,7 +176,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 
 - [x] Configure Netlify deployment for frontend.
 - [x] Configure Netlify deployment for the separate admin app.
-- [ ] Add Netlify config file when frontend deployment settings stabilize.
+- [x] Add Netlify config file when frontend deployment settings stabilize.
 - [x] Fix Netlify hard-refresh routing for SPA routes such as admin `/login`.
 - [x] Prevent admin dashboard queries from firing before a valid admin session exists.
 - [x] Set up backend deployment on Render, Railway, or Fly.io.
@@ -188,10 +188,10 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add `STRIPE_WEBHOOK_SECRET` and public Stripe publishable key handling to env docs before live Stripe work.
 - [x] Add backend Stripe webhook signature verification and payment status handling.
 - [x] Configure Stripe webhooks in the Stripe dashboard for production.
-- [ ] Add error monitoring such as Sentry.
-- [ ] Implement logging system.
-- [ ] Add GitHub Actions or equivalent CI for check, test, and build.
-- [ ] Set up SSL certificates.
+- [x] Add error monitoring such as Sentry.
+- [x] Implement logging system.
+- [x] Add GitHub Actions or equivalent CI for check, test, and build.
+- [x] Set up SSL certificates.
 
 ### Phase 9: Advanced Features (Future)
 

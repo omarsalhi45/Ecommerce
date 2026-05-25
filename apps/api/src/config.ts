@@ -20,6 +20,8 @@ export interface ApiConfig {
   readonly stripeSecretKey?: string
   readonly stripePublishableKey?: string
   readonly stripeWebhookSecret?: string
+  readonly sentryDsn?: string
+  readonly sentryTracesSampleRate: number
   readonly nodeEnv: string
 }
 
@@ -52,6 +54,20 @@ export const parseCorsOrigins = (value: string | undefined): string[] => {
   )
 }
 
+export const parseSentryTracesSampleRate = (value: string | undefined): number => {
+  if (!value?.trim()) {
+    return 0
+  }
+
+  const parsedValue = Number(value)
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0 || parsedValue > 1) {
+    throw new Error(`Invalid SENTRY_TRACES_SAMPLE_RATE value: ${value}`)
+  }
+
+  return parsedValue
+}
+
 export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
   const nodeEnv = env.NODE_ENV ?? 'development'
   const jwtSecret = env.JWT_SECRET ?? 'osai_local_dev_secret_change_me'
@@ -69,6 +85,8 @@ export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
     stripeSecretKey: env.STRIPE_SECRET_KEY,
     stripePublishableKey: env.STRIPE_PUBLISHABLE_KEY,
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
+    sentryDsn: env.SENTRY_DSN,
+    sentryTracesSampleRate: parseSentryTracesSampleRate(env.SENTRY_TRACES_SAMPLE_RATE),
     nodeEnv,
   }
 }

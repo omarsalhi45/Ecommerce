@@ -1,0 +1,12 @@
+[build]
+  command = "pnpm --dir ../.. --filter @osai/frontend build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  PNPM_VERSION = "8.10.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
