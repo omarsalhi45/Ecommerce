@@ -160,14 +160,14 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add tests around Phase 1.5 architecture helpers such as config parsing and cart selectors.
 - [x] Add tests for Phase 6 catalog search, filtering, sorting, and related-product logic.
 - [x] Add tests for product variant response data.
-- [ ] Write unit tests for React components with Vitest + Testing Library.
+- [x] Write unit tests for React components with Vitest + Testing Library.
 - [x] Add API endpoint tests.
 - [x] Test Redux actions, reducers, and selectors.
 - [x] Add checkout contract tests before Stripe integration.
 - [x] Add auth tests before admin features rely on them.
 - [x] Add role-guard tests before admin features rely on them.
 - [ ] Add accessibility checks for keyboard navigation, focus states, labels, and color contrast.
-- [ ] Add empty/loading/error state tests for key frontend flows.
+- [x] Add empty/loading/error state tests for key frontend flows.
 - [ ] Implement E2E tests with Playwright or Cypress.
 - [ ] Add integration tests for critical flows.
 - [x] Set up CI/CD pipeline with testing.
