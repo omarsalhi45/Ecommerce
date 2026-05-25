@@ -22,6 +22,7 @@ export interface Product {
   category: string
   variants?: ProductVariant[]
   popularityScore?: number
+  ratingSummary?: ProductRatingSummary
 }
 
 export interface ProductVariant {
@@ -29,6 +30,11 @@ export interface ProductVariant {
   size?: string
   color?: string
   stockQuantity: number
+}
+
+export interface ProductRatingSummary {
+  averageRating: number
+  reviewCount: number
 }
 
 export type UserRole = 'customer' | 'admin'

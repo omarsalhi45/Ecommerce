@@ -80,6 +80,12 @@ export default function ProductList({ products }: { products: Product[] }) {
               <Text color="neutral.600" fontSize="sm" lineHeight="tall" noOfLines={3}>
                 {product.description}
               </Text>
+              {product.ratingSummary?.reviewCount ? (
+                <Text color="neutral.700" fontSize="sm" fontWeight="bold">
+                  {product.ratingSummary.averageRating.toFixed(1)} / 5 -{' '}
+                  {product.ratingSummary.reviewCount} reviews
+                </Text>
+              ) : null}
             </VStack>
 
             <HStack justify="space-between" w="full" align="center" gap={3}>

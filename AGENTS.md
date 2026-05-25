@@ -151,7 +151,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add product detail pages (`/products/:id`).
 - [ ] Create product image upload using local or cloud storage.
 - [x] Add product variants such as sizes and colors.
-- [ ] Implement product reviews and ratings.
+- [x] Implement product reviews and ratings.
 - [x] Add related products suggestions.
 
 ### Phase 7: Testing & Quality Assurance
@@ -315,7 +315,7 @@ Project-local Codex skills live in `.agents/skills/` so they travel with this re
 
 ## Next Steps
 
-- Continue Phase 6 with product variants, image upload, reviews, ratings, popularity metadata, and richer recommendations.
+- Continue Phase 6 with image upload and richer recommendations.
 - Add admin-app focused component tests and deployment config after the split stabilizes.
 - Add shared checkout/order DTO package if API/frontend contract duplication starts to drift.
 - Move toward Phase 8 deployment once database hosting and production env values are selected.

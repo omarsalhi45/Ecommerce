@@ -31,6 +31,16 @@ CREATE TABLE IF NOT EXISTS inventory (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS product_reviews (
+  id TEXT PRIMARY KEY,
+  product_id TEXT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  author_name TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS carts (
   id TEXT PRIMARY KEY,
   user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
@@ -84,6 +94,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_products_popularity_score ON products(popularity_score DESC);
+CREATE INDEX IF NOT EXISTS idx_product_reviews_product_id ON product_reviews(product_id);
 CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id);
 CREATE INDEX IF NOT EXISTS idx_carts_guest_id ON carts(guest_id);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);

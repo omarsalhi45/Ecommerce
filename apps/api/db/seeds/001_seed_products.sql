@@ -48,3 +48,57 @@ ON CONFLICT (product_id) DO UPDATE SET
   stock_quantity = EXCLUDED.stock_quantity,
   low_stock_threshold = EXCLUDED.low_stock_threshold,
   updated_at = NOW();
+
+INSERT INTO product_reviews (id, product_id, author_name, rating, title, body, created_at)
+VALUES
+  (
+    'review-shirt-001-1',
+    'shirt-001',
+    'Maya',
+    5,
+    'Perfect boxy shape',
+    'The cotton feels heavy without being stiff, and the fit lands exactly right.',
+    '2026-01-14T10:00:00.000Z'
+  ),
+  (
+    'review-shirt-001-2',
+    'shirt-001',
+    'Noah',
+    4,
+    'Easy everyday tee',
+    'Clean graphic, good collar, and it works under jackets.',
+    '2026-01-22T14:30:00.000Z'
+  ),
+  (
+    'review-jacket-001-1',
+    'jacket-001',
+    'Iris',
+    4,
+    'Light but useful',
+    'Good for windy nights and packs down smaller than expected.',
+    '2026-02-03T09:15:00.000Z'
+  ),
+  (
+    'review-hoodie-001-1',
+    'hoodie-001',
+    'Leo',
+    5,
+    'Soft and structured',
+    'Warm enough for late walks but still has a clean streetwear shape.',
+    '2026-02-11T18:45:00.000Z'
+  ),
+  (
+    'review-hoodie-001-2',
+    'hoodie-001',
+    'Ari',
+    5,
+    'Favorite hoodie this month',
+    'The fleece is comfortable and the hood sits nicely without bunching.',
+    '2026-02-18T12:20:00.000Z'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  author_name = EXCLUDED.author_name,
+  rating = EXCLUDED.rating,
+  title = EXCLUDED.title,
+  body = EXCLUDED.body,
+  created_at = EXCLUDED.created_at;

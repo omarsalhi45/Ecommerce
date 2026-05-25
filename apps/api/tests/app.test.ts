@@ -183,6 +183,10 @@ describe('api app', () => {
       name: 'Everyday Weight Hoodie',
       category: 'hoodies',
       popularityScore: 95,
+      ratingSummary: {
+        averageRating: 5,
+        reviewCount: 2,
+      },
       variants: [
         {
           sku: 'OSAI-HOOD-GRY-M',
@@ -191,6 +195,22 @@ describe('api app', () => {
           stockQuantity: 34,
         },
       ],
+    })
+  })
+
+  it('returns product reviews and rating summary', async () => {
+    const response = await fetch(`${baseUrl}/api/products/hoodie-001/reviews`)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.summary).toEqual({
+      averageRating: 5,
+      reviewCount: 2,
+    })
+    expect(body.reviews).toHaveLength(2)
+    expect(body.reviews[0]).toMatchObject({
+      productId: 'hoodie-001',
+      rating: 5,
     })
   })
 

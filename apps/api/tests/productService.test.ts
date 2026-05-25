@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getAllProducts, getProduct } from '../src/services/productService'
+import { getAllProducts, getProduct, getProductReviews } from '../src/services/productService'
 
 describe('productService', () => {
   it('returns the seeded product catalog', async () => {
@@ -17,6 +17,10 @@ describe('productService', () => {
       name: 'Everyday Weight Hoodie',
       category: 'hoodies',
       popularityScore: 95,
+      ratingSummary: {
+        averageRating: 5,
+        reviewCount: 2,
+      },
       variants: [
         {
           sku: 'OSAI-HOOD-GRY-M',
@@ -32,5 +36,16 @@ describe('productService', () => {
     const product = await getProduct('missing-product')
 
     expect(product).toBeUndefined()
+  })
+
+  it('returns product reviews for a product', async () => {
+    const reviews = await getProductReviews('hoodie-001')
+
+    expect(reviews).toHaveLength(2)
+    expect(reviews[0]).toMatchObject({
+      productId: 'hoodie-001',
+      rating: 5,
+      title: 'Soft and structured',
+    })
   })
 })

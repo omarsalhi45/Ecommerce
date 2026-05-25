@@ -22,6 +22,7 @@ export interface Product {
   category: string
   variants?: ProductVariant[]
   popularityScore?: number
+  ratingSummary?: ProductRatingSummary
 }
 
 export interface ProductVariant {
@@ -29,6 +30,26 @@ export interface ProductVariant {
   size?: string
   color?: string
   stockQuantity: number
+}
+
+export interface ProductRatingSummary {
+  averageRating: number
+  reviewCount: number
+}
+
+export interface ProductReview {
+  id: string
+  productId: string
+  authorName: string
+  rating: number
+  title: string
+  body: string
+  createdAt: string
+}
+
+export interface ProductReviewsResponse {
+  reviews: ProductReview[]
+  summary: ProductRatingSummary
 }
 
 export type UserRole = 'customer' | 'admin'

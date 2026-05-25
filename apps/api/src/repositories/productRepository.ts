@@ -3,6 +3,7 @@ import type {
   CreateProductInput,
   InventoryItem,
   Product,
+  ProductReview,
   ProductVariant,
   UpdateProductInput,
 } from '../services/productService'
@@ -15,6 +16,8 @@ interface ProductRow {
   readonly image_url: string
   readonly category: string
   readonly popularity_score?: number | null
+  readonly average_rating?: string | null
+  readonly review_count?: number | string | null
 }
 
 interface InventoryRow extends ProductRow {
@@ -25,6 +28,31 @@ interface InventoryRow extends ProductRow {
   readonly low_stock_threshold: number
 }
 
+interface ProductReviewRow {
+  readonly id: string
+  readonly product_id: string
+  readonly author_name: string
+  readonly rating: number
+  readonly title: string
+  readonly body: string
+  readonly created_at: Date | string
+}
+
+const productSelectWithRatings = `
+  SELECT
+    p.id,
+    p.name,
+    p.description,
+    p.price,
+    p.image_url,
+    p.category,
+    p.popularity_score,
+    COALESCE(ROUND(AVG(r.rating)::numeric, 1), 0) AS average_rating,
+    COUNT(r.id)::int AS review_count
+  FROM products p
+  LEFT JOIN product_reviews r ON r.product_id = p.id
+`
+
 const mapProduct = (row: ProductRow): Product => ({
   id: row.id,
   name: row.name,
@@ -33,6 +61,10 @@ const mapProduct = (row: ProductRow): Product => ({
   imageUrl: row.image_url,
   category: row.category,
   popularityScore: row.popularity_score ?? undefined,
+  ratingSummary: {
+    averageRating: Number(row.average_rating ?? 0),
+    reviewCount: Number(row.review_count ?? 0),
+  },
 })
 
 const mapProductVariant = (row: InventoryRow): ProductVariant => ({
@@ -91,9 +123,25 @@ const mapInventory = (row: InventoryRow): InventoryItem => ({
   lowStockThreshold: row.low_stock_threshold,
 })
 
+const mapProductReview = (row: ProductReviewRow): ProductReview => ({
+  id: row.id,
+  productId: row.product_id,
+  authorName: row.author_name,
+  rating: row.rating,
+  title: row.title,
+  body: row.body,
+  createdAt:
+    row.created_at instanceof Date
+      ? row.created_at.toISOString()
+      : new Date(row.created_at).toISOString(),
+})
+
 export const getProductsFromDb = async (): Promise<Product[]> => {
   const result = await query<ProductRow>(
-    'SELECT id, name, description, price, image_url, category, popularity_score FROM products WHERE is_active = TRUE ORDER BY created_at ASC'
+    `${productSelectWithRatings}
+     WHERE p.is_active = TRUE
+     GROUP BY p.id
+     ORDER BY p.created_at ASC`
   )
 
   const products = result.rows.map(mapProduct)
@@ -104,7 +152,9 @@ export const getProductsFromDb = async (): Promise<Product[]> => {
 
 export const getProductFromDb = async (id: string): Promise<Product | undefined> => {
   const result = await query<ProductRow>(
-    'SELECT id, name, description, price, image_url, category, popularity_score FROM products WHERE id = $1 AND is_active = TRUE',
+    `${productSelectWithRatings}
+     WHERE p.id = $1 AND p.is_active = TRUE
+     GROUP BY p.id`,
     [id]
   )
 
@@ -118,11 +168,23 @@ export const getProductFromDb = async (id: string): Promise<Product | undefined>
   return attachVariants(product, variantsByProductId.get(id))
 }
 
+export const getProductReviewsFromDb = async (productId: string): Promise<ProductReview[]> => {
+  const result = await query<ProductReviewRow>(
+    `SELECT id, product_id, author_name, rating, title, body, created_at
+     FROM product_reviews
+     WHERE product_id = $1
+     ORDER BY created_at DESC`,
+    [productId]
+  )
+
+  return result.rows.map(mapProductReview)
+}
+
 export const createProductInDb = async (input: CreateProductInput): Promise<Product> => {
   const result = await query<ProductRow>(
     `INSERT INTO products (id, name, description, price, image_url, category)
      VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, name, description, price, image_url, category`,
+     RETURNING id, name, description, price, image_url, category, popularity_score`,
     [input.id, input.name, input.description, input.price, input.imageUrl, input.category]
   )
 

@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { frontendConfig } from '../config'
-import type { Product } from '../types'
+import type { Product, ProductReviewsResponse } from '../types'
 
 export const productsApi = createApi({
   reducerPath: 'productsApi',
@@ -20,7 +20,13 @@ export const productsApi = createApi({
         cache: 'no-store',
       }),
     }),
+    getProductReviews: builder.query<ProductReviewsResponse, string>({
+      query: (productId) => ({
+        url: `/products/${productId}/reviews`,
+        cache: 'no-store',
+      }),
+    }),
   }),
 })
 
-export const { useGetProductsQuery, useGetProductQuery } = productsApi
+export const { useGetProductsQuery, useGetProductQuery, useGetProductReviewsQuery } = productsApi

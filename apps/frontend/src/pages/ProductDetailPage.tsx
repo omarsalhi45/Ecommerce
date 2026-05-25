@@ -18,7 +18,11 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import { Link as RouterLink, useParams } from 'react-router-dom'
-import { useGetProductQuery, useGetProductsQuery } from '../api/productsApi'
+import {
+  useGetProductQuery,
+  useGetProductReviewsQuery,
+  useGetProductsQuery,
+} from '../api/productsApi'
 import { formatCategoryLabel, getRelatedProducts } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 import { addItem } from '../slices/cartSlice'
@@ -37,8 +41,13 @@ export default function ProductDetailPage() {
     skip: !productId,
   })
   const { data: products = [] } = useGetProductsQuery()
+  const { data: reviewsData } = useGetProductReviewsQuery(productId, {
+    skip: !productId,
+  })
 
   const relatedProducts = product ? getRelatedProducts(products, product) : []
+  const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
+  const reviews = reviewsData?.reviews ?? []
 
   const handleAddToCart = () => {
     if (!product) {
@@ -138,6 +147,16 @@ export default function ProductDetailPage() {
               <Text fontSize="3xl" fontWeight="black" color="neutral.900">
                 ${product.price.toFixed(2)}
               </Text>
+              {ratingSummary?.reviewCount ? (
+                <HStack spacing={2}>
+                  <Badge colorScheme="yellow" borderRadius="full" px={3} py={1}>
+                    {ratingSummary.averageRating.toFixed(1)} / 5
+                  </Badge>
+                  <Text color="neutral.600" fontWeight="bold">
+                    {ratingSummary.reviewCount} reviews
+                  </Text>
+                </HStack>
+              ) : null}
             </Stack>
 
             <Divider />
@@ -210,6 +229,46 @@ export default function ProductDetailPage() {
             </Flex>
           </Stack>
         </Grid>
+
+        {reviews.length > 0 && ratingSummary?.reviewCount ? (
+          <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
+            <Box>
+              <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
+                Community rating
+              </Text>
+              <Heading as="h2" size="xl" color="neutral.900">
+                Reviews
+              </Heading>
+              <Text color="neutral.600" mt={2}>
+                Average {ratingSummary.averageRating.toFixed(1)} out of 5 from{' '}
+                {ratingSummary.reviewCount} shoppers.
+              </Text>
+            </Box>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+              {reviews.map((review) => (
+                <Box
+                  key={review.id}
+                  bg="white"
+                  border="1px solid"
+                  borderColor="neutral.200"
+                  borderRadius="lg"
+                  p={5}
+                >
+                  <HStack justify="space-between" align="start" mb={3}>
+                    <Box>
+                      <Text fontWeight="black">{review.title}</Text>
+                      <Text color="neutral.500" fontSize="sm">
+                        {review.authorName}
+                      </Text>
+                    </Box>
+                    <Badge colorScheme="yellow">{review.rating} / 5</Badge>
+                  </HStack>
+                  <Text color="neutral.700">{review.body}</Text>
+                </Box>
+              ))}
+            </SimpleGrid>
+          </VStack>
+        ) : null}
 
         {relatedProducts.length > 0 ? (
           <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>

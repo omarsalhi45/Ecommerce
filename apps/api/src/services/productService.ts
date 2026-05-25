@@ -5,6 +5,7 @@ import {
   deactivateProductInDb,
   getInventoryFromDb,
   getProductFromDb,
+  getProductReviewsFromDb,
   getProductsFromDb,
   updateInventoryInDb,
   updateProductInDb,
@@ -19,6 +20,7 @@ export interface Product {
   category: string
   variants?: ProductVariant[]
   popularityScore?: number
+  ratingSummary?: ProductRatingSummary
 }
 
 export interface ProductVariant {
@@ -26,6 +28,21 @@ export interface ProductVariant {
   readonly size?: string
   readonly color?: string
   readonly stockQuantity: number
+}
+
+export interface ProductRatingSummary {
+  readonly averageRating: number
+  readonly reviewCount: number
+}
+
+export interface ProductReview {
+  readonly id: string
+  readonly productId: string
+  readonly authorName: string
+  readonly rating: number
+  readonly title: string
+  readonly body: string
+  readonly createdAt: string
 }
 
 export interface CreateProductInput extends Product {
@@ -113,15 +130,84 @@ const inventory: InventoryItem[] = [
   },
 ]
 
+const productReviews: ProductReview[] = [
+  {
+    id: 'review-shirt-001-1',
+    productId: 'shirt-001',
+    authorName: 'Maya',
+    rating: 5,
+    title: 'Perfect boxy shape',
+    body: 'The cotton feels heavy without being stiff, and the fit lands exactly right.',
+    createdAt: '2026-01-14T10:00:00.000Z',
+  },
+  {
+    id: 'review-shirt-001-2',
+    productId: 'shirt-001',
+    authorName: 'Noah',
+    rating: 4,
+    title: 'Easy everyday tee',
+    body: 'Clean graphic, good collar, and it works under jackets.',
+    createdAt: '2026-01-22T14:30:00.000Z',
+  },
+  {
+    id: 'review-jacket-001-1',
+    productId: 'jacket-001',
+    authorName: 'Iris',
+    rating: 4,
+    title: 'Light but useful',
+    body: 'Good for windy nights and packs down smaller than expected.',
+    createdAt: '2026-02-03T09:15:00.000Z',
+  },
+  {
+    id: 'review-hoodie-001-1',
+    productId: 'hoodie-001',
+    authorName: 'Leo',
+    rating: 5,
+    title: 'Soft and structured',
+    body: 'Warm enough for late walks but still has a clean streetwear shape.',
+    createdAt: '2026-02-11T18:45:00.000Z',
+  },
+  {
+    id: 'review-hoodie-001-2',
+    productId: 'hoodie-001',
+    authorName: 'Ari',
+    rating: 5,
+    title: 'Favorite hoodie this month',
+    body: 'The fleece is comfortable and the hood sits nicely without bunching.',
+    createdAt: '2026-02-18T12:20:00.000Z',
+  },
+]
+
+const getRatingSummary = (productId: string): ProductRatingSummary => {
+  const reviews = productReviews.filter((review) => review.productId === productId)
+  const reviewCount = reviews.length
+
+  if (reviewCount === 0) {
+    return { averageRating: 0, reviewCount: 0 }
+  }
+
+  const averageRating = reviews.reduce((total, review) => total + review.rating, 0) / reviewCount
+
+  return {
+    averageRating: Math.round(averageRating * 10) / 10,
+    reviewCount,
+  }
+}
+
 const withInventoryVariant = (product: Product): Product => {
   const productInventory = inventory.find((item) => item.product.id === product.id)
+  const ratingSummary = getRatingSummary(product.id)
 
   if (!productInventory) {
-    return product
+    return {
+      ...product,
+      ratingSummary,
+    }
   }
 
   return {
     ...product,
+    ratingSummary,
     variants: [
       {
         sku: productInventory.sku,
@@ -148,6 +234,14 @@ export const getProduct = async (id: string): Promise<Product | undefined> => {
 
   const product = products.find((candidate) => candidate.id === id)
   return product ? withInventoryVariant(product) : undefined
+}
+
+export const getProductReviews = async (productId: string): Promise<ProductReview[]> => {
+  if (isDatabaseConfigured) {
+    return getProductReviewsFromDb(productId)
+  }
+
+  return productReviews.filter((review) => review.productId === productId)
 }
 
 export const createProduct = async (input: CreateProductInput): Promise<Product> => {

@@ -1,7 +1,11 @@
 import { screen } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useGetProductQuery, useGetProductsQuery } from '../api/productsApi'
+import {
+  useGetProductQuery,
+  useGetProductReviewsQuery,
+  useGetProductsQuery,
+} from '../api/productsApi'
 import { renderWithProviders } from '../test/render'
 import type { Product } from '../types'
 import ProductDetailPage from './ProductDetailPage'
@@ -12,11 +16,13 @@ vi.mock('../api/productsApi', async () => {
   return {
     ...actual,
     useGetProductQuery: vi.fn(),
+    useGetProductReviewsQuery: vi.fn(),
     useGetProductsQuery: vi.fn(),
   }
 })
 
 const mockUseGetProductQuery = vi.mocked(useGetProductQuery)
+const mockUseGetProductReviewsQuery = vi.mocked(useGetProductReviewsQuery)
 const mockUseGetProductsQuery = vi.mocked(useGetProductsQuery)
 
 const currentProduct: Product = {
@@ -34,6 +40,10 @@ const currentProduct: Product = {
       stockQuantity: 8,
     },
   ],
+  ratingSummary: {
+    averageRating: 5,
+    reviewCount: 2,
+  },
 }
 
 const relatedProduct: Product = {
@@ -51,6 +61,25 @@ const createProductsQueryResult = (products: Product[]) =>
     refetch: vi.fn(),
   }) as unknown as ReturnType<typeof useGetProductsQuery>
 
+const createReviewsQueryResult = () =>
+  ({
+    data: {
+      summary: { averageRating: 5, reviewCount: 2 },
+      reviews: [
+        {
+          id: 'review-hoodie-001-1',
+          productId: 'hoodie-001',
+          authorName: 'Leo',
+          rating: 5,
+          title: 'Soft and structured',
+          body: 'Warm enough for late walks but still has a clean streetwear shape.',
+          createdAt: '2026-02-11T18:45:00.000Z',
+        },
+      ],
+    },
+    refetch: vi.fn(),
+  }) as unknown as ReturnType<typeof useGetProductReviewsQuery>
+
 const renderProductDetail = () =>
   renderWithProviders(
     <Routes>
@@ -62,7 +91,9 @@ const renderProductDetail = () =>
 describe('ProductDetailPage', () => {
   beforeEach(() => {
     mockUseGetProductQuery.mockReset()
+    mockUseGetProductReviewsQuery.mockReset()
     mockUseGetProductsQuery.mockReset()
+    mockUseGetProductReviewsQuery.mockReturnValue(createReviewsQueryResult())
   })
 
   it('renders loading skeletons while product details load', () => {
@@ -112,6 +143,9 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('hoodie-001-black-m')).toBeInTheDocument()
     expect(screen.getByText('M / Black')).toBeInTheDocument()
     expect(screen.getByText('8 in stock')).toBeInTheDocument()
+    expect(screen.getByText('5.0 / 5')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Reviews' })).toBeInTheDocument()
+    expect(screen.getByText('Soft and structured')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Related pieces' })).toBeInTheDocument()
     expect(screen.getByText('Zip Layer Hoodie')).toBeInTheDocument()
   })
