@@ -177,6 +177,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Configure Netlify deployment for frontend.
 - [ ] Configure Netlify deployment for the separate admin app.
 - [ ] Add Netlify config file when frontend deployment settings stabilize.
+- [ ] Fix Netlify hard-refresh routing for SPA routes such as admin `/login`.
+- [ ] Prevent admin dashboard queries from firing before a valid admin session exists.
 - [ ] Set up backend deployment on Render, Railway, or Fly.io.
 - [x] Add backend hosting config such as `render.yaml` once the API runtime and database are defined.
 - [x] Configure environment variables for production.
