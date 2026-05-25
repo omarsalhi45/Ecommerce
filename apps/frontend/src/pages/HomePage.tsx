@@ -31,6 +31,7 @@ import ProductList from '../components/ProductList'
 const sortOptions: { label: string; value: ProductSort }[] = [
   { label: 'Featured', value: 'featured' },
   { label: 'Latest drops', value: 'newest' },
+  { label: 'Most popular', value: 'popular' },
   { label: 'Price: low to high', value: 'price-asc' },
   { label: 'Price: high to low', value: 'price-desc' },
   { label: 'Name', value: 'name' },

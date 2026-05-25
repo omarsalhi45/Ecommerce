@@ -85,11 +85,10 @@ This repository is intended to become the OSAI ecommerce application with:
 ### In Progress: Phase 6 Enhanced Product Features
 
 - Product categories, filtering, search, and product detail pages are available.
-- Catalog sorting currently supports featured order, latest catalog position, price, and name.
+- Catalog sorting currently supports featured order, latest catalog position, popularity, price, and name.
 - Related product suggestions are available on product detail pages.
-- Remaining Phase 6 work includes true product variants, image upload, reviews, ratings, popularity metadata, and richer recommendations.
-- Variants for sizes and colors.
-- Product reviews, ratings, popularity metadata, and richer recommendations.
+- Product detail pages show available size/color variant metadata from inventory.
+- Remaining Phase 6 work includes image upload, reviews, ratings, and richer recommendations.
 
 ## Development Roadmap
 
@@ -196,6 +195,7 @@ Then start the admin app with `pnpm dev:admin` and log in at `http://localhost:5
 Phase 4 uses plain SQL migration and seed files:
 
 - `apps/api/db/migrations/001_initial_schema.sql`
+- `apps/api/db/migrations/002_product_popularity_score.sql`
 - `apps/api/db/seeds/001_seed_products.sql`
 
 Apply them to your PostgreSQL database with your preferred SQL client before running the API with `DATABASE_URL`. Without `DATABASE_URL`, the API keeps using deterministic in-memory data so tests and local frontend work still run.

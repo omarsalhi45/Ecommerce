@@ -3,6 +3,7 @@ import type {
   CreateProductInput,
   InventoryItem,
   Product,
+  ProductVariant,
   UpdateProductInput,
 } from '../services/productService'
 
@@ -13,6 +14,7 @@ interface ProductRow {
   readonly price: string
   readonly image_url: string
   readonly category: string
+  readonly popularity_score?: number | null
 }
 
 interface InventoryRow extends ProductRow {
@@ -30,6 +32,54 @@ const mapProduct = (row: ProductRow): Product => ({
   price: Number(row.price),
   imageUrl: row.image_url,
   category: row.category,
+  popularityScore: row.popularity_score ?? undefined,
+})
+
+const mapProductVariant = (row: InventoryRow): ProductVariant => ({
+  sku: row.sku,
+  size: row.size ?? undefined,
+  color: row.color ?? undefined,
+  stockQuantity: row.stock_quantity,
+})
+
+const getVariantsForProductIds = async (
+  productIds: readonly string[]
+): Promise<Map<string, ProductVariant[]>> => {
+  if (productIds.length === 0) {
+    return new Map()
+  }
+
+  const result = await query<InventoryRow>(
+    `SELECT
+       p.id,
+       p.name,
+       p.description,
+       p.price,
+       p.image_url,
+       p.category,
+       i.sku,
+       i.size,
+       i.color,
+       i.stock_quantity,
+       i.low_stock_threshold
+     FROM products p
+     JOIN inventory i ON i.product_id = p.id
+     WHERE p.id = ANY($1::text[])
+     ORDER BY i.size NULLS LAST, i.color NULLS LAST, i.sku`,
+    [productIds as string[]]
+  )
+
+  return result.rows.reduce((variantsByProductId, row) => {
+    const variants = variantsByProductId.get(row.id) ?? []
+    variants.push(mapProductVariant(row))
+    variantsByProductId.set(row.id, variants)
+    return variantsByProductId
+  }, new Map<string, ProductVariant[]>())
+}
+
+const attachVariants = (product: Product, variants: ProductVariant[] | undefined): Product => ({
+  ...product,
+  variants: variants ?? [],
 })
 
 const mapInventory = (row: InventoryRow): InventoryItem => ({
@@ -43,19 +93,29 @@ const mapInventory = (row: InventoryRow): InventoryItem => ({
 
 export const getProductsFromDb = async (): Promise<Product[]> => {
   const result = await query<ProductRow>(
-    'SELECT id, name, description, price, image_url, category FROM products WHERE is_active = TRUE ORDER BY created_at ASC'
+    'SELECT id, name, description, price, image_url, category, popularity_score FROM products WHERE is_active = TRUE ORDER BY created_at ASC'
   )
 
-  return result.rows.map(mapProduct)
+  const products = result.rows.map(mapProduct)
+  const variantsByProductId = await getVariantsForProductIds(products.map((product) => product.id))
+
+  return products.map((product) => attachVariants(product, variantsByProductId.get(product.id)))
 }
 
 export const getProductFromDb = async (id: string): Promise<Product | undefined> => {
   const result = await query<ProductRow>(
-    'SELECT id, name, description, price, image_url, category FROM products WHERE id = $1 AND is_active = TRUE',
+    'SELECT id, name, description, price, image_url, category, popularity_score FROM products WHERE id = $1 AND is_active = TRUE',
     [id]
   )
 
-  return result.rows[0] ? mapProduct(result.rows[0]) : undefined
+  if (!result.rows[0]) {
+    return undefined
+  }
+
+  const product = mapProduct(result.rows[0])
+  const variantsByProductId = await getVariantsForProductIds([id])
+
+  return attachVariants(product, variantsByProductId.get(id))
 }
 
 export const createProductInDb = async (input: CreateProductInput): Promise<Product> => {

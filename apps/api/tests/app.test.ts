@@ -182,6 +182,15 @@ describe('api app', () => {
       id: 'hoodie-001',
       name: 'Everyday Weight Hoodie',
       category: 'hoodies',
+      popularityScore: 95,
+      variants: [
+        {
+          sku: 'OSAI-HOOD-GRY-M',
+          size: 'M',
+          color: 'Grey',
+          stockQuantity: 34,
+        },
+      ],
     })
   })
 

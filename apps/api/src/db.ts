@@ -13,7 +13,7 @@ export const isDatabaseConfigured = Boolean(pool)
 
 export const query = async <Row extends QueryResultRow>(
   text: string,
-  params: Array<string | number | boolean | null | undefined> = []
+  params: Array<string | number | boolean | string[] | null | undefined> = []
 ) => {
   if (!pool) {
     throw new Error('DATABASE_URL is not configured')

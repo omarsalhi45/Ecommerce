@@ -146,11 +146,11 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 ### Phase 6: Enhanced Product Features
 
 - [x] Add product categories and filtering.
-- [ ] Add product sorting by newest, price, and popularity once product metadata supports it.
+- [x] Add product sorting by newest, price, and popularity once product metadata supports it.
 - [x] Implement search functionality.
 - [x] Add product detail pages (`/products/:id`).
 - [ ] Create product image upload using local or cloud storage.
-- [ ] Add product variants such as sizes and colors.
+- [x] Add product variants such as sizes and colors.
 - [ ] Implement product reviews and ratings.
 - [x] Add related products suggestions.
 
@@ -159,6 +159,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add first Vitest tests for existing frontend and API logic.
 - [x] Add tests around Phase 1.5 architecture helpers such as config parsing and cart selectors.
 - [x] Add tests for Phase 6 catalog search, filtering, sorting, and related-product logic.
+- [x] Add tests for product variant response data.
 - [ ] Write unit tests for React components with Vitest + Testing Library.
 - [x] Add API endpoint tests.
 - [x] Test Redux actions, reducers, and selectors.
@@ -169,7 +170,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add empty/loading/error state tests for key frontend flows.
 - [ ] Implement E2E tests with Playwright or Cypress.
 - [ ] Add integration tests for critical flows.
-- [ ] Set up CI/CD pipeline with testing.
+- [x] Set up CI/CD pipeline with testing.
 - [ ] Add code coverage reporting.
 
 ### Phase 8: Deployment & Production

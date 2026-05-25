@@ -16,6 +16,7 @@ const products: Product[] = [
     price: 29.99,
     imageUrl: 'shirt.jpg',
     category: 'tees',
+    popularityScore: 88,
   },
   {
     id: 'jacket-001',
@@ -24,6 +25,7 @@ const products: Product[] = [
     price: 79.99,
     imageUrl: 'jacket.jpg',
     category: 'outerwear',
+    popularityScore: 72,
   },
   {
     id: 'hoodie-001',
@@ -32,6 +34,7 @@ const products: Product[] = [
     price: 59.99,
     imageUrl: 'hoodie.jpg',
     category: 'hoodies',
+    popularityScore: 95,
   },
 ]
 
@@ -81,6 +84,16 @@ describe('catalogFilters', () => {
         sort: 'newest',
       }).map((product) => product.id)
     ).toEqual(['hoodie-001', 'jacket-001', 'shirt-001'])
+  })
+
+  it('sorts products by popularity metadata', () => {
+    expect(
+      applyProductDiscovery(products, {
+        category: ALL_CATEGORIES,
+        searchTerm: '',
+        sort: 'popular',
+      }).map((product) => product.id)
+    ).toEqual(['hoodie-001', 'shirt-001', 'jacket-001'])
   })
 
   it('returns same-category related products first with fallback items', () => {

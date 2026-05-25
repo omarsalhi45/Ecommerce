@@ -1,4 +1,4 @@
-INSERT INTO products (id, name, description, price, image_url, category)
+INSERT INTO products (id, name, description, price, image_url, category, popularity_score)
 VALUES
   (
     'shirt-001',
@@ -6,7 +6,8 @@ VALUES
     'Heavy cotton tee with a relaxed shape and clean OSAI mark.',
     29.99,
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
-    'tees'
+    'tees',
+    88
   ),
   (
     'jacket-001',
@@ -14,7 +15,8 @@ VALUES
     'Lightweight shell with a crisp finish for city weather.',
     79.99,
     'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=80',
-    'outerwear'
+    'outerwear',
+    72
   ),
   (
     'hoodie-001',
@@ -22,7 +24,8 @@ VALUES
     'Soft fleece hoodie cut for layering without feeling bulky.',
     59.99,
     'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80',
-    'hoodies'
+    'hoodies',
+    95
   )
 ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
@@ -30,6 +33,7 @@ ON CONFLICT (id) DO UPDATE SET
   price = EXCLUDED.price,
   image_url = EXCLUDED.image_url,
   category = EXCLUDED.category,
+  popularity_score = EXCLUDED.popularity_score,
   updated_at = NOW();
 
 INSERT INTO inventory (product_id, sku, size, color, stock_quantity, low_stock_threshold)

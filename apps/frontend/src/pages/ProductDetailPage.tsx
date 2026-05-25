@@ -142,6 +142,42 @@ export default function ProductDetailPage() {
 
             <Divider />
 
+            {product.variants?.length ? (
+              <Stack spacing={3}>
+                <Text color="neutral.900" fontWeight="black">
+                  Available options
+                </Text>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                  {product.variants.map((variant) => (
+                    <Box
+                      key={variant.sku}
+                      border="1px solid"
+                      borderColor="neutral.200"
+                      borderRadius="lg"
+                      bg="white"
+                      px={4}
+                      py={3}
+                    >
+                      <HStack justify="space-between" align="start">
+                        <Box>
+                          <Text fontWeight="bold">{variant.sku}</Text>
+                          <Text color="neutral.600" fontSize="sm">
+                            {[variant.size, variant.color].filter(Boolean).join(' / ') ||
+                              'Standard'}
+                          </Text>
+                        </Box>
+                        <Badge colorScheme={variant.stockQuantity > 0 ? 'green' : 'red'}>
+                          {variant.stockQuantity > 0
+                            ? `${variant.stockQuantity} in stock`
+                            : 'Sold out'}
+                        </Badge>
+                      </HStack>
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </Stack>
+            ) : null}
+
             <Stack spacing={4}>
               <Text color="neutral.900" fontWeight="black">
                 Fit notes

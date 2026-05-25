@@ -17,6 +17,15 @@ export interface Product {
   price: number
   imageUrl: string
   category: string
+  variants?: ProductVariant[]
+  popularityScore?: number
+}
+
+export interface ProductVariant {
+  readonly sku: string
+  readonly size?: string
+  readonly color?: string
+  readonly stockQuantity: number
 }
 
 export interface CreateProductInput extends Product {
@@ -53,6 +62,7 @@ const products: Product[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80',
     category: 'tees',
+    popularityScore: 88,
   },
   {
     id: 'jacket-001',
@@ -62,6 +72,7 @@ const products: Product[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=900&q=80',
     category: 'outerwear',
+    popularityScore: 72,
   },
   {
     id: 'hoodie-001',
@@ -71,6 +82,7 @@ const products: Product[] = [
     imageUrl:
       'https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&w=900&q=80',
     category: 'hoodies',
+    popularityScore: 95,
   },
 ]
 
@@ -101,12 +113,32 @@ const inventory: InventoryItem[] = [
   },
 ]
 
+const withInventoryVariant = (product: Product): Product => {
+  const productInventory = inventory.find((item) => item.product.id === product.id)
+
+  if (!productInventory) {
+    return product
+  }
+
+  return {
+    ...product,
+    variants: [
+      {
+        sku: productInventory.sku,
+        size: productInventory.size,
+        color: productInventory.color,
+        stockQuantity: productInventory.stockQuantity,
+      },
+    ],
+  }
+}
+
 export const getAllProducts = async (): Promise<Product[]> => {
   if (isDatabaseConfigured) {
     return getProductsFromDb()
   }
 
-  return products
+  return products.map(withInventoryVariant)
 }
 
 export const getProduct = async (id: string): Promise<Product | undefined> => {
@@ -114,7 +146,8 @@ export const getProduct = async (id: string): Promise<Product | undefined> => {
     return getProductFromDb(id)
   }
 
-  return products.find((product) => product.id === id)
+  const product = products.find((candidate) => candidate.id === id)
+  return product ? withInventoryVariant(product) : undefined
 }
 
 export const createProduct = async (input: CreateProductInput): Promise<Product> => {

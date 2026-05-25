@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS products (
   price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
   image_url TEXT NOT NULL,
   category TEXT NOT NULL,
+  popularity_score INTEGER NOT NULL DEFAULT 0 CHECK (popularity_score >= 0),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -82,6 +83,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_popularity_score ON products(popularity_score DESC);
 CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id);
 CREATE INDEX IF NOT EXISTS idx_carts_guest_id ON carts(guest_id);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);

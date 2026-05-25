@@ -1,6 +1,6 @@
 import type { Product } from '../types'
 
-export type ProductSort = 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'name'
+export type ProductSort = 'featured' | 'newest' | 'popular' | 'price-asc' | 'price-desc' | 'name'
 
 export interface ProductDiscoveryFilters {
   readonly category: string
@@ -46,6 +46,8 @@ export const applyProductDiscovery = (
     switch (filters.sort) {
       case 'newest':
         return products.indexOf(second) - products.indexOf(first)
+      case 'popular':
+        return (second.popularityScore ?? 0) - (first.popularityScore ?? 0)
       case 'price-asc':
         return first.price - second.price
       case 'price-desc':

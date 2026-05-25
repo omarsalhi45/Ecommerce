@@ -20,6 +20,15 @@ export interface Product {
   price: number
   imageUrl: string
   category: string
+  variants?: ProductVariant[]
+  popularityScore?: number
+}
+
+export interface ProductVariant {
+  sku: string
+  size?: string
+  color?: string
+  stockQuantity: number
 }
 
 export type UserRole = 'customer' | 'admin'
