@@ -174,20 +174,20 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 
 ### Phase 8: Deployment & Production
 
-- [ ] Configure Netlify deployment for frontend.
-- [ ] Configure Netlify deployment for the separate admin app.
+- [x] Configure Netlify deployment for frontend.
+- [x] Configure Netlify deployment for the separate admin app.
 - [ ] Add Netlify config file when frontend deployment settings stabilize.
-- [ ] Fix Netlify hard-refresh routing for SPA routes such as admin `/login`.
-- [ ] Prevent admin dashboard queries from firing before a valid admin session exists.
-- [ ] Set up backend deployment on Render, Railway, or Fly.io.
+- [x] Fix Netlify hard-refresh routing for SPA routes such as admin `/login`.
+- [x] Prevent admin dashboard queries from firing before a valid admin session exists.
+- [x] Set up backend deployment on Render, Railway, or Fly.io.
 - [x] Add backend hosting config such as `render.yaml` once the API runtime and database are defined.
 - [x] Configure environment variables for production.
 - [x] Add production env matrix for frontend, backend, database, auth, Stripe, and CORS secrets.
 - [x] Configure production CORS origins through environment variables.
-- [ ] Set up PostgreSQL database in production.
+- [x] Set up PostgreSQL database in production.
 - [x] Add `STRIPE_WEBHOOK_SECRET` and public Stripe publishable key handling to env docs before live Stripe work.
 - [x] Add backend Stripe webhook signature verification and payment status handling.
-- [ ] Configure Stripe webhooks in the Stripe dashboard for production.
+- [x] Configure Stripe webhooks in the Stripe dashboard for production.
 - [ ] Add error monitoring such as Sentry.
 - [ ] Implement logging system.
 - [ ] Add GitHub Actions or equivalent CI for check, test, and build.

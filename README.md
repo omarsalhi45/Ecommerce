@@ -230,6 +230,15 @@ Production environment matrix:
 
 After the Render Blueprint is applied, run the SQL files in `apps/api/db/migrations` and `apps/api/db/seeds` against the production database before sending real traffic to the storefront.
 
+Netlify hosts the storefront and admin as separate sites from the same repository:
+
+| App | Build command | Publish directory |
+| --- | --- | --- |
+| Storefront | `pnpm --filter @osai/frontend build` | `apps/frontend/dist` |
+| Admin | `pnpm --filter @osai/admin build` | `apps/admin/dist` |
+
+Both Vite apps include a `public/_redirects` file so direct reloads on client-side routes such as `/cart`, `/checkout`, `/products/:id`, and admin `/login` return `index.html`.
+
 ## Architecture Decisions
 
 - Runtime config is centralized in `apps/frontend/src/config.ts`, `apps/admin/src/config.ts`, and `apps/api/src/config.ts`; avoid reading environment variables directly from feature code.

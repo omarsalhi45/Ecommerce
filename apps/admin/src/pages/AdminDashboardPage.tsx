@@ -71,17 +71,25 @@ export default function AdminDashboardPage() {
   const currentUser = useAppSelector(selectCurrentUser)
   const [inventoryDrafts, setInventoryDrafts] = useState<Record<string, string>>({})
   const [productForm, setProductForm] = useState(emptyProductForm)
+  const canLoadAdminData = currentUser?.role === 'admin'
   const {
     data: analytics,
     isError: isAnalyticsError,
     isLoading: isAnalyticsLoading,
-  } = useGetAdminAnalyticsQuery()
+  } = useGetAdminAnalyticsQuery(undefined, { skip: !canLoadAdminData })
   const { data: ordersData, isError: isOrdersError } = useGetAdminOrdersQuery(undefined, {
-    pollingInterval: 5000,
+    pollingInterval: canLoadAdminData ? 5000 : 0,
+    skip: !canLoadAdminData,
   })
-  const { data: productsData, isError: isProductsError } = useGetAdminProductsQuery()
-  const { data: inventoryData, isError: isInventoryError } = useGetAdminInventoryQuery()
-  const { data: usersData, isError: isUsersError } = useGetAdminUsersQuery()
+  const { data: productsData, isError: isProductsError } = useGetAdminProductsQuery(undefined, {
+    skip: !canLoadAdminData,
+  })
+  const { data: inventoryData, isError: isInventoryError } = useGetAdminInventoryQuery(undefined, {
+    skip: !canLoadAdminData,
+  })
+  const { data: usersData, isError: isUsersError } = useGetAdminUsersQuery(undefined, {
+    skip: !canLoadAdminData,
+  })
   const [createProduct] = useCreateProductMutation()
   const [deleteProduct] = useDeleteProductMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
