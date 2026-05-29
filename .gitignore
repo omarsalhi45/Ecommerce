@@ -35,6 +35,9 @@ playwright-report/
 test-results/
 output/playwright/
 
+# local uploads
+uploads/
+
 # Editor directories and files
 .vscode/
 .idea/

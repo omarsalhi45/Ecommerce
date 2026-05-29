@@ -65,3 +65,7 @@ export interface AdminAnalytics {
   revenue: number
   pendingCount: number
 }
+
+export interface ProductImageUploadResponse {
+  imageUrl: string
+}

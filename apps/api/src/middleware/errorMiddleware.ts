@@ -16,9 +16,15 @@ export const notFoundHandler: RequestHandler = (req, _res, next) => {
 }
 
 export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
-  const statusCode = error instanceof ApiError ? error.statusCode : 500
+  const isMulterError = error instanceof Error && error.name === 'MulterError'
+  const statusCode = error instanceof ApiError ? error.statusCode : isMulterError ? 400 : 500
   const message = error instanceof Error ? error.message : 'Unexpected API error'
-  const code = error instanceof ApiError ? error.code : 'INTERNAL_SERVER_ERROR'
+  const code =
+    error instanceof ApiError
+      ? error.code
+      : isMulterError
+        ? 'UPLOAD_ERROR'
+        : 'INTERNAL_SERVER_ERROR'
 
   res.status(statusCode).json({
     code,

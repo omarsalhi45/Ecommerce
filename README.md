@@ -82,14 +82,14 @@ This repository is intended to become the OSAI ecommerce application with:
 - Sales analytics and user list views.
 - Customer storefront no longer bundles admin routes or admin RTK Query code.
 
-### In Progress: Phase 6 Enhanced Product Features
+### Completed: Phase 6 Enhanced Product Features
 
 - Product categories, filtering, search, and product detail pages are available.
 - Catalog sorting currently supports featured order, latest catalog position, popularity, price, and name.
 - Related product suggestions are available on product detail pages.
 - Product detail pages show available size/color variant metadata from inventory.
 - Product detail pages show seeded customer reviews and rating summaries.
-- Remaining Phase 6 work includes image upload and richer recommendations.
+- Admin product creation supports image uploads through the API.
 
 ## Development Roadmap
 
@@ -239,6 +239,7 @@ Production environment matrix:
 | Stripe | `STRIPE_WEBHOOK_SECRET` | Render Dashboard | Webhook signing secret from the Stripe Dashboard. |
 | Monitoring | `SENTRY_DSN` | Render Dashboard | Optional Sentry DSN for API error reporting. |
 | Monitoring | `SENTRY_TRACES_SAMPLE_RATE` | Render Dashboard | Optional trace sample rate from `0` to `1`; defaults to `0`. |
+| Uploads | `UPLOAD_DIR` | Render Dashboard | Optional local upload directory; defaults to `uploads` under the repo root. Use a persistent Render disk for durable product uploads. |
 | Storefront | `VITE_API_BASE_URL` | Netlify | Public API URL plus `/api`. |
 | Storefront | `VITE_STRIPE_PUBLISHABLE_KEY` | Netlify | Browser-safe Stripe publishable key. |
 | Admin | `VITE_API_BASE_URL` | Netlify | Same public API URL plus `/api`. |
@@ -274,6 +275,7 @@ Render and Netlify provide HTTPS certificates for their managed service domains.
 - Checkout totals displayed by the frontend are estimates. The API recalculates order totals from product data when creating the mocked order.
 - Auth and orders use PostgreSQL-backed repositories when `DATABASE_URL` is configured, with in-memory fallback for tests and no-database local development.
 - Stripe secret-key operations stay on the API. The storefront requests `/api/orders/payment-intent` and confirms payment with Stripe Elements when a publishable key is configured.
+- Product image uploads are admin-only and stored under `UPLOAD_DIR/product-images`; the API serves them from `/uploads/product-images/...`.
 - The API emits structured request logs with method, path, status code, duration, timestamp, and level. It does not log request bodies or secrets.
 - Sentry API error monitoring is optional and activates only when `SENTRY_DSN` is configured. The API captures server errors and leaves validation/auth errors out of Sentry noise.
 

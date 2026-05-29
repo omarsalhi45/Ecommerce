@@ -1,6 +1,13 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { frontendConfig } from '../config'
-import type { AdminAnalytics, InventoryItem, Order, Product, User } from '../types'
+import type {
+  AdminAnalytics,
+  InventoryItem,
+  Order,
+  Product,
+  ProductImageUploadResponse,
+  User,
+} from '../types'
 
 export const adminApi = createApi({
   reducerPath: 'adminApi',
@@ -52,6 +59,18 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['AdminProducts', 'AdminInventory'],
     }),
+    uploadProductImage: builder.mutation<ProductImageUploadResponse, File>({
+      query: (image) => {
+        const body = new FormData()
+        body.append('image', image)
+
+        return {
+          url: '/admin/uploads/product-image',
+          method: 'POST',
+          body,
+        }
+      },
+    }),
     deleteProduct: builder.mutation<void, string>({
       query: (productId) => ({
         url: `/admin/products/${productId}`,
@@ -85,6 +104,7 @@ export const {
   useGetAdminUsersQuery,
   useCreateProductMutation,
   useDeleteProductMutation,
+  useUploadProductImageMutation,
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
 } = adminApi

@@ -1,7 +1,10 @@
+import { rm } from 'node:fs/promises'
 import type { Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import app from '../src/app'
+import { apiConfig } from '../src/config'
 import { registerUser, resetAuthStoreForTests } from '../src/services/authService'
 import { resetOrderStoreForTests } from '../src/services/orderService'
 
@@ -241,6 +244,39 @@ describe('api app', () => {
 
     expect(customerResponse.status).toBe(403)
     expect(customerBody.code).toBe('AUTH_FORBIDDEN')
+  })
+
+  it('allows admins to upload product images', async () => {
+    const admin = await registerUser(
+      'Upload Admin',
+      'upload-admin@example.com',
+      'password123',
+      'admin'
+    )
+    const formData = new FormData()
+
+    formData.append('image', new Blob(['fake image bytes'], { type: 'image/png' }), 'product.png')
+
+    const uploadResponse = await fetch(`${baseUrl}/api/admin/uploads/product-image`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${admin.token}`,
+      },
+      body: formData,
+    })
+    const uploadBody = await uploadResponse.json()
+
+    expect(uploadResponse.status).toBe(201)
+    expect(uploadBody.imageUrl).toContain('/uploads/product-images/')
+
+    const imageResponse = await fetch(uploadBody.imageUrl)
+    expect(imageResponse.status).toBe(200)
+
+    const filename = new URL(uploadBody.imageUrl).pathname.split('/').at(-1)
+
+    if (filename) {
+      await rm(path.join(apiConfig.uploadDir, 'product-images', filename), { force: true })
+    }
   })
 
   it('allows admins to read analytics and update order status', async () => {

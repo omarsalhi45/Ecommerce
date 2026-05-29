@@ -10,9 +10,11 @@ import {
   patchAdminOrderStatus,
   patchAdminProduct,
   postAdminProduct,
+  postAdminProductImageUpload,
 } from '../controllers/adminController'
 import { asyncHandler } from '../middleware/asyncHandler'
 import { authenticateRequest, requireRole } from '../middleware/authMiddleware'
+import { productImageUpload } from '../middleware/uploadMiddleware'
 
 const router = Router()
 
@@ -26,6 +28,11 @@ router.get('/products', asyncHandler(getAdminProducts))
 router.post('/products', asyncHandler(postAdminProduct))
 router.patch('/products/:id', asyncHandler(patchAdminProduct))
 router.delete('/products/:id', asyncHandler(deleteAdminProduct))
+router.post(
+  '/uploads/product-image',
+  productImageUpload.single('image'),
+  asyncHandler(postAdminProductImageUpload)
+)
 router.get('/inventory', asyncHandler(getAdminInventory))
 router.patch('/inventory/:productId', asyncHandler(patchAdminInventory))
 router.get('/users', asyncHandler(getAdminUsers))

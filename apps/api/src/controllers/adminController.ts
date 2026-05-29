@@ -143,3 +143,14 @@ export const getAdminUsers = async (_req: Request, res: Response) => {
 export const getAdminAnalytics = async (_req: Request, res: Response) => {
   res.json(await getOrderAnalytics())
 }
+
+export const postAdminProductImageUpload = async (req: Request, res: Response) => {
+  if (!req.file) {
+    throw new ApiError(400, 'Product image is required', 'VALIDATION_ERROR')
+  }
+
+  const protocol = req.get('x-forwarded-proto') ?? req.protocol
+  const imageUrl = `${protocol}://${req.get('host')}/uploads/product-images/${req.file.filename}`
+
+  res.status(201).json({ imageUrl })
+}

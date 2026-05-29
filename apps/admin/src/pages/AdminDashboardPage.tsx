@@ -6,6 +6,8 @@ import {
   Button,
   Container,
   Divider,
+  FormControl,
+  FormLabel,
   Grid,
   HStack,
   Heading,
@@ -37,6 +39,7 @@ import {
   useGetAdminUsersQuery,
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
+  useUploadProductImageMutation,
 } from '../api/adminApi'
 import { logout, selectCurrentUser } from '../slices/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -94,8 +97,18 @@ export default function AdminDashboardPage() {
   const [deleteProduct] = useDeleteProductMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
   const [updateInventory] = useUpdateInventoryMutation()
+  const [uploadProductImage, { isLoading: isImageUploading }] = useUploadProductImageMutation()
   const hasAdminDataError =
     isAnalyticsError || isOrdersError || isProductsError || isInventoryError || isUsersError
+
+  const handleProductImageChange = async (file: File | undefined) => {
+    if (!file) {
+      return
+    }
+
+    const upload = await uploadProductImage(file).unwrap()
+    setProductForm((current) => ({ ...current, imageUrl: upload.imageUrl }))
+  }
 
   if (!currentUser) {
     return <Navigate to="/login" replace />
@@ -270,6 +283,17 @@ export default function AdminDashboardPage() {
                   }
                   isRequired
                 />
+                <FormControl>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Upload image
+                  </FormLabel>
+                  <Input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    pt={1}
+                    onChange={(event) => handleProductImageChange(event.target.files?.[0])}
+                  />
+                </FormControl>
                 <Input
                   placeholder="Description"
                   value={productForm.description}
@@ -303,7 +327,7 @@ export default function AdminDashboardPage() {
                 />
               </Grid>
               <Button mt={3} type="submit" size="sm" colorScheme="brand">
-                Add product
+                {isImageUploading ? 'Uploading image...' : 'Add product'}
               </Button>
             </Box>
             <VStack align="stretch" spacing={3}>

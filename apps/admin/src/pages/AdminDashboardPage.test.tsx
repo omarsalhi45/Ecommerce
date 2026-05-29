@@ -10,6 +10,7 @@ import {
   useGetAdminUsersQuery,
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
+  useUploadProductImageMutation,
 } from '../api/adminApi'
 import { renderWithProviders } from '../test/render'
 import type { User } from '../types'
@@ -27,6 +28,7 @@ vi.mock('../api/adminApi', async () => {
     useGetAdminOrdersQuery: vi.fn(),
     useGetAdminProductsQuery: vi.fn(),
     useGetAdminUsersQuery: vi.fn(),
+    useUploadProductImageMutation: vi.fn(),
     useUpdateInventoryMutation: vi.fn(),
     useUpdateOrderStatusMutation: vi.fn(),
   }
@@ -39,6 +41,7 @@ const mockUseGetAdminInventoryQuery = vi.mocked(useGetAdminInventoryQuery)
 const mockUseGetAdminUsersQuery = vi.mocked(useGetAdminUsersQuery)
 const mockUseCreateProductMutation = vi.mocked(useCreateProductMutation)
 const mockUseDeleteProductMutation = vi.mocked(useDeleteProductMutation)
+const mockUseUploadProductImageMutation = vi.mocked(useUploadProductImageMutation)
 const mockUseUpdateInventoryMutation = vi.mocked(useUpdateInventoryMutation)
 const mockUseUpdateOrderStatusMutation = vi.mocked(useUpdateOrderStatusMutation)
 
@@ -79,6 +82,9 @@ const configureSuccessfulAdminQueries = () => {
   >)
   mockUseDeleteProductMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useDeleteProductMutation
+  >)
+  mockUseUploadProductImageMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
+    typeof useUploadProductImageMutation
   >)
   mockUseUpdateInventoryMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useUpdateInventoryMutation

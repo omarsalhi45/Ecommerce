@@ -5,6 +5,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') })
 dotenv.config()
 
 const DEFAULT_PORT = 4000
+const DEFAULT_UPLOAD_DIR = path.resolve(__dirname, '../../../uploads')
 const DEFAULT_CORS_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -22,6 +23,7 @@ export interface ApiConfig {
   readonly stripeWebhookSecret?: string
   readonly sentryDsn?: string
   readonly sentryTracesSampleRate: number
+  readonly uploadDir: string
   readonly nodeEnv: string
 }
 
@@ -87,6 +89,7 @@ export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
     sentryDsn: env.SENTRY_DSN,
     sentryTracesSampleRate: parseSentryTracesSampleRate(env.SENTRY_TRACES_SAMPLE_RATE),
+    uploadDir: env.UPLOAD_DIR?.trim() ? path.resolve(env.UPLOAD_DIR) : DEFAULT_UPLOAD_DIR,
     nodeEnv,
   }
 }

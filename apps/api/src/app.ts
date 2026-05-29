@@ -1,3 +1,4 @@
+import path from 'node:path'
 import cors from 'cors'
 import express from 'express'
 import { apiConfig } from './config'
@@ -9,9 +10,11 @@ import router from './routes'
 const app = express()
 
 app.disable('etag')
+app.set('trust proxy', 1)
 initializeMonitoring()
 
 app.use(requestLogger)
+app.use('/uploads', express.static(path.join(apiConfig.uploadDir)))
 app.use('/api/stripe/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
 app.use(
