@@ -158,6 +158,7 @@ See `AGENTS.md` for the complete phased development plan covering:
    ```bash
    pnpm check
    pnpm test
+   pnpm test:coverage
    ```
 
 5. Run browser E2E smoke tests:
@@ -169,7 +170,7 @@ See `AGENTS.md` for the complete phased development plan covering:
 
 ## CI
 
-GitHub Actions runs `pnpm check`, `pnpm test`, `pnpm build`, and the Playwright E2E smoke suite on pushes to `main` and pull requests using Node 20 with pnpm 8.10.0. The E2E suite includes Axe accessibility scans for storefront/admin routes and keyboard checks for navigation and login forms.
+GitHub Actions runs `pnpm check`, `pnpm test`, `pnpm test:coverage`, `pnpm build`, and the Playwright E2E smoke suite on pushes to `main` and pull requests using Node 20 with pnpm 8.10.0. Coverage reports are uploaded as CI artifacts. The E2E suite includes Axe accessibility scans for storefront/admin routes and keyboard checks for navigation and login forms.
 
 ## Environment
 

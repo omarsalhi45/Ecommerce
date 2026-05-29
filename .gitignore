@@ -35,6 +35,11 @@ playwright-report/
 test-results/
 output/playwright/
 
+# test coverage
+coverage/
+apps/**/coverage/
+packages/**/coverage/
+
 # local uploads
 uploads/
 

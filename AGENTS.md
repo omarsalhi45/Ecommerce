@@ -171,7 +171,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Implement E2E tests with Playwright or Cypress.
 - [ ] Add integration tests for critical flows.
 - [x] Set up CI/CD pipeline with testing.
-- [ ] Add code coverage reporting.
+- [x] Add code coverage reporting.
 
 ### Phase 8: Deployment & Production
 
@@ -315,7 +315,7 @@ Project-local Codex skills live in `.agents/skills/` so they travel with this re
 
 ## Next Steps
 
-- Phase 6 enhanced product features are complete; continue Phase 7 with accessibility, integration testing, and coverage reporting.
+- Phase 6 enhanced product features are complete; continue Phase 7 with deeper integration testing and production smoke coverage.
 - Add admin-app focused component tests and deployment config after the split stabilizes.
 - Add shared checkout/order DTO package if API/frontend contract duplication starts to drift.
 - Move toward Phase 8 deployment once database hosting and production env values are selected.
