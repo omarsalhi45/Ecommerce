@@ -7,10 +7,12 @@ import {
   Container,
   Divider,
   FormControl,
+  FormErrorMessage,
   FormLabel,
   Grid,
   HStack,
   Heading,
+  Image,
   Input,
   Select,
   Skeleton,
@@ -68,12 +70,16 @@ const emptyProductForm = {
   sku: '',
   stockQuantity: '0',
 }
+const emptyImageSource = ''
 
 export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
   const currentUser = useAppSelector(selectCurrentUser)
   const [inventoryDrafts, setInventoryDrafts] = useState<Record<string, string>>({})
   const [productForm, setProductForm] = useState(emptyProductForm)
+  const [externalImageUrl, setExternalImageUrl] = useState(emptyImageSource)
+  const [productFormError, setProductFormError] = useState<string | undefined>()
+  const [imageStatus, setImageStatus] = useState<string | undefined>()
   const canLoadAdminData = currentUser?.role === 'admin'
   const {
     data: analytics,
@@ -93,7 +99,7 @@ export default function AdminDashboardPage() {
   const { data: usersData, isError: isUsersError } = useGetAdminUsersQuery(undefined, {
     skip: !canLoadAdminData,
   })
-  const [createProduct] = useCreateProductMutation()
+  const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation()
   const [deleteProduct] = useDeleteProductMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
   const [updateInventory] = useUpdateInventoryMutation()
@@ -106,8 +112,32 @@ export default function AdminDashboardPage() {
       return
     }
 
-    const upload = await uploadProductImage(file).unwrap()
-    setProductForm((current) => ({ ...current, imageUrl: upload.imageUrl }))
+    setProductFormError(undefined)
+    setImageStatus(undefined)
+
+    try {
+      const upload = await uploadProductImage(file).unwrap()
+      setExternalImageUrl(emptyImageSource)
+      setProductForm((current) => ({ ...current, imageUrl: upload.imageUrl }))
+      setImageStatus('Uploaded image ready.')
+    } catch {
+      setProductForm((current) => ({ ...current, imageUrl: '' }))
+      setProductFormError('Image upload failed. Try a JPG, PNG, WebP, or GIF under 2 MB.')
+    }
+  }
+
+  const handleExternalImageUrlChange = (value: string) => {
+    setProductFormError(undefined)
+    setImageStatus(undefined)
+
+    if (value.trim().startsWith('data:')) {
+      setProductFormError('Paste a normal https image link, or use upload for image files.')
+      return
+    }
+
+    setExternalImageUrl(value)
+    setProductForm((current) => ({ ...current, imageUrl: value.trim() }))
+    setImageStatus(value.trim() ? 'External image ready.' : undefined)
   }
 
   if (!currentUser) {
@@ -234,100 +264,200 @@ export default function AdminDashboardPage() {
               mb={5}
               onSubmit={async (event: FormEvent<HTMLDivElement>) => {
                 event.preventDefault()
-                await createProduct({
-                  id: productForm.id,
-                  name: productForm.name,
-                  description: productForm.description,
-                  price: Number(productForm.price),
-                  imageUrl: productForm.imageUrl,
-                  category: productForm.category,
-                  sku: productForm.sku || undefined,
-                  stockQuantity: Number(productForm.stockQuantity),
-                })
-                setProductForm(emptyProductForm)
+
+                if (isImageUploading) {
+                  setProductFormError('Wait for the image upload to finish before saving.')
+                  return
+                }
+
+                if (!productForm.imageUrl.trim()) {
+                  setProductFormError('Add a product image before saving.')
+                  return
+                }
+
+                try {
+                  await createProduct({
+                    id: productForm.id.trim(),
+                    name: productForm.name.trim(),
+                    description: productForm.description.trim(),
+                    price: Number(productForm.price),
+                    imageUrl: productForm.imageUrl.trim(),
+                    category: productForm.category.trim(),
+                    sku: productForm.sku.trim() || undefined,
+                    stockQuantity: Number(productForm.stockQuantity),
+                  }).unwrap()
+                  setProductForm(emptyProductForm)
+                  setExternalImageUrl(emptyImageSource)
+                  setProductFormError(undefined)
+                  setImageStatus(undefined)
+                } catch {
+                  setProductFormError('Product could not be saved. Check the fields and try again.')
+                }
               }}
             >
               <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3}>
-                <Input
-                  placeholder="Product id"
-                  value={productForm.id}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, id: event.target.value }))
-                  }
-                  isRequired
-                />
-                <Input
-                  placeholder="Name"
-                  value={productForm.name}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, name: event.target.value }))
-                  }
-                  isRequired
-                />
-                <Input
-                  placeholder="Price"
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  value={productForm.price}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, price: event.target.value }))
-                  }
-                  isRequired
-                />
-                <Input
-                  placeholder="Image URL"
-                  value={productForm.imageUrl}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, imageUrl: event.target.value }))
-                  }
-                  isRequired
-                />
-                <FormControl>
+                <FormControl isRequired>
                   <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Upload image
+                    Product id
                   </FormLabel>
                   <Input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    pt={1}
-                    onChange={(event) => handleProductImageChange(event.target.files?.[0])}
+                    placeholder="black-tee"
+                    value={productForm.id}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, id: event.target.value }))
+                    }
                   />
                 </FormControl>
-                <Input
-                  placeholder="Description"
-                  value={productForm.description}
-                  onChange={(event) =>
-                    setProductForm((current) => ({
-                      ...current,
-                      description: event.target.value,
-                    }))
-                  }
-                  isRequired
-                />
-                <Input
-                  placeholder="Category"
-                  value={productForm.category}
-                  onChange={(event) =>
-                    setProductForm((current) => ({ ...current, category: event.target.value }))
-                  }
-                  isRequired
-                />
-                <Input
-                  placeholder="Initial stock"
-                  type="number"
-                  min={0}
-                  value={productForm.stockQuantity}
-                  onChange={(event) =>
-                    setProductForm((current) => ({
-                      ...current,
-                      stockQuantity: event.target.value,
-                    }))
-                  }
-                />
+                <FormControl isRequired>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Name
+                  </FormLabel>
+                  <Input
+                    placeholder="Oversized tee"
+                    value={productForm.name}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, name: event.target.value }))
+                    }
+                  />
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Price
+                  </FormLabel>
+                  <Input
+                    placeholder="39.00"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={productForm.price}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, price: event.target.value }))
+                    }
+                  />
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Category
+                  </FormLabel>
+                  <Input
+                    placeholder="tees"
+                    value={productForm.category}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, category: event.target.value }))
+                    }
+                  />
+                </FormControl>
+                <FormControl
+                  gridColumn={{ base: 'auto', md: '1 / -1' }}
+                  isInvalid={Boolean(productFormError)}
+                >
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Product image
+                  </FormLabel>
+                  <Stack spacing={3}>
+                    {productForm.imageUrl ? (
+                      <HStack
+                        align="center"
+                        border="1px solid"
+                        borderColor="neutral.200"
+                        borderRadius="md"
+                        p={3}
+                        spacing={3}
+                      >
+                        <Image
+                          alt="Product image preview"
+                          borderRadius="md"
+                          boxSize="64px"
+                          fallbackSrc=""
+                          fit="cover"
+                          src={productForm.imageUrl}
+                        />
+                        <Box minW={0}>
+                          <Text fontSize="sm" fontWeight="bold">
+                            {imageStatus ?? 'Image ready.'}
+                          </Text>
+                          <Text color="neutral.500" fontSize="xs">
+                            This is the image that will be saved with the product.
+                          </Text>
+                        </Box>
+                      </HStack>
+                    ) : (
+                      <Text color="neutral.500" fontSize="sm">
+                        Upload one image, or paste one normal image link.
+                      </Text>
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      pt={1}
+                      onChange={(event) => {
+                        handleProductImageChange(event.target.files?.[0])
+                        event.target.value = ''
+                      }}
+                    />
+                    <Input
+                      placeholder="https://example.com/product.jpg"
+                      value={externalImageUrl}
+                      onChange={(event) => handleExternalImageUrlChange(event.target.value)}
+                    />
+                    <FormErrorMessage>{productFormError}</FormErrorMessage>
+                  </Stack>
+                </FormControl>
+                <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }} isRequired>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Description
+                  </FormLabel>
+                  <Input
+                    placeholder="Short product description"
+                    value={productForm.description}
+                    onChange={(event) =>
+                      setProductForm((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    SKU
+                  </FormLabel>
+                  <Input
+                    placeholder="OSAI-TEE-BLK"
+                    value={productForm.sku}
+                    onChange={(event) =>
+                      setProductForm((current) => ({ ...current, sku: event.target.value }))
+                    }
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Initial stock
+                  </FormLabel>
+                  <Input
+                    placeholder="0"
+                    type="number"
+                    min={0}
+                    value={productForm.stockQuantity}
+                    onChange={(event) =>
+                      setProductForm((current) => ({
+                        ...current,
+                        stockQuantity: event.target.value,
+                      }))
+                    }
+                  />
+                </FormControl>
               </Grid>
-              <Button mt={3} type="submit" size="sm" colorScheme="brand">
-                {isImageUploading ? 'Uploading image...' : 'Add product'}
+              <Button
+                mt={3}
+                type="submit"
+                size="sm"
+                colorScheme="brand"
+                isDisabled={isImageUploading || isCreatingProduct}
+                isLoading={isImageUploading || isCreatingProduct}
+                loadingText={isImageUploading ? 'Uploading image' : 'Saving product'}
+              >
+                Add product
               </Button>
             </Box>
             <VStack align="stretch" spacing={3}>
