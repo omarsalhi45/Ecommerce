@@ -145,15 +145,15 @@ export default function CartPage() {
           <Text color="neutral.500" fontSize="sm" mb={4}>
             Final totals are recalculated by the API when the order is created.
           </Text>
-          <Button
-            as={RouterLink}
-            to="/checkout"
-            colorScheme="brand"
-            w="full"
-            isDisabled={cartItems.length === 0}
-          >
-            Checkout
-          </Button>
+          {cartItems.length === 0 ? (
+            <Button colorScheme="brand" w="full" isDisabled>
+              Checkout
+            </Button>
+          ) : (
+            <Button as={RouterLink} to="/checkout" colorScheme="brand" w="full">
+              Checkout
+            </Button>
+          )}
         </Box>
       </Stack>
     </Container>

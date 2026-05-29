@@ -166,7 +166,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add checkout contract tests before Stripe integration.
 - [x] Add auth tests before admin features rely on them.
 - [x] Add role-guard tests before admin features rely on them.
-- [ ] Add accessibility checks for keyboard navigation, focus states, labels, and color contrast.
+- [x] Add accessibility checks for keyboard navigation, focus states, labels, and color contrast.
 - [x] Add empty/loading/error state tests for key frontend flows.
 - [x] Implement E2E tests with Playwright or Cypress.
 - [ ] Add integration tests for critical flows.

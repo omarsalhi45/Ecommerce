@@ -88,7 +88,7 @@ export default function HomePage() {
       >
         <Container maxW="7xl" py={{ base: 16, md: 24 }}>
           <Stack spacing={6} maxW="2xl">
-            <Badge alignSelf="flex-start" bg="accent.500" color="white" px={3} py={1}>
+            <Badge alignSelf="flex-start" bg="accent.600" color="white" px={3} py={1}>
               New season essentials
             </Badge>
             <Heading as="h1" size="4xl" lineHeight="0.95">
