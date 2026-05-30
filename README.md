@@ -91,6 +91,17 @@ This repository is intended to become the OSAI ecommerce application with:
 - Product detail pages show seeded customer reviews and rating summaries.
 - Admin product creation supports image uploads through the API.
 
+### Completed: Phase 9 Advanced Features
+
+- Wishlist state is available in the storefront, persists locally, and has a `/wishlist` route.
+- Product recommendations are served from `/api/products/recommendations` and shown on storefront/product pages.
+- Core storefront navigation and hero copy use a lightweight EN/FR i18n foundation.
+- Product cards, header navigation, and hero type have mobile-responsive refinements.
+- Order confirmation and status-change email hooks are available through the API email service.
+- Product reads use a Redis-ready cache abstraction controlled by `PRODUCT_CACHE_TTL_SECONDS`.
+- Order status updates can be streamed from `/api/orders/:id/events` with Server-Sent Events.
+- OpenAPI JSON is served from `/api/docs/openapi.json`.
+
 ## Development Roadmap
 
 See `AGENTS.md` for the complete phased development plan covering:
@@ -241,6 +252,9 @@ Production environment matrix:
 | Monitoring | `SENTRY_DSN` | Render Dashboard | Optional Sentry DSN for API error reporting. |
 | Monitoring | `SENTRY_TRACES_SAMPLE_RATE` | Render Dashboard | Optional trace sample rate from `0` to `1`; defaults to `0`. |
 | Uploads | `UPLOAD_DIR` | Render Dashboard | Optional local upload directory; defaults to `uploads` under the repo root. Use a persistent Render disk for durable product uploads. |
+| Cache | `PRODUCT_CACHE_TTL_SECONDS` | Render Dashboard | Product read cache TTL; set `0` to disable local caching. |
+| Cache | `REDIS_URL` | Render Dashboard | Reserved for Redis-backed caching when a Redis service is added. |
+| Email | `EMAIL_FROM` | Render Dashboard | Sender address used by the email notification service. |
 | Storefront | `VITE_API_BASE_URL` | Netlify | Public API URL plus `/api`. |
 | Storefront | `VITE_STRIPE_PUBLISHABLE_KEY` | Netlify | Browser-safe Stripe publishable key. |
 | Admin | `VITE_API_BASE_URL` | Netlify | Same public API URL plus `/api`. |
@@ -277,6 +291,11 @@ Render and Netlify provide HTTPS certificates for their managed service domains.
 - Auth and orders use PostgreSQL-backed repositories when `DATABASE_URL` is configured, with in-memory fallback for tests and no-database local development.
 - Stripe secret-key operations stay on the API. The storefront requests `/api/orders/payment-intent` and confirms payment with Stripe Elements when a publishable key is configured.
 - Product image uploads are admin-only and stored under `UPLOAD_DIR/product-images`; the API serves them from `/uploads/product-images/...`.
+- Product recommendations are available at `/api/products/recommendations` and favor popularity, rating, and matching category.
+- Product reads are cached through a small cache service. The current implementation is in-memory with Redis-ready config (`REDIS_URL`) documented for a provider swap.
+- Order status updates can be consumed with Server-Sent Events from `/api/orders/:id/events`.
+- OpenAPI JSON is available at `/api/docs/openapi.json`.
+- Email notification hooks send order confirmation and order status messages through the API email service; wire a provider inside that service when moving beyond console/local delivery.
 - The API emits structured request logs with method, path, status code, duration, timestamp, and level. It does not log request bodies or secrets.
 - Sentry API error monitoring is optional and activates only when `SENTRY_DSN` is configured. The API captures server errors and leaves validation/auth errors out of Sentry noise.
 

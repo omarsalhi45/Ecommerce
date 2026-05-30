@@ -1,4 +1,4 @@
-import { ArrowBackIcon } from '@chakra-ui/icons'
+import { ArrowBackIcon, StarIcon } from '@chakra-ui/icons'
 import {
   Badge,
   Box,
@@ -22,11 +22,13 @@ import {
   useGetProductQuery,
   useGetProductReviewsQuery,
   useGetProductsQuery,
+  useGetRecommendationsQuery,
 } from '../api/productsApi'
 import { formatCategoryLabel, getRelatedProducts } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 import { addItem } from '../slices/cartSlice'
-import { useAppDispatch } from '../store/hooks'
+import { selectIsWishlisted, toggleWishlistItem } from '../slices/wishlistSlice'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 export default function ProductDetailPage() {
   const { productId = '' } = useParams()
@@ -41,13 +43,21 @@ export default function ProductDetailPage() {
     skip: !productId,
   })
   const { data: products = [] } = useGetProductsQuery()
+  const { data: recommendations = [] } = useGetRecommendationsQuery(productId, {
+    skip: !productId,
+  })
   const { data: reviewsData } = useGetProductReviewsQuery(productId, {
     skip: !productId,
   })
 
-  const relatedProducts = product ? getRelatedProducts(products, product) : []
+  const relatedProducts = recommendations.length
+    ? recommendations
+    : product
+      ? getRelatedProducts(products, product)
+      : []
   const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
   const reviews = reviewsData?.reviews ?? []
+  const isWishlisted = useAppSelector(selectIsWishlisted(productId))
 
   const handleAddToCart = () => {
     if (!product) {
@@ -60,6 +70,21 @@ export default function ProductDetailPage() {
       description: 'Your cart is ready when you are.',
       status: 'success',
       duration: 2200,
+      isClosable: true,
+      position: 'bottom-right',
+    })
+  }
+
+  const handleToggleWishlist = () => {
+    if (!product) {
+      return
+    }
+
+    dispatch(toggleWishlistItem({ productId: product.id }))
+    toast({
+      title: isWishlisted ? `${product.name} removed from wishlist` : `${product.name} saved`,
+      status: isWishlisted ? 'info' : 'success',
+      duration: 1800,
       isClosable: true,
       position: 'bottom-right',
     })
@@ -223,6 +248,15 @@ export default function ProductDetailPage() {
               <Button colorScheme="brand" size="lg" onClick={handleAddToCart}>
                 Add to cart
               </Button>
+              <Button
+                leftIcon={<StarIcon />}
+                variant={isWishlisted ? 'solid' : 'outline'}
+                colorScheme={isWishlisted ? 'yellow' : 'gray'}
+                size="lg"
+                onClick={handleToggleWishlist}
+              >
+                {isWishlisted ? 'Saved' : 'Save'}
+              </Button>
               <Button as={RouterLink} to="/checkout" variant="outline" size="lg">
                 Checkout
               </Button>
@@ -277,7 +311,7 @@ export default function ProductDetailPage() {
                 Keep browsing
               </Text>
               <Heading as="h2" size="xl" color="neutral.900">
-                Related pieces
+                Recommended pieces
               </Heading>
             </Box>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>

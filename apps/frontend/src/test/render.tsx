@@ -9,6 +9,7 @@ import { ordersApi } from '../api/ordersApi'
 import { productsApi } from '../api/productsApi'
 import authReducer from '../slices/authSlice'
 import cartReducer from '../slices/cartSlice'
+import wishlistReducer from '../slices/wishlistSlice'
 import { theme } from '../theme'
 
 export const createTestStore = () =>
@@ -16,6 +17,7 @@ export const createTestStore = () =>
     reducer: {
       auth: authReducer,
       cart: cartReducer,
+      wishlist: wishlistReducer,
       [authApi.reducerPath]: authApi.reducer,
       [ordersApi.reducerPath]: ordersApi.reducer,
       [productsApi.reducerPath]: productsApi.reducer,

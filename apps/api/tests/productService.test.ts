@@ -1,7 +1,17 @@
-import { describe, expect, it } from 'vitest'
-import { getAllProducts, getProduct, getProductReviews } from '../src/services/productService'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { resetCacheForTests } from '../src/services/cacheService'
+import {
+  getAllProducts,
+  getProduct,
+  getProductReviews,
+  getRecommendedProducts,
+} from '../src/services/productService'
 
 describe('productService', () => {
+  beforeEach(() => {
+    resetCacheForTests()
+  })
+
   it('returns the seeded product catalog', async () => {
     const products = await getAllProducts()
 
@@ -47,5 +57,13 @@ describe('productService', () => {
       rating: 5,
       title: 'Soft and structured',
     })
+  })
+
+  it('recommends popular products with category affinity', async () => {
+    const recommendations = await getRecommendedProducts('hoodie-001', 2)
+
+    expect(recommendations).toHaveLength(2)
+    expect(recommendations[0]?.id).toBe('shirt-001')
+    expect(recommendations.map((product) => product.id)).not.toContain('hoodie-001')
   })
 })

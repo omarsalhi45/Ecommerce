@@ -3,6 +3,7 @@ import type { CartItem } from '../slices/cartSlice'
 
 const CART_STORAGE_KEY = 'osai.cart'
 const AUTH_STORAGE_KEY = 'osai.auth'
+const WISHLIST_STORAGE_KEY = 'osai.wishlist'
 
 const getLocalStorage = (): Storage | undefined => {
   if (typeof window === 'undefined') {
@@ -45,6 +46,24 @@ export const loadPersistedCart = (): { items: CartItem[] } | undefined => {
 
 export const savePersistedCart = (items: CartItem[]) => {
   getLocalStorage()?.setItem(CART_STORAGE_KEY, JSON.stringify({ items }))
+}
+
+export const loadPersistedWishlist = (): { productIds: string[] } | undefined => {
+  const wishlist = readJson<{ productIds?: string[] }>(WISHLIST_STORAGE_KEY)
+
+  if (!Array.isArray(wishlist?.productIds)) {
+    return undefined
+  }
+
+  return {
+    productIds: Array.from(
+      new Set(wishlist.productIds.filter((productId) => typeof productId === 'string'))
+    ),
+  }
+}
+
+export const savePersistedWishlist = (productIds: string[]) => {
+  getLocalStorage()?.setItem(WISHLIST_STORAGE_KEY, JSON.stringify({ productIds }))
 }
 
 export const loadPersistedAuth = (): AuthState | undefined => {

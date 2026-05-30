@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  getSentEmailNotificationsForTests,
+  resetEmailNotificationsForTests,
+} from '../src/services/emailService'
+import {
   calculateOrderTotals,
   createOrder,
   getOrderAnalytics,
@@ -9,6 +13,7 @@ import {
 describe('orderService', () => {
   beforeEach(() => {
     resetOrderStoreForTests()
+    resetEmailNotificationsForTests()
   })
 
   it('calculates trusted checkout totals', () => {
@@ -56,6 +61,10 @@ describe('orderService', () => {
         lineTotal: 59.98,
       },
     ])
+    expect(getSentEmailNotificationsForTests()[0]).toMatchObject({
+      to: 'shopper@example.com',
+      subject: expect.stringContaining(order.id),
+    })
   })
 
   it('rejects unknown products', async () => {

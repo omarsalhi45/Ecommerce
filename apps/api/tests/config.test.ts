@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createApiConfig,
   parseCorsOrigins,
+  parseNonNegativeInteger,
   parsePort,
   parseSentryTracesSampleRate,
 } from '../src/config'
@@ -17,6 +18,7 @@ describe('api config', () => {
       stripeWebhookSecret: undefined,
       sentryDsn: undefined,
       sentryTracesSampleRate: 0,
+      productCacheTtlSeconds: 30,
       nodeEnv: 'development',
     })
   })
@@ -42,6 +44,15 @@ describe('api config', () => {
     expect(parseSentryTracesSampleRate('1')).toBe(1)
     expect(() => parseSentryTracesSampleRate('2')).toThrow(
       'Invalid SENTRY_TRACES_SAMPLE_RATE value: 2'
+    )
+  })
+
+  it('parses non-negative integer feature settings', () => {
+    expect(parseNonNegativeInteger(undefined, 30, 'PRODUCT_CACHE_TTL_SECONDS')).toBe(30)
+    expect(parseNonNegativeInteger('0', 30, 'PRODUCT_CACHE_TTL_SECONDS')).toBe(0)
+    expect(parseNonNegativeInteger('60', 30, 'PRODUCT_CACHE_TTL_SECONDS')).toBe(60)
+    expect(() => parseNonNegativeInteger('-1', 30, 'PRODUCT_CACHE_TTL_SECONDS')).toThrow(
+      'Invalid PRODUCT_CACHE_TTL_SECONDS value: -1'
     )
   })
 })

@@ -17,6 +17,8 @@ import {
   updateOrderPaymentStatusInDb,
   updateOrderStatusInDb,
 } from '../repositories/orderRepository'
+import { sendOrderConfirmationEmail, sendOrderStatusEmail } from './emailService'
+import { publishOrderStatusEvent } from './orderEventsService'
 import { getProduct } from './productService'
 
 export type { OrderStatus } from '@osai/shared'
@@ -88,10 +90,15 @@ export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
   }
 
   if (isDatabaseConfigured) {
-    return insertOrderIntoDb(order)
+    const persistedOrder = await insertOrderIntoDb(order)
+    await sendOrderConfirmationEmail(persistedOrder)
+    publishOrderStatusEvent(persistedOrder)
+    return persistedOrder
   }
 
   orders.push(order)
+  await sendOrderConfirmationEmail(order)
+  publishOrderStatusEvent(order)
 
   return order
 }
@@ -121,7 +128,14 @@ export const updateOrderStatus = async (
   status: OrderStatus
 ): Promise<Order | undefined> => {
   if (isDatabaseConfigured) {
-    return updateOrderStatusInDb(orderId, status)
+    const order = await updateOrderStatusInDb(orderId, status)
+
+    if (order) {
+      await sendOrderStatusEmail(order)
+      publishOrderStatusEvent(order)
+    }
+
+    return order
   }
 
   const order = orders.find((candidate) => candidate.id === orderId)
@@ -131,6 +145,8 @@ export const updateOrderStatus = async (
   }
 
   Object.assign(order, { status })
+  await sendOrderStatusEmail(order)
+  publishOrderStatusEvent(order)
 
   return order
 }
@@ -140,7 +156,13 @@ export const updateOrderPaymentStatus = async (
   paymentStatus: OrderPaymentStatus
 ): Promise<Order | undefined> => {
   if (isDatabaseConfigured) {
-    return updateOrderPaymentStatusInDb(orderId, paymentStatus)
+    const order = await updateOrderPaymentStatusInDb(orderId, paymentStatus)
+
+    if (order) {
+      publishOrderStatusEvent(order)
+    }
+
+    return order
   }
 
   const order = orders.find((candidate) => candidate.id === orderId)
@@ -150,6 +172,7 @@ export const updateOrderPaymentStatus = async (
   }
 
   Object.assign(order, { paymentStatus })
+  publishOrderStatusEvent(order)
 
   return order
 }

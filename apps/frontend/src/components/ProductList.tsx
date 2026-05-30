@@ -1,11 +1,25 @@
-import { Badge, Box, Button, HStack, Image, Text, VStack, useToast } from '@chakra-ui/react'
+import { StarIcon } from '@chakra-ui/icons'
+import {
+  Badge,
+  Box,
+  Button,
+  HStack,
+  IconButton,
+  Image,
+  Stack,
+  Text,
+  VStack,
+  useToast,
+} from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { addItem } from '../slices/cartSlice'
-import { useAppDispatch } from '../store/hooks'
+import { selectWishlistProductIds, toggleWishlistItem } from '../slices/wishlistSlice'
+import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Product } from '../types'
 
 export default function ProductList({ products }: { products: Product[] }) {
   const dispatch = useAppDispatch()
+  const wishlistProductIds = useAppSelector(selectWishlistProductIds)
   const toast = useToast()
 
   const handleAddToCart = (product: Product) => {
@@ -15,6 +29,19 @@ export default function ProductList({ products }: { products: Product[] }) {
       description: 'Your cart is ready when you are.',
       status: 'success',
       duration: 2200,
+      isClosable: true,
+      position: 'bottom-right',
+    })
+  }
+
+  const handleToggleWishlist = (product: Product) => {
+    const isWishlisted = wishlistProductIds.includes(product.id)
+
+    dispatch(toggleWishlistItem({ productId: product.id }))
+    toast({
+      title: isWishlisted ? `${product.name} removed from wishlist` : `${product.name} saved`,
+      status: isWishlisted ? 'info' : 'success',
+      duration: 1800,
       isClosable: true,
       position: 'bottom-right',
     })
@@ -64,6 +91,21 @@ export default function ProductList({ products }: { products: Product[] }) {
             >
               {product.category}
             </Badge>
+            <IconButton
+              aria-label={
+                wishlistProductIds.includes(product.id)
+                  ? `Remove ${product.name} from wishlist`
+                  : `Save ${product.name} to wishlist`
+              }
+              icon={<StarIcon />}
+              position="absolute"
+              top={3}
+              left={3}
+              borderRadius="full"
+              colorScheme={wishlistProductIds.includes(product.id) ? 'yellow' : 'gray'}
+              size="sm"
+              onClick={() => handleToggleWishlist(product)}
+            />
           </Box>
 
           <VStack spacing={4} p={5} align="start">
@@ -88,17 +130,24 @@ export default function ProductList({ products }: { products: Product[] }) {
               ) : null}
             </VStack>
 
-            <HStack justify="space-between" w="full" align="center" gap={3}>
+            <Stack
+              direction={{ base: 'column', sm: 'row' }}
+              justify="space-between"
+              w="full"
+              align={{ base: 'stretch', sm: 'center' }}
+              gap={3}
+            >
               <Text fontSize="2xl" fontWeight="black" color="neutral.900" letterSpacing="tight">
                 ${product.price.toFixed(2)}
               </Text>
-              <HStack spacing={2}>
+              <HStack spacing={2} justify={{ base: 'stretch', sm: 'flex-end' }}>
                 <Button
                   as={RouterLink}
                   to={`/products/${product.id}`}
                   variant="outline"
                   size="sm"
                   borderRadius="full"
+                  flex={{ base: 1, sm: 'initial' }}
                 >
                   Details
                 </Button>
@@ -113,11 +162,12 @@ export default function ProductList({ products }: { products: Product[] }) {
                     boxShadow: 'md',
                   }}
                   onClick={() => handleAddToCart(product)}
+                  flex={{ base: 1, sm: 'initial' }}
                 >
                   Add
                 </Button>
               </HStack>
-            </HStack>
+            </Stack>
           </VStack>
         </Box>
       ))}

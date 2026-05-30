@@ -217,6 +217,56 @@ describe('api app', () => {
     })
   })
 
+  it('returns product recommendations', async () => {
+    const response = await fetch(`${baseUrl}/api/products/recommendations?productId=hoodie-001`)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.products).toHaveLength(2)
+    expect(body.products.map((product: { id: string }) => product.id)).not.toContain('hoodie-001')
+  })
+
+  it('serves OpenAPI documentation', async () => {
+    const response = await fetch(`${baseUrl}/api/docs/openapi.json`)
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.openapi).toBe('3.0.3')
+    expect(body.paths['/orders/{id}/events']).toBeDefined()
+  })
+
+  it('opens an order status event stream', async () => {
+    const orderResponse = await fetch(`${baseUrl}/api/orders`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        customer: {
+          email: 'events-shopper@example.com',
+          firstName: 'Events',
+          lastName: 'Shopper',
+        },
+        shippingAddress: {
+          line1: '1 Main Street',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'US',
+        },
+        items: [{ productId: 'shirt-001', quantity: 1 }],
+      }),
+    })
+    const order = await orderResponse.json()
+    const eventResponse = await fetch(`${baseUrl}/api/orders/${order.id}/events`)
+    const reader = eventResponse.body?.getReader()
+    const firstChunk = reader ? await reader.read() : undefined
+
+    await reader?.cancel()
+
+    expect(eventResponse.status).toBe(200)
+    expect(eventResponse.headers.get('content-type')).toContain('text/event-stream')
+    expect(new TextDecoder().decode(firstChunk?.value)).toContain(order.id)
+  })
+
   it('rejects invalid checkout payloads', async () => {
     const response = await fetch(`${baseUrl}/api/orders`, {
       method: 'POST',

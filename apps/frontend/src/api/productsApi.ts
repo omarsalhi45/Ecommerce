@@ -26,7 +26,20 @@ export const productsApi = createApi({
         cache: 'no-store',
       }),
     }),
+    getRecommendations: builder.query<Product[], string | undefined>({
+      query: (productId) => ({
+        url: '/products/recommendations',
+        params: productId ? { productId, limit: 4 } : { limit: 4 },
+        cache: 'no-store',
+      }),
+      transformResponse: (response: { products: Product[] }) => response.products,
+    }),
   }),
 })
 
-export const { useGetProductsQuery, useGetProductQuery, useGetProductReviewsQuery } = productsApi
+export const {
+  useGetProductsQuery,
+  useGetProductQuery,
+  useGetProductReviewsQuery,
+  useGetRecommendationsQuery,
+} = productsApi

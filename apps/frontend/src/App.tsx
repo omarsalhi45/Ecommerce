@@ -9,6 +9,7 @@ import OrderConfirmationPage from './pages/OrderConfirmationPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import SignupPage from './pages/SignupPage'
+import WishlistPage from './pages/WishlistPage'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </AppLayout>

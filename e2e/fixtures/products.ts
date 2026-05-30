@@ -71,6 +71,13 @@ export const mockProductApi = async (page: Page) => {
     })
   })
 
+  await page.route('**/api/products/recommendations**', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({ products }),
+    })
+  })
+
   await page.route('**/api/products', async (route) => {
     await route.fulfill({
       contentType: 'application/json',

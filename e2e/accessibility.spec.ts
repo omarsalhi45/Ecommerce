@@ -35,6 +35,11 @@ test('storefront primary navigation is keyboard reachable', async ({ page }) => 
   await expect(page.getByRole('link', { name: 'Shop', exact: true })).toBeFocused()
 
   await page.keyboard.press('Tab')
+  await expect(
+    page.getByLabel('Main navigation').getByRole('link', { name: 'Wishlist', exact: true })
+  ).toBeFocused()
+
+  await page.keyboard.press('Tab')
   await expect(page.getByRole('link', { name: 'Cart' }).first()).toBeFocused()
 })
 

@@ -46,5 +46,5 @@ test('shopper can open product details with variants and related products', asyn
   await expect(page.getByText('M / Black')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible()
   await expect(page.getByText('Soft and structured')).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Related pieces' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Recommended pieces' })).toBeVisible()
 })

@@ -23,6 +23,9 @@ export interface ApiConfig {
   readonly stripeWebhookSecret?: string
   readonly sentryDsn?: string
   readonly sentryTracesSampleRate: number
+  readonly productCacheTtlSeconds: number
+  readonly redisUrl?: string
+  readonly emailFrom?: string
   readonly uploadDir: string
   readonly nodeEnv: string
 }
@@ -70,6 +73,24 @@ export const parseSentryTracesSampleRate = (value: string | undefined): number =
   return parsedValue
 }
 
+export const parseNonNegativeInteger = (
+  value: string | undefined,
+  fallback: number,
+  name: string
+): number => {
+  if (!value?.trim()) {
+    return fallback
+  }
+
+  const parsedValue = Number(value)
+
+  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+    throw new Error(`Invalid ${name} value: ${value}`)
+  }
+
+  return parsedValue
+}
+
 export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
   const nodeEnv = env.NODE_ENV ?? 'development'
   const jwtSecret = env.JWT_SECRET ?? 'osai_local_dev_secret_change_me'
@@ -89,6 +110,13 @@ export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
     stripeWebhookSecret: env.STRIPE_WEBHOOK_SECRET,
     sentryDsn: env.SENTRY_DSN,
     sentryTracesSampleRate: parseSentryTracesSampleRate(env.SENTRY_TRACES_SAMPLE_RATE),
+    productCacheTtlSeconds: parseNonNegativeInteger(
+      env.PRODUCT_CACHE_TTL_SECONDS,
+      30,
+      'PRODUCT_CACHE_TTL_SECONDS'
+    ),
+    redisUrl: env.REDIS_URL,
+    emailFrom: env.EMAIL_FROM,
     uploadDir: env.UPLOAD_DIR?.trim() ? path.resolve(env.UPLOAD_DIR) : DEFAULT_UPLOAD_DIR,
     nodeEnv,
   }

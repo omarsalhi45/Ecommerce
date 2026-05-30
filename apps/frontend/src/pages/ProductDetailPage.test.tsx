@@ -5,6 +5,7 @@ import {
   useGetProductQuery,
   useGetProductReviewsQuery,
   useGetProductsQuery,
+  useGetRecommendationsQuery,
 } from '../api/productsApi'
 import { renderWithProviders } from '../test/render'
 import type { Product } from '../types'
@@ -18,12 +19,14 @@ vi.mock('../api/productsApi', async () => {
     useGetProductQuery: vi.fn(),
     useGetProductReviewsQuery: vi.fn(),
     useGetProductsQuery: vi.fn(),
+    useGetRecommendationsQuery: vi.fn(),
   }
 })
 
 const mockUseGetProductQuery = vi.mocked(useGetProductQuery)
 const mockUseGetProductReviewsQuery = vi.mocked(useGetProductReviewsQuery)
 const mockUseGetProductsQuery = vi.mocked(useGetProductsQuery)
+const mockUseGetRecommendationsQuery = vi.mocked(useGetRecommendationsQuery)
 
 const currentProduct: Product = {
   id: 'hoodie-001',
@@ -93,7 +96,12 @@ describe('ProductDetailPage', () => {
     mockUseGetProductQuery.mockReset()
     mockUseGetProductReviewsQuery.mockReset()
     mockUseGetProductsQuery.mockReset()
+    mockUseGetRecommendationsQuery.mockReset()
     mockUseGetProductReviewsQuery.mockReturnValue(createReviewsQueryResult())
+    mockUseGetRecommendationsQuery.mockReturnValue({
+      data: [],
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGetRecommendationsQuery>)
   })
 
   it('renders loading skeletons while product details load', () => {
@@ -146,7 +154,7 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('5.0 / 5')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Reviews' })).toBeInTheDocument()
     expect(screen.getByText('Soft and structured')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Related pieces' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Recommended pieces' })).toBeInTheDocument()
     expect(screen.getByText('Zip Layer Hoodie')).toBeInTheDocument()
   })
 })

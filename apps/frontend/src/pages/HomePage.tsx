@@ -18,7 +18,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { useMemo, useState } from 'react'
-import { useGetProductsQuery } from '../api/productsApi'
+import { useGetProductsQuery, useGetRecommendationsQuery } from '../api/productsApi'
 import {
   ALL_CATEGORIES,
   type ProductSort,
@@ -27,6 +27,7 @@ import {
   getProductCategories,
 } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
+import { useTranslation } from '../i18n'
 
 const sortOptions: { label: string; value: ProductSort }[] = [
   { label: 'Featured', value: 'featured' },
@@ -38,7 +39,9 @@ const sortOptions: { label: string; value: ProductSort }[] = [
 ]
 
 export default function HomePage() {
+  const { t } = useTranslation()
   const { data, isLoading, error, refetch } = useGetProductsQuery()
+  const { data: recommendations = [] } = useGetRecommendationsQuery(undefined)
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES)
   const [searchTerm, setSearchTerm] = useState('')
   const [sort, setSort] = useState<ProductSort>('featured')
@@ -89,21 +92,20 @@ export default function HomePage() {
         <Container maxW="7xl" py={{ base: 16, md: 24 }}>
           <Stack spacing={6} maxW="2xl">
             <Badge alignSelf="flex-start" bg="accent.600" color="white" px={3} py={1}>
-              New season essentials
+              {t('home.badge')}
             </Badge>
-            <Heading as="h1" size="4xl" lineHeight="0.95">
-              Clothes made for fast days and late nights.
+            <Heading as="h1" size={{ base: '2xl', md: '4xl' }} lineHeight="0.95">
+              {t('home.heroTitle')}
             </Heading>
             <Text fontSize={{ base: 'lg', md: 'xl' }} color="whiteAlpha.900">
-              OSAI brings clean streetwear pieces with sharp silhouettes, easy layering, and a
-              checkout flow built to stay out of your way.
+              {t('home.heroCopy')}
             </Text>
             <HStack spacing={3} flexWrap="wrap">
               <Button as="a" href="#collection" colorScheme="accent" size="lg">
-                Shop collection
+                {t('home.shopCollection')}
               </Button>
               <Button as="a" href="#collections" variant="outline" size="lg" borderColor="white">
-                Browse edits
+                {t('home.browseEdits')}
               </Button>
             </HStack>
           </Stack>
@@ -240,6 +242,22 @@ export default function HomePage() {
             </VStack>
           )}
         </VStack>
+
+        {recommendations.length > 0 ? (
+          <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
+            <Box>
+              <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
+                Recommended
+              </Text>
+              <Heading as="h2" size="xl" color="neutral.900">
+                Popular right now
+              </Heading>
+            </Box>
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5}>
+              <ProductList products={recommendations} />
+            </SimpleGrid>
+          </VStack>
+        ) : null}
       </Container>
     </Box>
   )

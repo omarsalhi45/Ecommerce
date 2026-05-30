@@ -194,16 +194,16 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add GitHub Actions or equivalent CI for check, test, and build.
 - [x] Set up SSL certificates.
 
-### Phase 9: Advanced Features (Future)
+### Phase 9: Advanced Features - Complete
 
-- [ ] Add email notifications for order confirmations and shipping updates.
-- [ ] Implement wishlist functionality.
-- [ ] Add product recommendations.
-- [ ] Create mobile-responsive design improvements.
-- [ ] Add multi-language support (i18n).
-- [ ] Implement caching with Redis.
-- [ ] Add real-time order status updates.
-- [ ] Create API documentation with Swagger/OpenAPI.
+- [x] Add email notifications for order confirmations and shipping updates.
+- [x] Implement wishlist functionality.
+- [x] Add product recommendations.
+- [x] Create mobile-responsive design improvements.
+- [x] Add multi-language support (i18n).
+- [x] Implement caching with Redis-ready configuration.
+- [x] Add real-time order status updates.
+- [x] Create API documentation with Swagger/OpenAPI.
 
 ### Phase 10: OAuth & Social Features (Future)
 
@@ -315,7 +315,7 @@ Project-local Codex skills live in `.agents/skills/` so they travel with this re
 
 ## Next Steps
 
-- Phase 6 enhanced product features are complete; continue Phase 7 with deeper integration testing and production smoke coverage.
+- Phase 9 advanced features are complete at a lightweight production-ready foundation level; continue with provider-specific integrations for email and Redis if needed.
 - Add admin-app focused component tests and deployment config after the split stabilizes.
 - Add shared checkout/order DTO package if API/frontend contract duplication starts to drift.
 - Move toward Phase 8 deployment once database hosting and production env values are selected.
