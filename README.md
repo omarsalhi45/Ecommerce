@@ -254,7 +254,8 @@ Production environment matrix:
 | Uploads | `UPLOAD_DIR` | Render Dashboard | Optional local upload directory; defaults to `uploads` under the repo root. Use a persistent Render disk for durable product uploads. |
 | Cache | `PRODUCT_CACHE_TTL_SECONDS` | Render Dashboard | Product read cache TTL; set `0` to disable local caching. |
 | Cache | `REDIS_URL` | Render Dashboard | Reserved for Redis-backed caching when a Redis service is added. |
-| Email | `EMAIL_FROM` | Render Dashboard | Sender address used by the email notification service. |
+| Email | `EMAIL_FROM` | Render Dashboard | Verified Resend sender address used by the email notification service. |
+| Email | `RESEND_API_KEY` | Render Dashboard | Resend API key for sending order confirmation and status emails. |
 | Storefront | `VITE_API_BASE_URL` | Netlify | Public API URL plus `/api`. |
 | Storefront | `VITE_STRIPE_PUBLISHABLE_KEY` | Netlify | Browser-safe Stripe publishable key. |
 | Admin | `VITE_API_BASE_URL` | Netlify | Same public API URL plus `/api`. |
@@ -295,7 +296,7 @@ Render and Netlify provide HTTPS certificates for their managed service domains.
 - Product reads are cached through a small cache service. The current implementation is in-memory with Redis-ready config (`REDIS_URL`) documented for a provider swap.
 - Order status updates can be consumed with Server-Sent Events from `/api/orders/:id/events`.
 - OpenAPI JSON is available at `/api/docs/openapi.json`.
-- Email notification hooks send order confirmation and order status messages through the API email service; wire a provider inside that service when moving beyond console/local delivery.
+- Email notification hooks send order confirmation and order status messages through Resend when `RESEND_API_KEY` is configured. Without a key, the API logs the email intent for local development.
 - The API emits structured request logs with method, path, status code, duration, timestamp, and level. It does not log request bodies or secrets.
 - Sentry API error monitoring is optional and activates only when `SENTRY_DSN` is configured. The API captures server errors and leaves validation/auth errors out of Sentry noise.
 

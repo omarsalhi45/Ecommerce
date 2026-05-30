@@ -9,12 +9,45 @@ export interface EmailNotification {
 
 const sentNotifications: EmailNotification[] = []
 
+const getEmailSender = () => apiConfig.emailFrom ?? 'no-reply@osai.local'
+
+const sendWithResend = async (notification: EmailNotification) => {
+  if (!apiConfig.resendApiKey || apiConfig.nodeEnv === 'test') {
+    return
+  }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiConfig.resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: getEmailSender(),
+      to: notification.to,
+      subject: notification.subject,
+      text: notification.body,
+    }),
+  })
+
+  if (!response.ok) {
+    const responseBody = await response.text()
+    throw new Error(`Resend email failed with ${response.status}: ${responseBody}`)
+  }
+}
+
 export const sendEmailNotification = async (notification: EmailNotification) => {
   sentNotifications.push(notification)
 
-  if (apiConfig.nodeEnv !== 'test') {
-    console.info('[email]', {
-      from: apiConfig.emailFrom ?? 'no-reply@osai.local',
+  try {
+    await sendWithResend(notification)
+  } catch (error) {
+    console.error('[email] delivery failed', error)
+  }
+
+  if (apiConfig.nodeEnv !== 'test' && !apiConfig.resendApiKey) {
+    console.info('[email] resend disabled', {
+      from: getEmailSender(),
       subject: notification.subject,
       to: notification.to,
     })

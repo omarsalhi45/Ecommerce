@@ -315,7 +315,7 @@ Project-local Codex skills live in `.agents/skills/` so they travel with this re
 
 ## Next Steps
 
-- Phase 9 advanced features are complete at a lightweight production-ready foundation level; continue with provider-specific integrations for email and Redis if needed.
+- Phase 9 advanced features are complete; email notifications use Resend when configured, and Redis remains the next provider-specific cache integration if needed.
 - Add admin-app focused component tests and deployment config after the split stabilizes.
 - Add shared checkout/order DTO package if API/frontend contract duplication starts to drift.
 - Move toward Phase 8 deployment once database hosting and production env values are selected.

@@ -19,6 +19,9 @@ describe('api config', () => {
       sentryDsn: undefined,
       sentryTracesSampleRate: 0,
       productCacheTtlSeconds: 30,
+      emailFrom: undefined,
+      redisUrl: undefined,
+      resendApiKey: undefined,
       nodeEnv: 'development',
     })
   })

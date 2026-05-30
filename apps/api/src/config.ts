@@ -26,6 +26,7 @@ export interface ApiConfig {
   readonly productCacheTtlSeconds: number
   readonly redisUrl?: string
   readonly emailFrom?: string
+  readonly resendApiKey?: string
   readonly uploadDir: string
   readonly nodeEnv: string
 }
@@ -117,6 +118,7 @@ export const createApiConfig = (env: NodeJS.ProcessEnv): ApiConfig => {
     ),
     redisUrl: env.REDIS_URL,
     emailFrom: env.EMAIL_FROM,
+    resendApiKey: env.RESEND_API_KEY,
     uploadDir: env.UPLOAD_DIR?.trim() ? path.resolve(env.UPLOAD_DIR) : DEFAULT_UPLOAD_DIR,
     nodeEnv,
   }
