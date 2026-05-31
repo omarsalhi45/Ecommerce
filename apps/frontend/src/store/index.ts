@@ -4,6 +4,7 @@ import { ordersApi } from '../api/ordersApi'
 import { productsApi } from '../api/productsApi'
 import authReducer from '../slices/authSlice'
 import cartReducer from '../slices/cartSlice'
+import cartUiReducer from '../slices/cartUiSlice'
 import wishlistReducer from '../slices/wishlistSlice'
 import {
   loadPersistedAuth,
@@ -18,6 +19,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     cart: cartReducer,
+    cartUi: cartUiReducer,
     wishlist: wishlistReducer,
     [authApi.reducerPath]: authApi.reducer,
     [ordersApi.reducerPath]: ordersApi.reducer,

@@ -6,6 +6,7 @@ import { selectCurrentUser } from '../slices/authSlice'
 import { selectCartItemCount } from '../slices/cartSlice'
 import { selectWishlistCount } from '../slices/wishlistSlice'
 import { useAppSelector } from '../store/hooks'
+import MiniCartDrawer from './MiniCartDrawer'
 
 const navItems = [
   { labelKey: 'nav.shop', to: '/' },
@@ -134,6 +135,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       </Box>
 
       <Box as="main">{children}</Box>
+      <MiniCartDrawer />
     </Box>
   )
 }

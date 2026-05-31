@@ -16,7 +16,7 @@ import {
 } from '@chakra-ui/react'
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
-import { type FormEvent, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { useCreateCheckoutPaymentIntentMutation, useCreateOrderMutation } from '../api/ordersApi'
 import { useGetProductsQuery } from '../api/productsApi'
@@ -57,9 +57,21 @@ export default function CheckoutPage() {
   const [errorMessage, setErrorMessage] = useState<string>()
   const [paymentIntentResponse, setPaymentIntentResponse] =
     useState<CreateCheckoutPaymentIntentResponse>()
+  const paymentSectionRef = useRef<HTMLDivElement>(null)
   const summary = useMemo(() => calculateCartSummary(cartItems, products), [cartItems, products])
   const isStripeConfigured = Boolean(stripePromise)
   const isSubmitting = isMockOrderLoading || isPaymentIntentLoading
+
+  useEffect(() => {
+    if (!paymentIntentResponse) {
+      return
+    }
+
+    window.requestAnimationFrame(() => {
+      paymentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      paymentSectionRef.current?.focus({ preventScroll: true })
+    })
+  }, [paymentIntentResponse])
 
   const updateField = (field: keyof CheckoutFormState, value: string) => {
     setFormState((current) => ({ ...current, [field]: value }))
@@ -280,6 +292,7 @@ export default function CheckoutPage() {
 
       {paymentIntentResponse && stripePromise ? (
         <Box
+          ref={paymentSectionRef}
           mt={8}
           bg="white"
           border="1px solid"
@@ -287,6 +300,8 @@ export default function CheckoutPage() {
           borderRadius="lg"
           p={{ base: 6, md: 8 }}
           maxW="3xl"
+          tabIndex={-1}
+          outline="none"
         >
           <Stack spacing={5}>
             <Box>

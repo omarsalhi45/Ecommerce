@@ -1,6 +1,7 @@
 import { Box } from '@chakra-ui/react'
 import { Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
+import ScrollToTop from './components/ScrollToTop'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
 import HomePage from './pages/HomePage'
@@ -14,6 +15,7 @@ import WishlistPage from './pages/WishlistPage'
 function App() {
   return (
     <Box minH="100vh" bg="neutral.50">
+      <ScrollToTop />
       <AppLayout>
         <Routes>
           <Route path="/" element={<HomePage />} />

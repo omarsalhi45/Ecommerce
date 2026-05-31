@@ -215,11 +215,11 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add shipping, delivery estimate, returns, and support information near the product detail buy buttons.
 - [x] Add a sticky mobile add-to-cart bar on product detail pages.
 - [ ] Add "Complete the fit" product recommendations for outfit-style cross-sells.
-- [ ] Upgrade product cards with quick-add size selection.
-- [ ] Add product badges such as New, Best seller, Low stock, Sale, and Back soon.
-- [ ] Add product card hover or secondary-image support.
-- [ ] Display rating stars and review counts more visually on product cards.
-- [ ] Display available color swatches on product cards.
+- [x] Upgrade product cards with quick-add size selection.
+- [x] Add product badges such as Best seller and Low stock.
+- [x] Add product card hover support.
+- [x] Display rating stars and review counts more visually on product cards.
+- [x] Display available color swatches on product cards.
 - [ ] Improve wishlist affordance so saved state is clearer than a plain star icon.
 - [x] Add honest inventory urgency such as "Only 3 left in M" when stock is genuinely low.
 - [ ] Add back-in-stock email capture for sold-out variants.
@@ -232,9 +232,9 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add a filter drawer for category, size, color, price range, in-stock state, and rating.
 - [ ] Add applied filter chips and visible product result counts.
 - [ ] Add search suggestions, autocomplete, typo-tolerant matching, and useful no-results recommendations.
-- [ ] Add a cart drawer or mini-cart response after adding a product.
+- [x] Add a cart drawer or mini-cart response after adding a product.
 - [x] Add free-shipping threshold messaging in cart.
-- [ ] Add free-shipping threshold messaging in mini-cart once the cart drawer exists.
+- [x] Add free-shipping threshold messaging in mini-cart once the cart drawer exists.
 - [ ] Add promo code UI and backend discount validation.
 - [ ] Add save-for-later cart actions using wishlist or a dedicated saved-items list.
 - [ ] Add cart-level product recommendations and add-on suggestions.
@@ -249,6 +249,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add public order tracking page for order status and shipping updates.
 - [ ] Add customer return request flow for eligible orders.
 - [x] Add tests for product detail variant selection before add-to-cart.
+- [x] Add tests for product card quick-add variant selection.
 - [ ] Add or improve tests for sticky add-to-cart, filters, cart drawer, discounts, and checkout steps.
 
 ### Phase 10: OAuth & Social Features (Future)

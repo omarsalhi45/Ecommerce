@@ -43,6 +43,7 @@ import {
 import { formatCategoryLabel, getRelatedProducts } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 import { addItem } from '../slices/cartSlice'
+import { openMiniCart } from '../slices/cartUiSlice'
 import { selectIsWishlisted, toggleWishlistItem } from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
@@ -108,6 +109,7 @@ export default function ProductDetailPage() {
         color: selectedVariant?.color,
       })
     )
+    dispatch(openMiniCart())
     toast({
       title: `${product.name} added to cart`,
       description: selectedVariantLabel
