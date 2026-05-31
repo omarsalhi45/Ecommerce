@@ -13,9 +13,11 @@ import {
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
 import {
+  FREE_SHIPPING_THRESHOLD,
   addItem,
   calculateCartSummary,
   decrementItem,
+  getCartLineKey,
   removeItem,
   selectCartItems,
 } from '../slices/cartSlice'
@@ -32,6 +34,9 @@ export default function CartPage() {
   }))
 
   const summary = calculateCartSummary(cartItems, products)
+  const freeShippingRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - summary.subtotal)
+  const freeShippingProgress =
+    summary.subtotal > 0 ? Math.min((summary.subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100) : 0
 
   return (
     <Container maxW="7xl" py={{ base: 8, md: 12 }}>
@@ -63,7 +68,7 @@ export default function CartPage() {
           ) : (
             enrichedItems.map((item) => (
               <HStack
-                key={item.productId}
+                key={getCartLineKey(item)}
                 bg="white"
                 border="1px solid"
                 borderColor="neutral.200"
@@ -83,11 +88,23 @@ export default function CartPage() {
                 ) : null}
                 <Box flex={1}>
                   <Text fontWeight="black">{item.product?.name ?? item.productId}</Text>
+                  {[item.size, item.color].filter(Boolean).length > 0 ? (
+                    <Text color="neutral.500" fontSize="sm" fontWeight="semibold">
+                      {[item.size, item.color].filter(Boolean).join(' / ')}
+                    </Text>
+                  ) : null}
                   <Text color="neutral.600">${(item.product?.price ?? 0).toFixed(2)}</Text>
                   <HStack mt={3}>
                     <Button
                       size="sm"
-                      onClick={() => dispatch(decrementItem({ productId: item.productId }))}
+                      onClick={() =>
+                        dispatch(
+                          decrementItem({
+                            productId: item.productId,
+                            variantSku: item.variantSku,
+                          })
+                        )
+                      }
                     >
                       -
                     </Button>
@@ -96,14 +113,30 @@ export default function CartPage() {
                     </Text>
                     <Button
                       size="sm"
-                      onClick={() => dispatch(addItem({ productId: item.productId }))}
+                      onClick={() =>
+                        dispatch(
+                          addItem({
+                            productId: item.productId,
+                            variantSku: item.variantSku,
+                            size: item.size,
+                            color: item.color,
+                          })
+                        )
+                      }
                     >
                       +
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => dispatch(removeItem({ productId: item.productId }))}
+                      onClick={() =>
+                        dispatch(
+                          removeItem({
+                            productId: item.productId,
+                            variantSku: item.variantSku,
+                          })
+                        )
+                      }
                     >
                       Remove
                     </Button>
@@ -125,6 +158,25 @@ export default function CartPage() {
           <Heading as="h2" size="md" mb={4}>
             Summary
           </Heading>
+          {summary.subtotal > 0 ? (
+            <Box
+              border="1px solid"
+              borderColor={freeShippingRemaining > 0 ? 'neutral.200' : 'green.200'}
+              bg={freeShippingRemaining > 0 ? 'neutral.50' : 'green.50'}
+              borderRadius="lg"
+              p={4}
+              mb={4}
+            >
+              <Text color="neutral.800" fontWeight="black" fontSize="sm">
+                {freeShippingRemaining > 0
+                  ? `$${freeShippingRemaining.toFixed(2)} away from free shipping`
+                  : 'Free shipping unlocked'}
+              </Text>
+              <Box bg="white" borderRadius="full" h="8px" mt={3} overflow="hidden">
+                <Box bg="black" h="full" w={`${freeShippingProgress}%`} />
+              </Box>
+            </Box>
+          ) : null}
           <HStack justify="space-between">
             <Text color="neutral.600">Subtotal</Text>
             <Text fontWeight="black">${summary.subtotal.toFixed(2)}</Text>

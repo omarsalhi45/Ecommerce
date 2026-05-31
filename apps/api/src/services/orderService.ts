@@ -36,6 +36,7 @@ export interface OrderAnalytics {
 
 const TAX_RATE = 0.08
 const SHIPPING_RATE = 7.5
+const FREE_SHIPPING_THRESHOLD = 100
 const orders: Order[] = []
 
 const roundMoney = (value: number): number => Math.round(value * 100) / 100
@@ -45,7 +46,7 @@ export const isRevenueRecognizedPaymentStatus = (paymentStatus: OrderPaymentStat
 }
 
 export const calculateOrderTotals = (subtotal: number): CartSummary => {
-  const shipping = subtotal > 0 ? SHIPPING_RATE : 0
+  const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD ? SHIPPING_RATE : 0
   const tax = roundMoney(subtotal * TAX_RATE)
 
   return {

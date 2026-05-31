@@ -10,13 +10,29 @@ import {
   HStack,
   Heading,
   Image,
+  Link,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
   SimpleGrid,
   Skeleton,
   Stack,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
   VStack,
+  useDisclosure,
   useToast,
 } from '@chakra-ui/react'
+import { useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router-dom'
 import {
   useGetProductQuery,
@@ -34,6 +50,8 @@ export default function ProductDetailPage() {
   const { productId = '' } = useParams()
   const dispatch = useAppDispatch()
   const toast = useToast()
+  const sizeGuide = useDisclosure()
+  const [selectedVariantSku, setSelectedVariantSku] = useState<string>()
   const {
     data: product,
     isLoading,
@@ -58,16 +76,43 @@ export default function ProductDetailPage() {
   const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
   const reviews = reviewsData?.reviews ?? []
   const isWishlisted = useAppSelector(selectIsWishlisted(productId))
+  const variants = product?.variants ?? []
+  const selectedVariant = variants.find((variant) => variant.sku === selectedVariantSku)
+  const selectedVariantLabel = selectedVariant
+    ? [selectedVariant.size, selectedVariant.color].filter(Boolean).join(' / ') ||
+      selectedVariant.sku
+    : undefined
 
   const handleAddToCart = () => {
     if (!product) {
       return
     }
 
-    dispatch(addItem({ productId: product.id }))
+    if (variants.length > 0 && !selectedVariant) {
+      toast({
+        title: 'Choose your option first',
+        description: 'Pick the size and color you want before adding this piece.',
+        status: 'warning',
+        duration: 2400,
+        isClosable: true,
+        position: 'bottom-right',
+      })
+      return
+    }
+
+    dispatch(
+      addItem({
+        productId: product.id,
+        variantSku: selectedVariant?.sku,
+        size: selectedVariant?.size,
+        color: selectedVariant?.color,
+      })
+    )
     toast({
       title: `${product.name} added to cart`,
-      description: 'Your cart is ready when you are.',
+      description: selectedVariantLabel
+        ? `${selectedVariantLabel} is in your bag.`
+        : 'Your cart is ready when you are.',
       status: 'success',
       duration: 2200,
       isClosable: true,
@@ -129,7 +174,7 @@ export default function ProductDetailPage() {
 
   return (
     <Box>
-      <Container maxW="7xl" py={{ base: 6, md: 10 }}>
+      <Container maxW="7xl" py={{ base: 6, md: 10 }} pb={{ base: 28, lg: 10 }}>
         <Button as={RouterLink} to="/" leftIcon={<ArrowBackIcon />} variant="ghost" mb={6}>
           Back to shop
         </Button>
@@ -187,27 +232,49 @@ export default function ProductDetailPage() {
             <Divider />
 
             {product.variants?.length ? (
-              <Stack spacing={3}>
-                <Text color="neutral.900" fontWeight="black">
-                  Available options
-                </Text>
+              <Stack spacing={4}>
+                <HStack justify="space-between" align="center">
+                  <Box>
+                    <Text color="neutral.900" fontWeight="black">
+                      Choose size and color
+                    </Text>
+                  </Box>
+                  <Button
+                    variant="link"
+                    color="neutral.900"
+                    fontWeight="black"
+                    onClick={sizeGuide.onOpen}
+                  >
+                    Size guide
+                  </Button>
+                </HStack>
                 <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                   {product.variants.map((variant) => (
-                    <Box
+                    <Button
                       key={variant.sku}
+                      type="button"
+                      variant="outline"
+                      isDisabled={variant.stockQuantity <= 0}
+                      onClick={() => setSelectedVariantSku(variant.sku)}
+                      h="auto"
+                      minH="82px"
+                      justifyContent="stretch"
                       border="1px solid"
-                      borderColor="neutral.200"
+                      borderColor={selectedVariantSku === variant.sku ? 'black' : 'neutral.200'}
                       borderRadius="lg"
-                      bg="white"
+                      bg={selectedVariantSku === variant.sku ? 'neutral.50' : 'white'}
                       px={4}
                       py={3}
+                      _hover={{ borderColor: variant.stockQuantity > 0 ? 'black' : 'neutral.200' }}
                     >
-                      <HStack justify="space-between" align="start">
+                      <HStack justify="space-between" align="start" w="full">
                         <Box>
-                          <Text fontWeight="bold">{variant.sku}</Text>
-                          <Text color="neutral.600" fontSize="sm">
+                          <Text fontWeight="black" textAlign="left">
                             {[variant.size, variant.color].filter(Boolean).join(' / ') ||
                               'Standard'}
+                          </Text>
+                          <Text color="neutral.600" fontSize="sm">
+                            {variant.sku}
                           </Text>
                         </Box>
                         <Badge colorScheme={variant.stockQuantity > 0 ? 'green' : 'red'}>
@@ -216,9 +283,14 @@ export default function ProductDetailPage() {
                             : 'Sold out'}
                         </Badge>
                       </HStack>
-                    </Box>
+                    </Button>
                   ))}
                 </SimpleGrid>
+                {selectedVariant && selectedVariant.stockQuantity <= 5 ? (
+                  <Text color="orange.600" fontSize="sm" fontWeight="bold">
+                    Low stock in {selectedVariantLabel}.
+                  </Text>
+                ) : null}
               </Stack>
             ) : null}
 
@@ -261,6 +333,32 @@ export default function ProductDetailPage() {
                 Checkout
               </Button>
             </Flex>
+
+            <SimpleGrid columns={{ base: 1, md: 4 }} spacing={3}>
+              {[
+                ['Delivery', 'Ships in 2-4 business days'],
+                ['Returns', '30-day returns on unworn items'],
+                ['Checkout', 'Secure Stripe payment'],
+                ['Support', 'Help before and after your order'],
+              ].map(([title, body]) => (
+                <Box
+                  key={title}
+                  border="1px solid"
+                  borderColor="neutral.200"
+                  borderRadius="lg"
+                  bg="white"
+                  px={4}
+                  py={3}
+                >
+                  <Text color="neutral.900" fontWeight="black">
+                    {title}
+                  </Text>
+                  <Text color="neutral.600" fontSize="sm">
+                    {body}
+                  </Text>
+                </Box>
+              ))}
+            </SimpleGrid>
           </Stack>
         </Grid>
 
@@ -320,6 +418,79 @@ export default function ProductDetailPage() {
           </VStack>
         ) : null}
       </Container>
+
+      <Box
+        display={{ base: 'block', lg: 'none' }}
+        position="fixed"
+        bottom={0}
+        left={0}
+        right={0}
+        zIndex={20}
+        bg="white"
+        borderTop="1px solid"
+        borderColor="neutral.200"
+        px={4}
+        py={3}
+        boxShadow="0 -10px 30px rgba(15, 23, 42, 0.12)"
+      >
+        <HStack justify="space-between" spacing={3}>
+          <Box minW={0}>
+            <Text fontWeight="black">${product.price.toFixed(2)}</Text>
+            <Text color="neutral.500" fontSize="sm" noOfLines={1}>
+              {selectedVariantLabel ??
+                (variants.length > 0 ? 'Choose size and color' : product.name)}
+            </Text>
+          </Box>
+          <Button colorScheme="brand" onClick={handleAddToCart} minW="136px">
+            Add to cart
+          </Button>
+        </HStack>
+      </Box>
+
+      <Modal isOpen={sizeGuide.isOpen} onClose={sizeGuide.onClose} size="lg">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Size guide</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <Text color="neutral.600" mb={4}>
+              OSAI pieces are cut relaxed. Choose your usual size for a roomy street fit.
+            </Text>
+            <TableContainer>
+              <Table size="sm">
+                <Thead>
+                  <Tr>
+                    <Th>Size</Th>
+                    <Th>Chest</Th>
+                    <Th>Length</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {[
+                    ['S', '34-36 in', '26 in'],
+                    ['M', '38-40 in', '27 in'],
+                    ['L', '42-44 in', '28 in'],
+                    ['XL', '46-48 in', '29 in'],
+                  ].map(([size, chest, length]) => (
+                    <Tr key={size}>
+                      <Td fontWeight="bold">{size}</Td>
+                      <Td>{chest}</Td>
+                      <Td>{length}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </TableContainer>
+            <Text color="neutral.500" fontSize="sm" mt={4}>
+              Need help?{' '}
+              <Link as={RouterLink} to="/cart" fontWeight="bold">
+                Review your bag
+              </Link>{' '}
+              before checkout.
+            </Text>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   )
 }

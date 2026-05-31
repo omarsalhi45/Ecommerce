@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -156,5 +156,37 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('Soft and structured')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recommended pieces' })).toBeInTheDocument()
     expect(screen.getByText('Zip Layer Hoodie')).toBeInTheDocument()
+  })
+
+  it('requires a variant choice before adding a detailed product to the cart', () => {
+    mockUseGetProductQuery.mockReturnValue({
+      data: currentProduct,
+      error: undefined,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as ReturnType<typeof useGetProductQuery>)
+    mockUseGetProductsQuery.mockReturnValue(
+      createProductsQueryResult([currentProduct, relatedProduct])
+    )
+
+    const { store } = renderProductDetail()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add to cart' })[0])
+
+    expect(screen.getByText('Choose your option first')).toBeInTheDocument()
+    expect(store.getState().cart.items).toEqual([])
+
+    fireEvent.click(screen.getByRole('button', { name: /M \/ Black/ }))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add to cart' })[0])
+
+    expect(store.getState().cart.items).toEqual([
+      {
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-m',
+        size: 'M',
+        color: 'Black',
+        quantity: 1,
+      },
+    ])
   })
 })

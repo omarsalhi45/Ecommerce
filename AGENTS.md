@@ -208,12 +208,12 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 ### Phase 9.5: Storefront Conversion & Trust Upgrade
 
 - [ ] Upgrade product detail media with an image gallery, thumbnails, alternate images, and optional short product video support.
-- [ ] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
+- [x] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
 - [ ] Add color swatches and size buttons that update selected variant state and stock messaging.
-- [ ] Add a size guide modal for apparel measurements and fit guidance.
+- [x] Add a size guide modal for apparel measurements and fit guidance.
 - [ ] Add fit confidence details such as model height, model size, garment fit, material, and care instructions.
-- [ ] Add shipping, delivery estimate, returns, and support information near the product detail buy buttons.
-- [ ] Add a sticky mobile add-to-cart bar on product detail pages.
+- [x] Add shipping, delivery estimate, returns, and support information near the product detail buy buttons.
+- [x] Add a sticky mobile add-to-cart bar on product detail pages.
 - [ ] Add "Complete the fit" product recommendations for outfit-style cross-sells.
 - [ ] Upgrade product cards with quick-add size selection.
 - [ ] Add product badges such as New, Best seller, Low stock, Sale, and Back soon.
@@ -221,7 +221,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Display rating stars and review counts more visually on product cards.
 - [ ] Display available color swatches on product cards.
 - [ ] Improve wishlist affordance so saved state is clearer than a plain star icon.
-- [ ] Add honest inventory urgency such as "Only 3 left in M" when stock is genuinely low.
+- [x] Add honest inventory urgency such as "Only 3 left in M" when stock is genuinely low.
 - [ ] Add back-in-stock email capture for sold-out variants.
 - [ ] Add waitlist support for sold-out products or variants.
 - [ ] Add fit feedback from reviews such as runs small, true to size, oversized, or roomy.
@@ -233,7 +233,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add applied filter chips and visible product result counts.
 - [ ] Add search suggestions, autocomplete, typo-tolerant matching, and useful no-results recommendations.
 - [ ] Add a cart drawer or mini-cart response after adding a product.
-- [ ] Add free-shipping threshold messaging in cart and mini-cart.
+- [x] Add free-shipping threshold messaging in cart.
+- [ ] Add free-shipping threshold messaging in mini-cart once the cart drawer exists.
 - [ ] Add promo code UI and backend discount validation.
 - [ ] Add save-for-later cart actions using wishlist or a dedicated saved-items list.
 - [ ] Add cart-level product recommendations and add-on suggestions.
@@ -247,7 +248,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add customer order history for signed-in users.
 - [ ] Add public order tracking page for order status and shipping updates.
 - [ ] Add customer return request flow for eligible orders.
-- [ ] Add or improve tests for product detail variant selection, sticky add-to-cart, filters, cart drawer, discounts, and checkout steps.
+- [x] Add tests for product detail variant selection before add-to-cart.
+- [ ] Add or improve tests for sticky add-to-cart, filters, cart drawer, discounts, and checkout steps.
 
 ### Phase 10: OAuth & Social Features (Future)
 

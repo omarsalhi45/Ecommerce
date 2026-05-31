@@ -23,6 +23,44 @@ describe('cartSlice', () => {
     expect(secondState.items).toEqual([{ productId: 'shirt-001', quantity: 2 }])
   })
 
+  it('keeps different product variants as separate cart lines', () => {
+    const mediumState = cartReducer(
+      undefined,
+      addItem({
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-m',
+        size: 'M',
+        color: 'Black',
+      })
+    )
+    const largeState = cartReducer(
+      mediumState,
+      addItem({
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-l',
+        size: 'L',
+        color: 'Black',
+      })
+    )
+
+    expect(largeState.items).toEqual([
+      {
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-m',
+        size: 'M',
+        color: 'Black',
+        quantity: 1,
+      },
+      {
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-l',
+        size: 'L',
+        color: 'Black',
+        quantity: 1,
+      },
+    ])
+  })
+
   it('decrements an item and removes it when quantity reaches zero', () => {
     const addedState = cartReducer(undefined, addItem({ productId: 'shirt-001' }))
     const removedState = cartReducer(addedState, decrementItem({ productId: 'shirt-001' }))
@@ -77,9 +115,9 @@ describe('cartSlice', () => {
 
     expect(summary).toEqual({
       subtotal: 119.97,
-      shipping: 7.5,
+      shipping: 0,
       tax: 9.6,
-      total: 137.07,
+      total: 129.57,
     })
   })
 })

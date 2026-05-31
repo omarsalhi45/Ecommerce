@@ -5,11 +5,17 @@ import type { CartSummary, Product } from '../types'
 export interface CartItem {
   productId: string
   quantity: number
+  variantSku?: string
+  size?: string
+  color?: string
 }
 
 interface CartState {
   items: CartItem[]
 }
+
+type CartItemIdentity = Pick<CartItem, 'productId' | 'variantSku'>
+type AddCartItemPayload = CartItemIdentity & Pick<CartItem, 'size' | 'color'>
 
 const initialState: CartState = {
   items: [],
@@ -17,19 +23,29 @@ const initialState: CartState = {
 
 const TAX_RATE = 0.08
 const SHIPPING_RATE = 7.5
+export const FREE_SHIPPING_THRESHOLD = 100
 
 const roundMoney = (value: number): number => Math.round(value * 100) / 100
+const sameCartLine = (item: CartItem, identity: CartItemIdentity) =>
+  item.productId === identity.productId && (item.variantSku ?? '') === (identity.variantSku ?? '')
+
+export const getCartLineKey = (item: CartItem): string =>
+  item.variantSku ? `${item.productId}:${item.variantSku}` : item.productId
 
 export const calculateCartSummary = (
   items: CartItem[],
   products: Product[],
-  rates = { shipping: SHIPPING_RATE, tax: TAX_RATE }
+  rates = {
+    freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+    shipping: SHIPPING_RATE,
+    tax: TAX_RATE,
+  }
 ): CartSummary => {
   const subtotal = items.reduce((total, item) => {
     const product = products.find((candidate) => candidate.id === item.productId)
     return total + (product?.price ?? 0) * item.quantity
   }, 0)
-  const shipping = subtotal > 0 ? rates.shipping : 0
+  const shipping = subtotal > 0 && subtotal < rates.freeShippingThreshold ? rates.shipping : 0
   const tax = roundMoney(subtotal * rates.tax)
 
   return {
@@ -44,23 +60,23 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addItem(state, action: PayloadAction<{ productId: string }>) {
-      const existing = state.items.find((item) => item.productId === action.payload.productId)
+    addItem(state, action: PayloadAction<AddCartItemPayload>) {
+      const existing = state.items.find((item) => sameCartLine(item, action.payload))
       if (existing) {
         existing.quantity += 1
       } else {
-        state.items.push({ productId: action.payload.productId, quantity: 1 })
+        state.items.push({ ...action.payload, quantity: 1 })
       }
     },
-    removeItem(state, action: PayloadAction<{ productId: string }>) {
-      state.items = state.items.filter((item) => item.productId !== action.payload.productId)
+    removeItem(state, action: PayloadAction<CartItemIdentity>) {
+      state.items = state.items.filter((item) => !sameCartLine(item, action.payload))
     },
-    decrementItem(state, action: PayloadAction<{ productId: string }>) {
-      const existing = state.items.find((item) => item.productId === action.payload.productId)
+    decrementItem(state, action: PayloadAction<CartItemIdentity>) {
+      const existing = state.items.find((item) => sameCartLine(item, action.payload))
       if (existing) {
         existing.quantity -= 1
         if (existing.quantity <= 0) {
-          state.items = state.items.filter((item) => item.productId !== action.payload.productId)
+          state.items = state.items.filter((item) => !sameCartLine(item, action.payload))
         }
       }
     },

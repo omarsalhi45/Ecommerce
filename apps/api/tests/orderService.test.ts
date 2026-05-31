@@ -19,9 +19,9 @@ describe('orderService', () => {
   it('calculates trusted checkout totals', () => {
     expect(calculateOrderTotals(100)).toEqual({
       subtotal: 100,
-      shipping: 7.5,
+      shipping: 0,
       tax: 8,
-      total: 115.5,
+      total: 108,
     })
   })
 
