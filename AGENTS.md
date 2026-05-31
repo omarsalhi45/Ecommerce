@@ -229,8 +229,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add a "Why this piece" or product comparison block that explains what makes the item different.
 - [ ] Add sale pricing with original price, discount amount, and sale badge support.
 - [ ] Add bundle offers such as hoodie plus tee discounts.
-- [ ] Add a filter drawer for category, size, color, price range, in-stock state, and rating.
-- [ ] Add applied filter chips and visible product result counts.
+- [x] Add a filter drawer for category, size, color, price range, in-stock state, and rating.
+- [x] Add applied filter chips and visible product result counts.
 - [ ] Add search suggestions, autocomplete, typo-tolerant matching, and useful no-results recommendations.
 - [x] Add a cart drawer or mini-cart response after adding a product.
 - [x] Add free-shipping threshold messaging in cart.
@@ -250,7 +250,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add customer return request flow for eligible orders.
 - [x] Add tests for product detail variant selection before add-to-cart.
 - [x] Add tests for product card quick-add variant selection.
-- [ ] Add or improve tests for sticky add-to-cart, filters, cart drawer, discounts, and checkout steps.
+- [x] Add tests for product discovery filters.
+- [ ] Add or improve tests for sticky add-to-cart, cart drawer, discounts, and checkout steps.
 
 ### Phase 10: OAuth & Social Features (Future)
 

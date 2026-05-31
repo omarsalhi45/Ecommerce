@@ -3,7 +3,16 @@ import {
   Badge,
   Box,
   Button,
+  Checkbox,
   Container,
+  Divider,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
   Flex,
   HStack,
   Heading,
@@ -16,15 +25,20 @@ import {
   Stack,
   Text,
   VStack,
+  useDisclosure,
 } from '@chakra-ui/react'
-import { useMemo, useState } from 'react'
+import { type Dispatch, type SetStateAction, useMemo, useState } from 'react'
 import { useGetProductsQuery, useGetRecommendationsQuery } from '../api/productsApi'
 import {
   ALL_CATEGORIES,
+  ALL_PRICES,
+  type ProductPriceRange,
   type ProductSort,
   applyProductDiscovery,
   formatCategoryLabel,
   getProductCategories,
+  getProductColors,
+  getProductSizes,
 } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 import { useTranslation } from '../i18n'
@@ -38,24 +52,118 @@ const sortOptions: { label: string; value: ProductSort }[] = [
   { label: 'Name', value: 'name' },
 ]
 
+const priceOptions: { label: string; value: ProductPriceRange }[] = [
+  { label: 'All prices', value: ALL_PRICES },
+  { label: 'Under $30', value: 'under-30' },
+  { label: '$30 to $60', value: '30-60' },
+  { label: '$60 to $90', value: '60-90' },
+  { label: '$90+', value: '90-plus' },
+]
+
+const ratingOptions = [
+  { label: 'Any rating', value: 0 },
+  { label: '4+ stars', value: 4 },
+  { label: '4.5+ stars', value: 4.5 },
+]
+
+interface AppliedFilter {
+  readonly key: string
+  readonly label: string
+  readonly onRemove: () => void
+}
+
 export default function HomePage() {
   const { t } = useTranslation()
   const { data, isLoading, error, refetch } = useGetProductsQuery()
   const { data: recommendations = [] } = useGetRecommendationsQuery(undefined)
+  const filterDrawer = useDisclosure()
   const [activeCategory, setActiveCategory] = useState(ALL_CATEGORIES)
   const [searchTerm, setSearchTerm] = useState('')
   const [sort, setSort] = useState<ProductSort>('featured')
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [priceRange, setPriceRange] = useState<ProductPriceRange>(ALL_PRICES)
+  const [inStockOnly, setInStockOnly] = useState(false)
+  const [minRating, setMinRating] = useState(0)
   const products = data ?? []
   const categories = useMemo(() => getProductCategories(products), [products])
+  const sizes = useMemo(() => getProductSizes(products), [products])
+  const colors = useMemo(() => getProductColors(products), [products])
   const visibleProducts = useMemo(
     () =>
       applyProductDiscovery(products, {
         category: activeCategory,
+        colors: selectedColors,
+        inStockOnly,
+        minRating,
+        priceRange,
         searchTerm,
+        sizes: selectedSizes,
         sort,
       }),
-    [activeCategory, products, searchTerm, sort]
+    [
+      activeCategory,
+      inStockOnly,
+      minRating,
+      priceRange,
+      products,
+      searchTerm,
+      selectedColors,
+      selectedSizes,
+      sort,
+    ]
   )
+  const appliedFilters: AppliedFilter[] = [
+    activeCategory !== ALL_CATEGORIES
+      ? {
+          key: 'category',
+          label: formatCategoryLabel(activeCategory),
+          onRemove: () => setActiveCategory(ALL_CATEGORIES),
+        }
+      : undefined,
+    searchTerm.trim()
+      ? { key: 'search', label: `Search: ${searchTerm.trim()}`, onRemove: () => setSearchTerm('') }
+      : undefined,
+    ...selectedSizes.map((size) => ({
+      key: `size-${size}`,
+      label: `Size ${size}`,
+      onRemove: () => setSelectedSizes((current) => current.filter((item) => item !== size)),
+    })),
+    ...selectedColors.map((color) => ({
+      key: `color-${color}`,
+      label: color,
+      onRemove: () => setSelectedColors((current) => current.filter((item) => item !== color)),
+    })),
+    priceRange !== ALL_PRICES
+      ? {
+          key: 'price',
+          label: priceOptions.find((option) => option.value === priceRange)?.label ?? 'Price',
+          onRemove: () => setPriceRange(ALL_PRICES),
+        }
+      : undefined,
+    inStockOnly
+      ? { key: 'stock', label: 'In stock', onRemove: () => setInStockOnly(false) }
+      : undefined,
+    minRating > 0
+      ? { key: 'rating', label: `${minRating}+ stars`, onRemove: () => setMinRating(0) }
+      : undefined,
+  ].filter((filter): filter is AppliedFilter => Boolean(filter))
+  const appliedFilterCount = appliedFilters.length
+  const clearFilters = () => {
+    setActiveCategory(ALL_CATEGORIES)
+    setSearchTerm('')
+    setSelectedSizes([])
+    setSelectedColors([])
+    setPriceRange(ALL_PRICES)
+    setInStockOnly(false)
+    setMinRating(0)
+    setSort('featured')
+  }
+  const toggleSelection = (value: string, setter: Dispatch<SetStateAction<string[]>>) => {
+    setter((current) =>
+      current.includes(value) ? current.filter((item) => item !== value) : [...current, value]
+    )
+  }
 
   if (isLoading) {
     return (
@@ -187,6 +295,7 @@ export default function HomePage() {
             gap={3}
             align={{ base: 'stretch', md: 'center' }}
             direction={{ base: 'column', md: 'row' }}
+            wrap="wrap"
           >
             <InputGroup maxW={{ base: 'full', md: 'md' }}>
               <InputLeftElement pointerEvents="none">
@@ -214,6 +323,28 @@ export default function HomePage() {
                 </option>
               ))}
             </Select>
+
+            <Button variant="outline" onClick={filterDrawer.onOpen}>
+              Filters{appliedFilterCount > 0 ? ` ${appliedFilterCount}` : ''}
+            </Button>
+          </Flex>
+
+          <Flex justify="space-between" align={{ base: 'start', md: 'center' }} gap={4} wrap="wrap">
+            <Text color="neutral.600" fontWeight="semibold">
+              Showing {visibleProducts.length} of {products.length} products
+            </Text>
+            {appliedFilterCount > 0 ? (
+              <HStack spacing={2} flexWrap="wrap">
+                {appliedFilters.map((filter) => (
+                  <Button key={filter.key} size="sm" variant="outline" onClick={filter.onRemove}>
+                    {filter.label} x
+                  </Button>
+                ))}
+                <Button size="sm" colorScheme="brand" onClick={clearFilters}>
+                  Clear all
+                </Button>
+              </HStack>
+            ) : null}
           </Flex>
 
           {products.length > 0 && visibleProducts.length > 0 ? (
@@ -227,9 +358,7 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setActiveCategory(ALL_CATEGORIES)
-                  setSearchTerm('')
-                  setSort('featured')
+                  clearFilters()
                 }}
               >
                 Clear filters
@@ -259,6 +388,110 @@ export default function HomePage() {
           </VStack>
         ) : null}
       </Container>
+
+      <Drawer isOpen={filterDrawer.isOpen} placement="right" onClose={filterDrawer.onClose}>
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>Filter collection</DrawerHeader>
+          <DrawerBody>
+            <Stack spacing={6}>
+              <Box>
+                <Text color="neutral.900" fontWeight="black" mb={3}>
+                  Size
+                </Text>
+                <SimpleGrid columns={4} spacing={2}>
+                  {sizes.map((size) => {
+                    const isSelected = selectedSizes.includes(size)
+
+                    return (
+                      <Button
+                        key={size}
+                        size="sm"
+                        variant={isSelected ? 'solid' : 'outline'}
+                        colorScheme={isSelected ? 'brand' : 'gray'}
+                        aria-label={`Filter size ${size}`}
+                        onClick={() => toggleSelection(size, setSelectedSizes)}
+                      >
+                        {size}
+                      </Button>
+                    )
+                  })}
+                </SimpleGrid>
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Text color="neutral.900" fontWeight="black" mb={3}>
+                  Color
+                </Text>
+                <Stack spacing={2}>
+                  {colors.map((color) => (
+                    <Checkbox
+                      key={color}
+                      isChecked={selectedColors.includes(color)}
+                      onChange={() => toggleSelection(color, setSelectedColors)}
+                    >
+                      {color}
+                    </Checkbox>
+                  ))}
+                </Stack>
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Text color="neutral.900" fontWeight="black" mb={3}>
+                  Price
+                </Text>
+                <Select
+                  value={priceRange}
+                  onChange={(event) => setPriceRange(event.target.value as ProductPriceRange)}
+                  bg="white"
+                  aria-label="Filter by price"
+                >
+                  {priceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Text color="neutral.900" fontWeight="black" mb={3}>
+                  Rating
+                </Text>
+                <Select
+                  value={minRating}
+                  onChange={(event) => setMinRating(Number(event.target.value))}
+                  bg="white"
+                  aria-label="Filter by rating"
+                >
+                  {ratingOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Box>
+
+              <Checkbox isChecked={inStockOnly} onChange={() => setInStockOnly((value) => !value)}>
+                In stock only
+              </Checkbox>
+            </Stack>
+          </DrawerBody>
+          <DrawerFooter borderTopWidth="1px">
+            <Button variant="outline" mr={3} onClick={clearFilters}>
+              Clear
+            </Button>
+            <Button colorScheme="brand" onClick={filterDrawer.onClose}>
+              Show {visibleProducts.length} products
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </Box>
   )
 }

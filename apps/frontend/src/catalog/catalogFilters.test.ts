@@ -5,6 +5,8 @@ import {
   applyProductDiscovery,
   formatCategoryLabel,
   getProductCategories,
+  getProductColors,
+  getProductSizes,
   getRelatedProducts,
 } from './catalogFilters'
 
@@ -17,6 +19,18 @@ const products: Product[] = [
     imageUrl: 'shirt.jpg',
     category: 'tees',
     popularityScore: 88,
+    ratingSummary: {
+      averageRating: 4.5,
+      reviewCount: 2,
+    },
+    variants: [
+      {
+        sku: 'shirt-001-black-m',
+        size: 'M',
+        color: 'Black',
+        stockQuantity: 8,
+      },
+    ],
   },
   {
     id: 'jacket-001',
@@ -26,6 +40,18 @@ const products: Product[] = [
     imageUrl: 'jacket.jpg',
     category: 'outerwear',
     popularityScore: 72,
+    ratingSummary: {
+      averageRating: 4,
+      reviewCount: 1,
+    },
+    variants: [
+      {
+        sku: 'jacket-001-black-l',
+        size: 'L',
+        color: 'Black',
+        stockQuantity: 0,
+      },
+    ],
   },
   {
     id: 'hoodie-001',
@@ -35,6 +61,18 @@ const products: Product[] = [
     imageUrl: 'hoodie.jpg',
     category: 'hoodies',
     popularityScore: 95,
+    ratingSummary: {
+      averageRating: 5,
+      reviewCount: 2,
+    },
+    variants: [
+      {
+        sku: 'hoodie-001-grey-m',
+        size: 'M',
+        color: 'Grey',
+        stockQuantity: 3,
+      },
+    ],
   },
 ]
 
@@ -45,6 +83,11 @@ describe('catalogFilters', () => {
 
   it('returns sorted unique categories', () => {
     expect(getProductCategories(products)).toEqual(['hoodies', 'outerwear', 'tees'])
+  })
+
+  it('returns sorted unique variant sizes and colors', () => {
+    expect(getProductSizes(products)).toEqual(['L', 'M'])
+    expect(getProductColors(products)).toEqual(['Black', 'Grey'])
   })
 
   it('filters products by category and search term', () => {
@@ -94,6 +137,21 @@ describe('catalogFilters', () => {
         sort: 'popular',
       }).map((product) => product.id)
     ).toEqual(['hoodie-001', 'shirt-001', 'jacket-001'])
+  })
+
+  it('filters products by variant, price, stock, and rating confidence', () => {
+    const visibleProducts = applyProductDiscovery(products, {
+      category: ALL_CATEGORIES,
+      searchTerm: '',
+      sort: 'featured',
+      sizes: ['M'],
+      colors: ['Grey'],
+      priceRange: '30-60',
+      inStockOnly: true,
+      minRating: 4.8,
+    })
+
+    expect(visibleProducts.map((product) => product.id)).toEqual(['hoodie-001'])
   })
 
   it('returns same-category related products first with fallback items', () => {
