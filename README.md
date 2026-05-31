@@ -218,6 +218,7 @@ Phase 4 uses plain SQL migration and seed files:
 - `apps/api/db/migrations/002_product_popularity_score.sql`
 - `apps/api/db/migrations/003_product_reviews.sql`
 - `apps/api/db/seeds/001_seed_products.sql`
+- `apps/api/db/seeds/002_expanded_catalog.sql`
 
 Apply them to your PostgreSQL database with your preferred SQL client before running the API with `DATABASE_URL`. Without `DATABASE_URL`, the API keeps using deterministic in-memory data so tests and local frontend work still run.
 

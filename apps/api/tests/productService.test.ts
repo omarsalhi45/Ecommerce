@@ -15,8 +15,10 @@ describe('productService', () => {
   it('returns the seeded product catalog', async () => {
     const products = await getAllProducts()
 
-    expect(products).toHaveLength(3)
-    expect(products.map((product) => product.id)).toEqual(['shirt-001', 'jacket-001', 'hoodie-001'])
+    expect(products).toHaveLength(20)
+    expect(products.map((product) => product.id)).toEqual(
+      expect.arrayContaining(['shirt-001', 'jacket-001', 'hoodie-001', 'pants-001', 'bag-001'])
+    )
   })
 
   it('finds a product by id', async () => {
@@ -63,7 +65,7 @@ describe('productService', () => {
     const recommendations = await getRecommendedProducts('hoodie-001', 2)
 
     expect(recommendations).toHaveLength(2)
-    expect(recommendations[0]?.id).toBe('shirt-001')
+    expect(recommendations[0]?.category).toBe('hoodies')
     expect(recommendations.map((product) => product.id)).not.toContain('hoodie-001')
   })
 })

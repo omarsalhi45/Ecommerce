@@ -222,7 +222,7 @@ describe('api app', () => {
     const body = await response.json()
 
     expect(response.status).toBe(200)
-    expect(body.products).toHaveLength(2)
+    expect(body.products).toHaveLength(4)
     expect(body.products.map((product: { id: string }) => product.id)).not.toContain('hoodie-001')
   })
 
