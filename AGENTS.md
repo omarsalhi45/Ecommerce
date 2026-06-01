@@ -211,7 +211,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
 - [x] Add color swatches and size buttons that update selected variant state and stock messaging.
 - [x] Add a size guide modal for apparel measurements and fit guidance.
-- [ ] Add fit confidence details such as model height, model size, garment fit, material, and care instructions.
+- [x] Add fit confidence details such as model height, model size, garment fit, material, and care instructions.
 - [x] Add shipping, delivery estimate, returns, and support information near the product detail buy buttons.
 - [x] Add a sticky mobile add-to-cart bar on product detail pages.
 - [ ] Add "Complete the fit" product recommendations for outfit-style cross-sells.
@@ -225,8 +225,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add back-in-stock email capture for sold-out variants.
 - [ ] Add waitlist support for sold-out products or variants.
 - [ ] Add fit feedback from reviews such as runs small, true to size, oversized, or roomy.
-- [ ] Add product Q&A for common shopper questions.
-- [ ] Add a "Why this piece" or product comparison block that explains what makes the item different.
+- [x] Add product Q&A for common shopper questions.
+- [x] Add a "Why this piece" or product comparison block that explains what makes the item different.
 - [ ] Add sale pricing with original price, discount amount, and sale badge support.
 - [ ] Add bundle offers such as hoodie plus tee discounts.
 - [x] Add a filter drawer for category, size, color, price range, in-stock state, and rating.
@@ -237,8 +237,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add free-shipping threshold messaging in mini-cart once the cart drawer exists.
 - [ ] Add promo code UI and backend discount validation.
 - [ ] Add save-for-later cart actions using wishlist or a dedicated saved-items list.
-- [ ] Add cart-level product recommendations and add-on suggestions.
-- [ ] Add delivery estimate and payment trust badges to cart.
+- [x] Add cart-level product recommendations and add-on suggestions.
+- [x] Add delivery estimate and payment trust badges to cart.
 - [ ] Upgrade checkout into a clearer step flow: Contact, Shipping, Payment, Review.
 - [ ] Add shipping method selection and final order review before payment.
 - [ ] Add stronger inline checkout validation and field-level error messages.

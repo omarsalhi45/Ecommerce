@@ -24,7 +24,7 @@ test('shopper can browse products, add to cart, and reach checkout', async ({ pa
 
   await miniCart.getByRole('link', { name: 'View cart' }).click()
 
-  await expect(page.getByRole('heading', { name: 'Cart' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Cart', exact: true })).toBeVisible()
   await expect(page.getByText('Everyday Weight Hoodie', { exact: true }).first()).toBeVisible()
   await expect(page.locator('main').getByText('Estimated total')).toBeVisible()
   await expect(page.locator('main').getByText('$72.29')).toBeVisible()

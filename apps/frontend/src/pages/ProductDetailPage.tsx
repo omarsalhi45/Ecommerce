@@ -46,7 +46,20 @@ import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
 import { selectIsWishlisted, toggleWishlistItem } from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import type { ProductVariant } from '../types'
+import type { Product, ProductVariant } from '../types'
+
+interface FitProfile {
+  readonly modelHeight: string
+  readonly modelSize: string
+  readonly fit: string
+  readonly material: string
+  readonly care: string
+}
+
+interface ProductQuestion {
+  readonly question: string
+  readonly answer: string
+}
 
 const isString = (value: string | undefined): value is string => Boolean(value)
 
@@ -83,6 +96,90 @@ const getColorSwatch = (color: string): string => {
   return '#D4D4D4'
 }
 
+const getFitProfile = (product: Product): FitProfile => {
+  const category = product.category.toLowerCase()
+
+  if (category.includes('jacket')) {
+    return {
+      modelHeight: '6 ft 1 in',
+      modelSize: 'L',
+      fit: 'Relaxed shell fit with room for a hoodie underneath.',
+      material: 'Lightweight woven nylon blend with a smooth lining.',
+      care: 'Machine wash cold, hang dry, avoid bleach.',
+    }
+  }
+
+  if (category.includes('tee')) {
+    return {
+      modelHeight: '5 ft 11 in',
+      modelSize: 'M',
+      fit: 'Boxy street fit with dropped shoulders.',
+      material: 'Heavy cotton jersey that keeps its shape.',
+      care: 'Wash inside out cold, tumble dry low.',
+    }
+  }
+
+  if (category.includes('pant') || category.includes('cargo')) {
+    return {
+      modelHeight: '6 ft',
+      modelSize: 'M',
+      fit: 'Relaxed through the leg with easy movement.',
+      material: 'Structured cotton twill with light stretch.',
+      care: 'Machine wash cold, line dry for best shape.',
+    }
+  }
+
+  return {
+    modelHeight: '6 ft',
+    modelSize: 'M',
+    fit: 'Relaxed everyday fit, designed for layering.',
+    material: 'Soft midweight fleece with a brushed inside.',
+    care: 'Machine wash cold, tumble dry low.',
+  }
+}
+
+const getProductReasons = (product: Product): string[] => {
+  const reasons = ['Easy to style with the rest of the OSAI catalog']
+
+  if ((product.popularityScore ?? 0) >= 90) {
+    reasons.unshift('One of the most saved pieces in the current drop')
+  }
+
+  if ((product.ratingSummary?.averageRating ?? 0) >= 4.7) {
+    reasons.push('Strong shopper rating for comfort and shape')
+  }
+
+  if (
+    product.variants?.some((variant) => variant.stockQuantity > 0 && variant.stockQuantity <= 5)
+  ) {
+    reasons.push('Limited stock in select options')
+  }
+
+  return reasons.slice(0, 3)
+}
+
+const getProductQuestions = (product: Product): ProductQuestion[] => {
+  const category = product.category.toLowerCase()
+  const isOuterwear = category.includes('jacket')
+
+  return [
+    {
+      question: 'How does it fit?',
+      answer: isOuterwear
+        ? 'Roomy enough for a hoodie layer. Size down only if you want a sharper fit.'
+        : 'Relaxed without feeling oversized. Choose your usual size for the intended look.',
+    },
+    {
+      question: 'When will it arrive?',
+      answer: 'Orders usually ship in 2-4 business days with tracking after confirmation.',
+    },
+    {
+      question: 'Can I return it?',
+      answer: 'Yes. Unworn items can be returned within 30 days after delivery.',
+    },
+  ]
+}
+
 export default function ProductDetailPage() {
   const { productId = '' } = useParams()
   const dispatch = useAppDispatch()
@@ -112,6 +209,9 @@ export default function ProductDetailPage() {
     : product
       ? getRelatedProducts(products, product)
       : []
+  const fitProfile = product ? getFitProfile(product) : undefined
+  const productReasons = product ? getProductReasons(product) : []
+  const productQuestions = product ? getProductQuestions(product) : []
   const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
   const reviews = reviewsData?.reviews ?? []
   const isWishlisted = useAppSelector(selectIsWishlisted(productId))
@@ -446,23 +546,34 @@ export default function ProductDetailPage() {
 
             <Stack spacing={4}>
               <Text color="neutral.900" fontWeight="black">
-                Fit notes
+                Fit & fabric
               </Text>
-              <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={3}>
-                {['Relaxed shape', 'Layer-ready weight', 'Easy returns'].map((note) => (
-                  <Box
-                    key={note}
-                    border="1px solid"
-                    borderColor="neutral.200"
-                    borderRadius="lg"
-                    bg="white"
-                    px={4}
-                    py={3}
-                    fontWeight="semibold"
-                  >
-                    {note}
-                  </Box>
-                ))}
+              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                {fitProfile
+                  ? [
+                      ['Model', `${fitProfile.modelHeight}, wearing ${fitProfile.modelSize}`],
+                      ['Fit', fitProfile.fit],
+                      ['Material', fitProfile.material],
+                      ['Care', fitProfile.care],
+                    ].map(([title, body]) => (
+                      <Box
+                        key={title}
+                        border="1px solid"
+                        borderColor="neutral.200"
+                        borderRadius="lg"
+                        bg="white"
+                        px={4}
+                        py={3}
+                      >
+                        <Text color="neutral.900" fontWeight="black">
+                          {title}
+                        </Text>
+                        <Text color="neutral.600" fontSize="sm">
+                          {body}
+                        </Text>
+                      </Box>
+                    ))
+                  : null}
               </SimpleGrid>
             </Stack>
 
@@ -511,6 +622,67 @@ export default function ProductDetailPage() {
             </SimpleGrid>
           </Stack>
         </Grid>
+
+        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} mt={{ base: 12, md: 16 }}>
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="neutral.200"
+            borderRadius="lg"
+            p={{ base: 5, md: 6 }}
+          >
+            <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
+              Product notes
+            </Text>
+            <Heading as="h2" size="lg" color="neutral.900" mt={1} mb={4}>
+              Why this piece
+            </Heading>
+            <Stack spacing={3}>
+              {productReasons.map((reason) => (
+                <HStack key={reason} align="start" spacing={3}>
+                  <Box
+                    w={2}
+                    h={2}
+                    borderRadius="full"
+                    bg="accent.600"
+                    flexShrink={0}
+                    mt="0.55rem"
+                  />
+                  <Text color="neutral.700" fontWeight="semibold">
+                    {reason}
+                  </Text>
+                </HStack>
+              ))}
+            </Stack>
+          </Box>
+
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="neutral.200"
+            borderRadius="lg"
+            p={{ base: 5, md: 6 }}
+          >
+            <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
+              Quick answers
+            </Text>
+            <Heading as="h2" size="lg" color="neutral.900" mt={1} mb={4}>
+              Questions shoppers ask
+            </Heading>
+            <Stack spacing={4} divider={<Divider />}>
+              {productQuestions.map((item) => (
+                <Box key={item.question}>
+                  <Text color="neutral.900" fontWeight="black">
+                    {item.question}
+                  </Text>
+                  <Text color="neutral.600" fontSize="sm" mt={1}>
+                    {item.answer}
+                  </Text>
+                </Box>
+              ))}
+            </Stack>
+          </Box>
+        </SimpleGrid>
 
         {reviews.length > 0 && ratingSummary?.reviewCount ? (
           <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>

@@ -1,4 +1,5 @@
 import {
+  Badge,
   Box,
   Button,
   Container,
@@ -6,6 +7,7 @@ import {
   HStack,
   Heading,
   Image,
+  SimpleGrid,
   Stack,
   Text,
   VStack,
@@ -22,11 +24,23 @@ import {
   selectCartItems,
 } from '../slices/cartSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+import type { Product } from '../types'
+
+const getRecommendedCartProducts = (cartProductIds: string[], products: Product[]) =>
+  products
+    .filter((product) => !cartProductIds.includes(product.id))
+    .sort((first, second) => (second.popularityScore ?? 0) - (first.popularityScore ?? 0))
+    .slice(0, 3)
+
+const getDefaultVariant = (product: Product) =>
+  product.variants?.find((variant) => variant.stockQuantity > 0)
 
 export default function CartPage() {
   const dispatch = useAppDispatch()
   const cartItems = useAppSelector(selectCartItems)
   const { data: products = [] } = useGetProductsQuery()
+  const cartProductIds = cartItems.map((item) => item.productId)
+  const recommendedProducts = getRecommendedCartProducts(cartProductIds, products)
 
   const enrichedItems = cartItems.map((item) => ({
     ...item,
@@ -145,6 +159,82 @@ export default function CartPage() {
               </HStack>
             ))
           )}
+
+          {enrichedItems.length > 0 && recommendedProducts.length > 0 ? (
+            <Box
+              bg="white"
+              border="1px solid"
+              borderColor="neutral.200"
+              borderRadius="lg"
+              p={{ base: 4, md: 5 }}
+            >
+              <HStack justify="space-between" align="start" mb={4}>
+                <Box>
+                  <Text
+                    color="accent.600"
+                    fontSize="sm"
+                    fontWeight="black"
+                    textTransform="uppercase"
+                  >
+                    Add-on picks
+                  </Text>
+                  <Heading as="h2" size="md">
+                    Complete your cart
+                  </Heading>
+                </Box>
+                <Badge colorScheme="green" borderRadius="full" px={3} py={1}>
+                  Ships together
+                </Badge>
+              </HStack>
+              <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
+                {recommendedProducts.map((product) => {
+                  const variant = getDefaultVariant(product)
+
+                  return (
+                    <Box
+                      key={product.id}
+                      border="1px solid"
+                      borderColor="neutral.200"
+                      borderRadius="lg"
+                      overflow="hidden"
+                    >
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.name}
+                        aspectRatio="4 / 3"
+                        objectFit="cover"
+                        w="full"
+                      />
+                      <Stack spacing={2} p={3}>
+                        <Text fontWeight="black" noOfLines={1}>
+                          {product.name}
+                        </Text>
+                        <Text color="neutral.600" fontSize="sm">
+                          ${product.price.toFixed(2)}
+                        </Text>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            dispatch(
+                              addItem({
+                                productId: product.id,
+                                variantSku: variant?.sku,
+                                size: variant?.size,
+                                color: variant?.color,
+                              })
+                            )
+                          }
+                        >
+                          Add to cart
+                        </Button>
+                      </Stack>
+                    </Box>
+                  )
+                })}
+              </SimpleGrid>
+            </Box>
+          ) : null}
         </VStack>
 
         <Box
@@ -197,6 +287,29 @@ export default function CartPage() {
           <Text color="neutral.500" fontSize="sm" mb={4}>
             Final totals are recalculated by the API when the order is created.
           </Text>
+          <SimpleGrid columns={1} spacing={3} mb={5}>
+            {[
+              ['Delivery estimate', 'Arrives in 3-6 business days after shipping'],
+              ['Secure payment', 'Stripe handles encrypted card details'],
+              ['Returns clarity', '30-day returns on unworn items'],
+            ].map(([title, body]) => (
+              <Box
+                key={title}
+                border="1px solid"
+                borderColor="neutral.200"
+                borderRadius="lg"
+                bg="neutral.50"
+                p={3}
+              >
+                <Text color="neutral.900" fontWeight="black" fontSize="sm">
+                  {title}
+                </Text>
+                <Text color="neutral.600" fontSize="sm">
+                  {body}
+                </Text>
+              </Box>
+            ))}
+          </SimpleGrid>
           {cartItems.length === 0 ? (
             <Button colorScheme="brand" w="full" isDisabled>
               Checkout
