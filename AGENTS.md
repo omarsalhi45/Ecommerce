@@ -207,7 +207,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 
 ### Phase 9.5: Storefront Conversion & Trust Upgrade
 
-- [ ] Upgrade product detail media with an image gallery, thumbnails, alternate images, and optional short product video support.
+- [x] Upgrade product detail media with an image gallery, thumbnails, alternate images, and optional short product video support.
 - [x] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
 - [x] Add color swatches and size buttons that update selected variant state and stock messaging.
 - [x] Add a size guide modal for apparel measurements and fit guidance.

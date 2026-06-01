@@ -19,6 +19,8 @@ export interface Product {
   description: string
   price: number
   imageUrl: string
+  imageUrls?: string[]
+  videoUrl?: string
   category: string
   variants?: ProductVariant[]
   popularityScore?: number

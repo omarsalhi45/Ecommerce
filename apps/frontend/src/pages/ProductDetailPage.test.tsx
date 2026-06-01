@@ -34,6 +34,8 @@ const currentProduct: Product = {
   description: 'Soft fleece hoodie',
   price: 59.99,
   imageUrl: 'hoodie.jpg',
+  imageUrls: ['hoodie-side.jpg', 'hoodie-detail.jpg'],
+  videoUrl: 'hoodie-fit.mp4',
   category: 'hoodies',
   variants: [
     {
@@ -166,6 +168,20 @@ describe('ProductDetailPage', () => {
     renderProductDetail()
 
     expect(screen.getByRole('heading', { name: 'Everyday Weight Hoodie' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Everyday Weight Hoodie view 1' })).toHaveAttribute(
+      'src',
+      'hoodie.jpg'
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Show Everyday Weight Hoodie view 2' }))
+    expect(screen.getByRole('img', { name: 'Everyday Weight Hoodie view 2' })).toHaveAttribute(
+      'src',
+      'hoodie-side.jpg'
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Show Everyday Weight Hoodie video' }))
+    expect(screen.getByLabelText('Everyday Weight Hoodie video')).toHaveAttribute(
+      'src',
+      'hoodie-fit.mp4'
+    )
     expect(screen.getByText('Choose your option')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Select size M' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Select color Black' })).toBeInTheDocument()

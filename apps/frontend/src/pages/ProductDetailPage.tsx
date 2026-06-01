@@ -61,6 +61,12 @@ interface ProductQuestion {
   readonly answer: string
 }
 
+interface ProductMediaItem {
+  readonly type: 'image' | 'video'
+  readonly url: string
+  readonly label: string
+}
+
 const isString = (value: string | undefined): value is string => Boolean(value)
 
 const getUniqueVariantValues = (variants: ProductVariant[], key: 'size' | 'color') => [
@@ -69,6 +75,21 @@ const getUniqueVariantValues = (variants: ProductVariant[], key: 'size' | 'color
 
 const getVariantLabel = (variant: ProductVariant): string =>
   [variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku
+
+const getProductMedia = (product: Product): ProductMediaItem[] => {
+  const imageUrls = Array.from(new Set([product.imageUrl, ...(product.imageUrls ?? [])])).filter(
+    Boolean
+  )
+  const imageMedia = imageUrls.map((url, index) => ({
+    type: 'image' as const,
+    url,
+    label: `${product.name} view ${index + 1}`,
+  }))
+
+  return product.videoUrl
+    ? [...imageMedia, { type: 'video', url: product.videoUrl, label: `${product.name} video` }]
+    : imageMedia
+}
 
 const getColorSwatch = (color: string): string => {
   const normalizedColor = color.toLowerCase()
@@ -188,6 +209,7 @@ export default function ProductDetailPage() {
   const [selectedVariantSku, setSelectedVariantSku] = useState<string>()
   const [selectedSize, setSelectedSize] = useState<string>()
   const [selectedColor, setSelectedColor] = useState<string>()
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0)
   const {
     data: product,
     isLoading,
@@ -212,6 +234,8 @@ export default function ProductDetailPage() {
   const fitProfile = product ? getFitProfile(product) : undefined
   const productReasons = product ? getProductReasons(product) : []
   const productQuestions = product ? getProductQuestions(product) : []
+  const productMedia = product ? getProductMedia(product) : []
+  const selectedMedia = productMedia[Math.min(selectedMediaIndex, productMedia.length - 1)]
   const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
   const reviews = reviewsData?.reviews ?? []
   const isWishlisted = useAppSelector(selectIsWishlisted(productId))
@@ -364,21 +388,74 @@ export default function ProductDetailPage() {
         </Button>
 
         <Grid templateColumns={{ base: '1fr', lg: '1.05fr 0.95fr' }} gap={{ base: 8, lg: 12 }}>
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="neutral.200"
-            borderRadius="lg"
-            overflow="hidden"
-          >
-            <Image
-              src={product.imageUrl}
-              alt={product.name}
-              objectFit="cover"
-              w="full"
-              aspectRatio="4 / 5"
-            />
-          </Box>
+          <Stack spacing={3}>
+            <Box
+              bg="white"
+              border="1px solid"
+              borderColor="neutral.200"
+              borderRadius="lg"
+              overflow="hidden"
+            >
+              {selectedMedia?.type === 'video' ? (
+                <Box
+                  as="video"
+                  src={selectedMedia.url}
+                  aria-label={selectedMedia.label}
+                  controls
+                  muted
+                  playsInline
+                  w="full"
+                  aspectRatio="4 / 5"
+                  objectFit="cover"
+                  bg="black"
+                />
+              ) : (
+                <Image
+                  src={selectedMedia?.url ?? product.imageUrl}
+                  alt={selectedMedia?.label ?? product.name}
+                  objectFit="cover"
+                  w="full"
+                  aspectRatio="4 / 5"
+                />
+              )}
+            </Box>
+
+            {productMedia.length > 1 ? (
+              <SimpleGrid columns={{ base: 4, md: 5 }} spacing={3} aria-label="Product media">
+                {productMedia.map((media, index) => {
+                  const isSelected = index === selectedMediaIndex
+
+                  return (
+                    <Button
+                      key={`${media.type}-${media.url}`}
+                      aria-label={`Show ${media.label}`}
+                      aria-pressed={isSelected}
+                      h="auto"
+                      minH={20}
+                      overflow="hidden"
+                      p={0}
+                      border="2px solid"
+                      borderColor={isSelected ? 'neutral.900' : 'neutral.200'}
+                      borderRadius="md"
+                      bg="white"
+                      onClick={() => setSelectedMediaIndex(index)}
+                    >
+                      {media.type === 'image' ? (
+                        <Image src={media.url} alt="" objectFit="cover" w="full" aspectRatio="1" />
+                      ) : (
+                        <VStack spacing={1} color="neutral.900" px={2}>
+                          <Text fontWeight="black">Video</Text>
+                          <Text color="neutral.500" fontSize="xs">
+                            0:15
+                          </Text>
+                        </VStack>
+                      )}
+                    </Button>
+                  )
+                })}
+              </SimpleGrid>
+            ) : null}
+          </Stack>
 
           <Stack spacing={7} align="stretch">
             <Stack spacing={4}>
