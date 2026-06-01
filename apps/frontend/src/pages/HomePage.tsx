@@ -36,9 +36,11 @@ import {
   type ProductSort,
   applyProductDiscovery,
   formatCategoryLabel,
+  getNoResultsRecommendations,
   getProductCategories,
   getProductColors,
   getProductSizes,
+  getSearchSuggestions,
 } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 import { useTranslation } from '../i18n'
@@ -85,6 +87,7 @@ export default function HomePage() {
   const [priceRange, setPriceRange] = useState<ProductPriceRange>(ALL_PRICES)
   const [inStockOnly, setInStockOnly] = useState(false)
   const [minRating, setMinRating] = useState(0)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
   const products = data ?? []
   const categories = useMemo(() => getProductCategories(products), [products])
   const sizes = useMemo(() => getProductSizes(products), [products])
@@ -92,6 +95,34 @@ export default function HomePage() {
   const visibleProducts = useMemo(
     () =>
       applyProductDiscovery(products, {
+        category: activeCategory,
+        colors: selectedColors,
+        inStockOnly,
+        minRating,
+        priceRange,
+        searchTerm,
+        sizes: selectedSizes,
+        sort,
+      }),
+    [
+      activeCategory,
+      inStockOnly,
+      minRating,
+      priceRange,
+      products,
+      searchTerm,
+      selectedColors,
+      selectedSizes,
+      sort,
+    ]
+  )
+  const searchSuggestions = useMemo(
+    () => getSearchSuggestions(products, searchTerm),
+    [products, searchTerm]
+  )
+  const noResultsRecommendations = useMemo(
+    () =>
+      getNoResultsRecommendations(products, {
         category: activeCategory,
         colors: selectedColors,
         inStockOnly,
@@ -297,18 +328,56 @@ export default function HomePage() {
             direction={{ base: 'column', md: 'row' }}
             wrap="wrap"
           >
-            <InputGroup maxW={{ base: 'full', md: 'md' }}>
-              <InputLeftElement pointerEvents="none">
-                <SearchIcon color="neutral.500" />
-              </InputLeftElement>
-              <Input
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Search tees, jackets, hoodies"
-                aria-label="Search products"
-                bg="white"
-              />
-            </InputGroup>
+            <Box position="relative" w="full" maxW={{ base: 'full', md: 'md' }}>
+              <InputGroup>
+                <InputLeftElement pointerEvents="none">
+                  <SearchIcon color="neutral.500" />
+                </InputLeftElement>
+                <Input
+                  value={searchTerm}
+                  onBlur={() => setIsSearchFocused(false)}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  onFocus={() => setIsSearchFocused(true)}
+                  placeholder="Search tees, jackets, hoodies"
+                  aria-label="Search products"
+                  bg="white"
+                />
+              </InputGroup>
+
+              {isSearchFocused && searchSuggestions.length > 0 ? (
+                <Box
+                  bg="white"
+                  border="1px solid"
+                  borderColor="neutral.200"
+                  borderRadius="lg"
+                  boxShadow="lg"
+                  left={0}
+                  mt={2}
+                  p={2}
+                  position="absolute"
+                  right={0}
+                  zIndex={5}
+                >
+                  <Stack spacing={1}>
+                    {searchSuggestions.map((suggestion) => (
+                      <Button
+                        key={suggestion}
+                        justifyContent="flex-start"
+                        size="sm"
+                        variant="ghost"
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          setSearchTerm(suggestion)
+                          setIsSearchFocused(false)
+                        }}
+                      >
+                        {suggestion}
+                      </Button>
+                    ))}
+                  </Stack>
+                </Box>
+              ) : null}
+            </Box>
 
             <Select
               value={sort}
@@ -352,10 +421,23 @@ export default function HomePage() {
               <ProductList products={visibleProducts} />
             </SimpleGrid>
           ) : products.length > 0 ? (
-            <VStack py={16} border="1px solid" borderColor="neutral.200" borderRadius="lg">
-              <Text fontWeight="bold">No products match those filters.</Text>
-              <Text color="neutral.600">Try a different search or category.</Text>
+            <VStack
+              align="stretch"
+              py={10}
+              px={{ base: 4, md: 6 }}
+              border="1px solid"
+              borderColor="neutral.200"
+              borderRadius="lg"
+              bg="white"
+            >
+              <VStack spacing={3}>
+                <Text fontWeight="bold">No products match those filters.</Text>
+                <Text color="neutral.600" textAlign="center">
+                  Try a different search, clear a filter, or start from these popular pieces.
+                </Text>
+              </VStack>
               <Button
+                alignSelf="center"
                 variant="outline"
                 onClick={() => {
                   clearFilters()
@@ -363,6 +445,11 @@ export default function HomePage() {
               >
                 Clear filters
               </Button>
+              {noResultsRecommendations.length > 0 ? (
+                <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} pt={4}>
+                  <ProductList products={noResultsRecommendations} />
+                </SimpleGrid>
+              ) : null}
             </VStack>
           ) : (
             <VStack py={16} border="1px solid" borderColor="neutral.200" borderRadius="lg">

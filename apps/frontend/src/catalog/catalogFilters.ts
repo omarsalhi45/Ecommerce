@@ -30,6 +30,60 @@ export const getProductCategories = (products: Product[]): string[] => {
 }
 
 const isString = (value: string | undefined): value is string => Boolean(value)
+const normalizeSearchText = (value: string): string =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+
+const getSearchTokens = (product: Product): string[] => {
+  const variantText =
+    product.variants?.flatMap((variant) => [variant.size, variant.color]).filter(isString) ?? []
+  const searchableText = `${product.name} ${product.description} ${product.category} ${variantText.join(
+    ' '
+  )}`
+
+  return normalizeSearchText(searchableText).split(' ').filter(Boolean)
+}
+
+const getEditDistance = (first: string, second: string): number => {
+  const distances = Array.from({ length: first.length + 1 }, (_, row) =>
+    Array.from({ length: second.length + 1 }, (_, column) => (row === 0 ? column : row))
+  )
+
+  for (let row = 1; row <= first.length; row += 1) {
+    distances[row][0] = row
+  }
+
+  for (let row = 1; row <= first.length; row += 1) {
+    for (let column = 1; column <= second.length; column += 1) {
+      const cost = first[row - 1] === second[column - 1] ? 0 : 1
+      distances[row][column] = Math.min(
+        distances[row - 1][column] + 1,
+        distances[row][column - 1] + 1,
+        distances[row - 1][column - 1] + cost
+      )
+    }
+  }
+
+  return distances[first.length][second.length]
+}
+
+const getTypoTolerance = (queryToken: string): number => {
+  if (queryToken.length <= 3) {
+    return 0
+  }
+
+  return queryToken.length <= 6 ? 1 : 2
+}
+
+const tokenMatches = (queryToken: string, productToken: string): boolean => {
+  if (productToken.includes(queryToken)) {
+    return true
+  }
+
+  return getEditDistance(queryToken, productToken) <= getTypoTolerance(queryToken)
+}
 
 export const getProductSizes = (products: Product[]): string[] => {
   const sizes = products.flatMap(
@@ -50,8 +104,12 @@ const matchesSearch = (product: Product, normalizedSearch: string): boolean => {
     return true
   }
 
-  const searchableText = `${product.name} ${product.description} ${product.category}`.toLowerCase()
-  return searchableText.includes(normalizedSearch)
+  const tokens = getSearchTokens(product)
+  const queryTokens = normalizedSearch.split(' ').filter(Boolean)
+
+  return queryTokens.every((queryToken) =>
+    tokens.some((productToken) => tokenMatches(queryToken, productToken))
+  )
 }
 
 const matchesSelectedVariantField = (
@@ -135,4 +193,56 @@ export const getRelatedProducts = (products: Product[], product: Product, limit 
   )
 
   return [...sameCategory, ...fallback].slice(0, limit)
+}
+
+export const getSearchSuggestions = (
+  products: Product[],
+  searchTerm: string,
+  limit = 6
+): string[] => {
+  const normalizedSearch = normalizeSearchText(searchTerm)
+
+  if (normalizedSearch.length < 2) {
+    return []
+  }
+
+  const candidates = products.flatMap((product) => [
+    product.name,
+    formatCategoryLabel(product.category),
+    ...(product.variants?.map((variant) => variant.color).filter(isString) ?? []),
+  ])
+
+  return Array.from(new Set(candidates))
+    .filter((candidate) => {
+      const candidateTokens = normalizeSearchText(candidate).split(' ').filter(Boolean)
+      return normalizedSearch
+        .split(' ')
+        .filter(Boolean)
+        .every((queryToken) =>
+          candidateTokens.some((candidateToken) => tokenMatches(queryToken, candidateToken))
+        )
+    })
+    .slice(0, limit)
+}
+
+export const getNoResultsRecommendations = (
+  products: Product[],
+  filters: ProductDiscoveryFilters,
+  limit = 4
+): Product[] => {
+  const relaxedMatches = applyProductDiscovery(products, {
+    ...filters,
+    searchTerm: '',
+    sort: 'popular',
+  })
+
+  const source = relaxedMatches.length
+    ? relaxedMatches
+    : applyProductDiscovery(products, {
+        category: ALL_CATEGORIES,
+        searchTerm: '',
+        sort: 'popular',
+      })
+
+  return source.slice(0, limit)
 }

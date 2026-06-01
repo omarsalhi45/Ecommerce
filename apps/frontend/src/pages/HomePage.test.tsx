@@ -150,6 +150,31 @@ describe('HomePage', () => {
     expect(screen.getByRole('button', { name: 'Grey x' })).toBeInTheDocument()
   })
 
+  it('suggests search terms and tolerates small typos', () => {
+    mockUseGetProductsQuery.mockReturnValue({
+      data: products,
+      isLoading: false,
+      error: undefined,
+      refetch: vi.fn(),
+    } as ReturnType<typeof useGetProductsQuery>)
+
+    renderWithProviders(<HomePage />)
+
+    const searchInput = screen.getByRole('textbox', { name: 'Search products' })
+
+    fireEvent.focus(searchInput)
+    fireEvent.change(searchInput, { target: { value: 'hoo' } })
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Everyday Weight Hoodie' }))
+
+    expect(searchInput).toHaveValue('Everyday Weight Hoodie')
+
+    fireEvent.change(searchInput, { target: { value: 'hoddie' } })
+
+    expect(screen.getByText('Showing 1 of 2 products')).toBeInTheDocument()
+    expect(screen.getByText('Everyday Weight Hoodie')).toBeInTheDocument()
+    expect(screen.queryByText('Box Fit Street Tee')).not.toBeInTheDocument()
+  })
+
   it('renders recommendations when they load', () => {
     mockUseGetProductsQuery.mockReturnValue({
       data: products,

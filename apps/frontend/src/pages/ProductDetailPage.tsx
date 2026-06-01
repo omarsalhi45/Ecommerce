@@ -46,6 +46,42 @@ import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
 import { selectIsWishlisted, toggleWishlistItem } from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
+import type { ProductVariant } from '../types'
+
+const isString = (value: string | undefined): value is string => Boolean(value)
+
+const getUniqueVariantValues = (variants: ProductVariant[], key: 'size' | 'color') => [
+  ...new Set(variants.map((variant) => variant[key]).filter(isString)),
+]
+
+const getVariantLabel = (variant: ProductVariant): string =>
+  [variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku
+
+const getColorSwatch = (color: string): string => {
+  const normalizedColor = color.toLowerCase()
+
+  if (normalizedColor.includes('black')) {
+    return '#111111'
+  }
+
+  if (normalizedColor.includes('grey') || normalizedColor.includes('gray')) {
+    return '#9CA3AF'
+  }
+
+  if (normalizedColor.includes('white')) {
+    return '#FFFFFF'
+  }
+
+  if (normalizedColor.includes('blue')) {
+    return '#2563EB'
+  }
+
+  if (normalizedColor.includes('green')) {
+    return '#16A34A'
+  }
+
+  return '#D4D4D4'
+}
 
 export default function ProductDetailPage() {
   const { productId = '' } = useParams()
@@ -53,6 +89,8 @@ export default function ProductDetailPage() {
   const toast = useToast()
   const sizeGuide = useDisclosure()
   const [selectedVariantSku, setSelectedVariantSku] = useState<string>()
+  const [selectedSize, setSelectedSize] = useState<string>()
+  const [selectedColor, setSelectedColor] = useState<string>()
   const {
     data: product,
     isLoading,
@@ -78,11 +116,43 @@ export default function ProductDetailPage() {
   const reviews = reviewsData?.reviews ?? []
   const isWishlisted = useAppSelector(selectIsWishlisted(productId))
   const variants = product?.variants ?? []
+  const variantSizes = getUniqueVariantValues(variants, 'size')
+  const variantColors = getUniqueVariantValues(variants, 'color')
+  const hasSizeChoices = variantSizes.length > 0
+  const hasColorChoices = variantColors.length > 0
+  const hasStructuredChoices = hasSizeChoices || hasColorChoices
   const selectedVariant = variants.find((variant) => variant.sku === selectedVariantSku)
-  const selectedVariantLabel = selectedVariant
-    ? [selectedVariant.size, selectedVariant.color].filter(Boolean).join(' / ') ||
-      selectedVariant.sku
-    : undefined
+  const selectedVariantLabel = selectedVariant ? getVariantLabel(selectedVariant) : undefined
+  const variantStockMessage = selectedVariant
+    ? selectedVariant.stockQuantity <= 0
+      ? `${selectedVariantLabel} is sold out. Try another option.`
+      : selectedVariant.stockQuantity <= 5
+        ? `Only ${selectedVariant.stockQuantity} left in ${selectedVariantLabel}.`
+        : `${selectedVariant.stockQuantity} available in ${selectedVariantLabel}.`
+    : hasStructuredChoices
+      ? `Choose ${hasSizeChoices && hasColorChoices ? 'a size and color' : hasSizeChoices ? 'a size' : 'a color'} to check availability.`
+      : undefined
+
+  const findMatchingVariant = (nextSize = selectedSize, nextColor = selectedColor) => {
+    const matches = variants.filter((variant) => {
+      const sizeMatches = !hasSizeChoices || variant.size === nextSize
+      const colorMatches = !hasColorChoices || variant.color === nextColor
+
+      return sizeMatches && colorMatches
+    })
+
+    return matches.find((variant) => variant.stockQuantity > 0) ?? matches[0]
+  }
+
+  const handleSelectSize = (size: string) => {
+    setSelectedSize(size)
+    setSelectedVariantSku(findMatchingVariant(size, selectedColor)?.sku)
+  }
+
+  const handleSelectColor = (color: string) => {
+    setSelectedColor(color)
+    setSelectedVariantSku(findMatchingVariant(selectedSize, color)?.sku)
+  }
 
   const handleAddToCart = () => {
     if (!product) {
@@ -93,6 +163,18 @@ export default function ProductDetailPage() {
       toast({
         title: 'Choose your option first',
         description: 'Pick the size and color you want before adding this piece.',
+        status: 'warning',
+        duration: 2400,
+        isClosable: true,
+        position: 'bottom-right',
+      })
+      return
+    }
+
+    if (selectedVariant && selectedVariant.stockQuantity <= 0) {
+      toast({
+        title: 'That option is sold out',
+        description: 'Pick another size or color before adding this piece.',
         status: 'warning',
         duration: 2400,
         isClosable: true,
@@ -234,11 +316,11 @@ export default function ProductDetailPage() {
             <Divider />
 
             {product.variants?.length ? (
-              <Stack spacing={4}>
+              <Stack spacing={5}>
                 <HStack justify="space-between" align="center">
                   <Box>
                     <Text color="neutral.900" fontWeight="black">
-                      Choose size and color
+                      Choose your option
                     </Text>
                   </Box>
                   <Button
@@ -250,47 +332,113 @@ export default function ProductDetailPage() {
                     Size guide
                   </Button>
                 </HStack>
-                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
-                  {product.variants.map((variant) => (
-                    <Button
-                      key={variant.sku}
-                      type="button"
-                      variant="outline"
-                      isDisabled={variant.stockQuantity <= 0}
-                      onClick={() => setSelectedVariantSku(variant.sku)}
-                      h="auto"
-                      minH="82px"
-                      justifyContent="stretch"
-                      border="1px solid"
-                      borderColor={selectedVariantSku === variant.sku ? 'black' : 'neutral.200'}
-                      borderRadius="lg"
-                      bg={selectedVariantSku === variant.sku ? 'neutral.50' : 'white'}
-                      px={4}
-                      py={3}
-                      _hover={{ borderColor: variant.stockQuantity > 0 ? 'black' : 'neutral.200' }}
-                    >
-                      <HStack justify="space-between" align="start" w="full">
-                        <Box>
-                          <Text fontWeight="black" textAlign="left">
-                            {[variant.size, variant.color].filter(Boolean).join(' / ') ||
-                              'Standard'}
-                          </Text>
-                          <Text color="neutral.600" fontSize="sm">
-                            {variant.sku}
-                          </Text>
-                        </Box>
-                        <Badge colorScheme={variant.stockQuantity > 0 ? 'green' : 'red'}>
-                          {variant.stockQuantity > 0
-                            ? `${variant.stockQuantity} in stock`
-                            : 'Sold out'}
-                        </Badge>
-                      </HStack>
-                    </Button>
-                  ))}
-                </SimpleGrid>
-                {selectedVariant && selectedVariant.stockQuantity <= 5 ? (
-                  <Text color="orange.600" fontSize="sm" fontWeight="bold">
-                    Low stock in {selectedVariantLabel}.
+
+                {hasSizeChoices ? (
+                  <Box>
+                    <Text color="neutral.600" fontSize="sm" fontWeight="bold" mb={2}>
+                      Size
+                    </Text>
+                    <HStack spacing={2} flexWrap="wrap">
+                      {variantSizes.map((size) => {
+                        const hasStock = variants.some(
+                          (variant) => variant.size === size && variant.stockQuantity > 0
+                        )
+
+                        return (
+                          <Button
+                            key={size}
+                            type="button"
+                            aria-label={`Select size ${size}${hasStock ? '' : ' (sold out)'}`}
+                            aria-pressed={selectedSize === size}
+                            size="sm"
+                            variant={selectedSize === size ? 'solid' : 'outline'}
+                            colorScheme={selectedSize === size ? 'brand' : 'gray'}
+                            isDisabled={!hasStock}
+                            onClick={() => handleSelectSize(size)}
+                            minW="48px"
+                          >
+                            {size}
+                          </Button>
+                        )
+                      })}
+                    </HStack>
+                  </Box>
+                ) : null}
+
+                {hasColorChoices ? (
+                  <Box>
+                    <Text color="neutral.600" fontSize="sm" fontWeight="bold" mb={2}>
+                      Color
+                    </Text>
+                    <HStack spacing={2} flexWrap="wrap">
+                      {variantColors.map((color) => {
+                        const hasStock = variants.some(
+                          (variant) => variant.color === color && variant.stockQuantity > 0
+                        )
+
+                        return (
+                          <Button
+                            key={color}
+                            type="button"
+                            aria-label={`Select color ${color}${hasStock ? '' : ' (sold out)'}`}
+                            aria-pressed={selectedColor === color}
+                            size="sm"
+                            variant={selectedColor === color ? 'solid' : 'outline'}
+                            colorScheme={selectedColor === color ? 'brand' : 'gray'}
+                            isDisabled={!hasStock}
+                            onClick={() => handleSelectColor(color)}
+                            leftIcon={
+                              <Box
+                                as="span"
+                                w={3}
+                                h={3}
+                                borderRadius="full"
+                                border="1px solid"
+                                borderColor={
+                                  color.toLowerCase().includes('white')
+                                    ? 'neutral.300'
+                                    : 'transparent'
+                                }
+                                bg={getColorSwatch(color)}
+                              />
+                            }
+                          >
+                            {color}
+                          </Button>
+                        )
+                      })}
+                    </HStack>
+                  </Box>
+                ) : null}
+
+                {!hasStructuredChoices ? (
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                    {product.variants.map((variant) => (
+                      <Button
+                        key={variant.sku}
+                        type="button"
+                        variant={selectedVariantSku === variant.sku ? 'solid' : 'outline'}
+                        colorScheme={selectedVariantSku === variant.sku ? 'brand' : 'gray'}
+                        isDisabled={variant.stockQuantity <= 0}
+                        onClick={() => setSelectedVariantSku(variant.sku)}
+                      >
+                        {variant.stockQuantity > 0 ? 'Standard' : 'Sold out'}
+                      </Button>
+                    ))}
+                  </SimpleGrid>
+                ) : null}
+
+                {variantStockMessage ? (
+                  <Text
+                    color={
+                      selectedVariant && selectedVariant.stockQuantity <= 5
+                        ? 'orange.600'
+                        : 'neutral.600'
+                    }
+                    fontSize="sm"
+                    fontWeight="bold"
+                  >
+                    {variantStockMessage}
                   </Text>
                 ) : null}
               </Stack>

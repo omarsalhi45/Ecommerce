@@ -4,10 +4,12 @@ import {
   ALL_CATEGORIES,
   applyProductDiscovery,
   formatCategoryLabel,
+  getNoResultsRecommendations,
   getProductCategories,
   getProductColors,
   getProductSizes,
   getRelatedProducts,
+  getSearchSuggestions,
 } from './catalogFilters'
 
 const products: Product[] = [
@@ -111,6 +113,21 @@ describe('catalogFilters', () => {
     expect(products.map((product) => product.id)).toEqual(['shirt-001', 'jacket-001', 'hoodie-001'])
   })
 
+  it('matches small search typos against product text', () => {
+    const visibleProducts = applyProductDiscovery(products, {
+      category: ALL_CATEGORIES,
+      searchTerm: 'hoddie',
+      sort: 'featured',
+    })
+
+    expect(visibleProducts.map((product) => product.id)).toEqual(['hoodie-001'])
+  })
+
+  it('returns autocomplete suggestions from product names, categories, and colors', () => {
+    expect(getSearchSuggestions(products, 'hoo')).toEqual(['Everyday Weight Hoodie', 'Hoodies'])
+    expect(getSearchSuggestions(products, 'gre')).toEqual(['Grey'])
+  })
+
   it('sorts products by price and latest catalog position', () => {
     expect(
       applyProductDiscovery(products, {
@@ -172,5 +189,20 @@ describe('catalogFilters', () => {
     )
 
     expect(relatedProducts.map((product) => product.id)).toEqual(['tee-002', 'jacket-001'])
+  })
+
+  it('returns useful recommendations when current filters have no results', () => {
+    const recommendedProducts = getNoResultsRecommendations(products, {
+      category: ALL_CATEGORIES,
+      searchTerm: 'not-a-real-piece',
+      sort: 'featured',
+      priceRange: '90-plus',
+    })
+
+    expect(recommendedProducts.map((product) => product.id)).toEqual([
+      'hoodie-001',
+      'shirt-001',
+      'jacket-001',
+    ])
   })
 })

@@ -209,7 +209,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 
 - [ ] Upgrade product detail media with an image gallery, thumbnails, alternate images, and optional short product video support.
 - [x] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
-- [ ] Add color swatches and size buttons that update selected variant state and stock messaging.
+- [x] Add color swatches and size buttons that update selected variant state and stock messaging.
 - [x] Add a size guide modal for apparel measurements and fit guidance.
 - [ ] Add fit confidence details such as model height, model size, garment fit, material, and care instructions.
 - [x] Add shipping, delivery estimate, returns, and support information near the product detail buy buttons.
@@ -231,7 +231,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add bundle offers such as hoodie plus tee discounts.
 - [x] Add a filter drawer for category, size, color, price range, in-stock state, and rating.
 - [x] Add applied filter chips and visible product result counts.
-- [ ] Add search suggestions, autocomplete, typo-tolerant matching, and useful no-results recommendations.
+- [x] Add search suggestions, autocomplete, typo-tolerant matching, and useful no-results recommendations.
 - [x] Add a cart drawer or mini-cart response after adding a product.
 - [x] Add free-shipping threshold messaging in cart.
 - [x] Add free-shipping threshold messaging in mini-cart once the cart drawer exists.
@@ -251,6 +251,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add tests for product detail variant selection before add-to-cart.
 - [x] Add tests for product card quick-add variant selection.
 - [x] Add tests for product discovery filters.
+- [x] Add tests for search suggestions, typo-tolerant matching, and no-results recommendations.
 - [ ] Add or improve tests for sticky add-to-cart, cart drawer, discounts, and checkout steps.
 
 ### Phase 10: OAuth & Social Features (Future)

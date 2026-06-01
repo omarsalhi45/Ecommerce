@@ -42,6 +42,24 @@ const currentProduct: Product = {
       size: 'M',
       stockQuantity: 8,
     },
+    {
+      sku: 'hoodie-001-black-l',
+      color: 'Black',
+      size: 'L',
+      stockQuantity: 3,
+    },
+    {
+      sku: 'hoodie-001-grey-m',
+      color: 'Grey',
+      size: 'M',
+      stockQuantity: 6,
+    },
+    {
+      sku: 'hoodie-001-black-xl',
+      color: 'Black',
+      size: 'XL',
+      stockQuantity: 0,
+    },
   ],
   ratingSummary: {
     averageRating: 5,
@@ -148,9 +166,11 @@ describe('ProductDetailPage', () => {
     renderProductDetail()
 
     expect(screen.getByRole('heading', { name: 'Everyday Weight Hoodie' })).toBeInTheDocument()
-    expect(screen.getByText('hoodie-001-black-m')).toBeInTheDocument()
-    expect(screen.getByText('M / Black')).toBeInTheDocument()
-    expect(screen.getByText('8 in stock')).toBeInTheDocument()
+    expect(screen.getByText('Choose your option')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Select size M' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Select color Black' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Select size XL (sold out)' })).toBeDisabled()
+    expect(screen.getByText('Choose a size and color to check availability.')).toBeInTheDocument()
     expect(screen.getByText('5.0 / 5')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Reviews' })).toBeInTheDocument()
     expect(screen.getByText('Soft and structured')).toBeInTheDocument()
@@ -176,7 +196,9 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('Choose your option first')).toBeInTheDocument()
     expect(store.getState().cart.items).toEqual([])
 
-    fireEvent.click(screen.getByRole('button', { name: /M \/ Black/ }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select size M' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select color Black' }))
+    expect(screen.getByText('8 available in M / Black.')).toBeInTheDocument()
     fireEvent.click(screen.getAllByRole('button', { name: 'Add to cart' })[0])
 
     expect(store.getState().cart.items).toEqual([
@@ -188,5 +210,28 @@ describe('ProductDetailPage', () => {
         quantity: 1,
       },
     ])
+  })
+
+  it('updates product detail stock messaging when shoppers change size and color', () => {
+    mockUseGetProductQuery.mockReturnValue({
+      data: currentProduct,
+      error: undefined,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as ReturnType<typeof useGetProductQuery>)
+    mockUseGetProductsQuery.mockReturnValue(
+      createProductsQueryResult([currentProduct, relatedProduct])
+    )
+
+    renderProductDetail()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select color Black' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select size L' }))
+
+    expect(screen.getByText('Only 3 left in L / Black.')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select color Grey' }))
+
+    expect(screen.getByText('Choose a size and color to check availability.')).toBeInTheDocument()
   })
 })
