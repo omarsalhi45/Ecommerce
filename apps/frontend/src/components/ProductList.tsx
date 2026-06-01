@@ -1,16 +1,5 @@
 import { StarIcon } from '@chakra-ui/icons'
-import {
-  Badge,
-  Box,
-  Button,
-  HStack,
-  IconButton,
-  Image,
-  Stack,
-  Text,
-  VStack,
-  useToast,
-} from '@chakra-ui/react'
+import { Badge, Box, Button, HStack, Image, Stack, Text, VStack, useToast } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { addItem } from '../slices/cartSlice'
@@ -84,6 +73,7 @@ export default function ProductList({ products }: { products: Product[] }) {
           product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
         const selectedVariant = getSelectedVariant(product, selectedVariantByProductId[product.id])
         const addLabel = inStockVariants.length > 1 && !selectedVariant ? 'Pick size' : 'Add'
+        const isWishlisted = wishlistProductIds.includes(product.id)
 
         return (
           <Box
@@ -140,21 +130,30 @@ export default function ProductList({ products }: { products: Product[] }) {
                   </Badge>
                 ))}
               </VStack>
-              <IconButton
+              <Button
                 aria-label={
-                  wishlistProductIds.includes(product.id)
+                  isWishlisted
                     ? `Remove ${product.name} from wishlist`
                     : `Save ${product.name} to wishlist`
                 }
-                icon={<StarIcon />}
+                aria-pressed={isWishlisted}
+                leftIcon={<StarIcon color={isWishlisted ? 'yellow.300' : 'neutral.500'} />}
                 position="absolute"
                 top={3}
                 left={3}
                 borderRadius="full"
-                colorScheme={wishlistProductIds.includes(product.id) ? 'yellow' : 'gray'}
                 size="sm"
+                px={3}
+                bg={isWishlisted ? 'black' : 'white'}
+                color={isWishlisted ? 'white' : 'neutral.900'}
+                boxShadow="sm"
+                _hover={{
+                  bg: isWishlisted ? 'neutral.800' : 'neutral.50',
+                }}
                 onClick={() => handleToggleWishlist(product)}
-              />
+              >
+                {isWishlisted ? 'Saved' : 'Save'}
+              </Button>
             </Box>
 
             <VStack spacing={4} p={5} align="start">

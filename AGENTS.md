@@ -220,7 +220,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add product card hover support.
 - [x] Display rating stars and review counts more visually on product cards.
 - [x] Display available color swatches on product cards.
-- [ ] Improve wishlist affordance so saved state is clearer than a plain star icon.
+- [x] Improve wishlist affordance so saved state is clearer than a plain star icon.
 - [x] Add honest inventory urgency such as "Only 3 left in M" when stock is genuinely low.
 - [ ] Add back-in-stock email capture for sold-out variants.
 - [ ] Add waitlist support for sold-out products or variants.

@@ -56,4 +56,26 @@ describe('ProductList', () => {
     ])
     expect(store.getState().cartUi.isMiniCartOpen).toBe(true)
   })
+
+  it('makes wishlist saved state clear on product cards', () => {
+    const { store } = renderWithProviders(<ProductList products={[variantProduct]} />)
+    const saveButton = screen.getByRole('button', {
+      name: 'Save Everyday Weight Hoodie to wishlist',
+    })
+
+    expect(saveButton).toHaveTextContent('Save')
+    expect(saveButton).toHaveAttribute('aria-pressed', 'false')
+
+    fireEvent.click(saveButton)
+
+    expect(store.getState().wishlist.productIds).toEqual(['hoodie-001'])
+    expect(screen.getByText('Everyday Weight Hoodie saved')).toBeInTheDocument()
+
+    const savedButton = screen.getByRole('button', {
+      name: 'Remove Everyday Weight Hoodie from wishlist',
+    })
+
+    expect(savedButton).toHaveTextContent('Saved')
+    expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+  })
 })
