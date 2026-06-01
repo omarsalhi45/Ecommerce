@@ -239,11 +239,11 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add save-for-later cart actions using wishlist or a dedicated saved-items list.
 - [x] Add cart-level product recommendations and add-on suggestions.
 - [x] Add delivery estimate and payment trust badges to cart.
-- [ ] Upgrade checkout into a clearer step flow: Contact, Shipping, Payment, Review.
-- [ ] Add shipping method selection and final order review before payment.
-- [ ] Add stronger inline checkout validation and field-level error messages.
+- [x] Upgrade checkout into a clearer step flow: Contact, Shipping, Payment, Review.
+- [x] Add shipping method selection and final order review before payment.
+- [x] Add stronger inline checkout validation and field-level error messages.
 - [ ] Add express payment wallet support when Stripe configuration supports it.
-- [ ] Add checkout trust microcopy for secure payment, returns, support, and delivery.
+- [x] Add checkout trust microcopy for secure payment, returns, support, and delivery.
 - [ ] Add return cost clarity before checkout so shoppers know whether returns are free, paid, or conditional.
 - [ ] Add customer order history for signed-in users.
 - [ ] Add public order tracking page for order status and shipping updates.

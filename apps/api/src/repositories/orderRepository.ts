@@ -13,7 +13,7 @@ interface OrderRow {
   readonly shipping_line1: string
   readonly shipping_line2: string | null
   readonly shipping_city: string
-  readonly shipping_state: string
+  readonly shipping_state: string | null
   readonly shipping_postal_code: string
   readonly shipping_country: string
   readonly subtotal: string
@@ -53,7 +53,7 @@ const mapOrder = (row: OrderRow, items: OrderItem[]): Order => ({
     line1: row.shipping_line1,
     line2: row.shipping_line2 ?? undefined,
     city: row.shipping_city,
-    state: row.shipping_state,
+    state: row.shipping_state ?? undefined,
     postalCode: row.shipping_postal_code,
     country: row.shipping_country,
   },
@@ -116,7 +116,7 @@ export const insertOrderIntoDb = async (order: Order): Promise<Order> => {
         order.shippingAddress.line1,
         order.shippingAddress.line2,
         order.shippingAddress.city,
-        order.shippingAddress.state,
+        order.shippingAddress.state ?? null,
         order.shippingAddress.postalCode,
         order.shippingAddress.country,
         order.totals.subtotal,

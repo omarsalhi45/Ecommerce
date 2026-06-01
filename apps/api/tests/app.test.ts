@@ -155,7 +155,6 @@ describe('api app', () => {
         shippingAddress: {
           line1: '1 Main Street',
           city: 'Austin',
-          state: 'TX',
           postalCode: '78701',
           country: 'US',
         },

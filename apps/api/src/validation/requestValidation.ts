@@ -72,7 +72,7 @@ export const validateCheckoutRequest = (body: unknown): CreateOrderRequest => {
       line1: readRequiredString(body.shippingAddress.line1, 'Address line 1'),
       line2: readOptionalString(body.shippingAddress.line2),
       city: readRequiredString(body.shippingAddress.city, 'City'),
-      state: readRequiredString(body.shippingAddress.state, 'State'),
+      state: readOptionalString(body.shippingAddress.state),
       postalCode: readRequiredString(body.shippingAddress.postalCode, 'Postal code'),
       country: readRequiredString(body.shippingAddress.country, 'Country'),
     },

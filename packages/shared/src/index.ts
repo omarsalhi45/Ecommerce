@@ -21,7 +21,7 @@ export interface ShippingAddress {
   readonly line1: string
   readonly line2?: string
   readonly city: string
-  readonly state: string
+  readonly state?: string
   readonly postalCode: string
   readonly country: string
 }

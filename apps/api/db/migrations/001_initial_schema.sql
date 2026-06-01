@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping_line1 TEXT NOT NULL,
   shipping_line2 TEXT,
   shipping_city TEXT NOT NULL,
-  shipping_state TEXT NOT NULL,
+  shipping_state TEXT,
   shipping_postal_code TEXT NOT NULL,
   shipping_country TEXT NOT NULL,
   subtotal NUMERIC(10, 2) NOT NULL CHECK (subtotal >= 0),
