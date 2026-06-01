@@ -40,7 +40,11 @@ import {
   useGetProductsQuery,
   useGetRecommendationsQuery,
 } from '../api/productsApi'
-import { formatCategoryLabel, getRelatedProducts } from '../catalog/catalogFilters'
+import {
+  formatCategoryLabel,
+  getCompleteTheFitProducts,
+  getRelatedProducts,
+} from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
 import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
@@ -226,11 +230,11 @@ export default function ProductDetailPage() {
     skip: !productId,
   })
 
-  const relatedProducts = recommendations.length
-    ? recommendations
-    : product
-      ? getRelatedProducts(products, product)
-      : []
+  const completeTheFitProducts = product ? getCompleteTheFitProducts(products, product) : []
+  const completeTheFitProductIds = new Set(completeTheFitProducts.map((item) => item.id))
+  const relatedProducts = (
+    recommendations.length ? recommendations : product ? getRelatedProducts(products, product) : []
+  ).filter((item) => !completeTheFitProductIds.has(item.id))
   const fitProfile = product ? getFitProfile(product) : undefined
   const productReasons = product ? getProductReasons(product) : []
   const productQuestions = product ? getProductQuestions(product) : []
@@ -797,6 +801,25 @@ export default function ProductDetailPage() {
                   <Text color="neutral.700">{review.body}</Text>
                 </Box>
               ))}
+            </SimpleGrid>
+          </VStack>
+        ) : null}
+
+        {completeTheFitProducts.length > 0 ? (
+          <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
+            <Box>
+              <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
+                Outfit builder
+              </Text>
+              <Heading as="h2" size="xl" color="neutral.900">
+                Complete the fit
+              </Heading>
+              <Text color="neutral.600" mt={2}>
+                Add complementary pieces that balance the shape, layer, and color of this item.
+              </Text>
+            </Box>
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
+              <ProductList products={completeTheFitProducts} />
             </SimpleGrid>
           </VStack>
         ) : null}

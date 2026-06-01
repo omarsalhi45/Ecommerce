@@ -78,6 +78,16 @@ const relatedProduct: Product = {
   category: 'hoodies',
 }
 
+const outfitProduct: Product = {
+  id: 'bottom-001',
+  name: 'Relaxed Cargo Pant',
+  description: 'Roomy twill pants',
+  price: 69,
+  imageUrl: 'pants.jpg',
+  category: 'bottoms',
+  popularityScore: 83,
+}
+
 const createProductsQueryResult = (products: Product[]) =>
   ({
     data: products,
@@ -162,7 +172,7 @@ describe('ProductDetailPage', () => {
       refetch: vi.fn(),
     } as ReturnType<typeof useGetProductQuery>)
     mockUseGetProductsQuery.mockReturnValue(
-      createProductsQueryResult([currentProduct, relatedProduct])
+      createProductsQueryResult([currentProduct, relatedProduct, outfitProduct])
     )
 
     renderProductDetail()
@@ -197,6 +207,8 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('5.0 / 5')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Reviews' })).toBeInTheDocument()
     expect(screen.getByText('Soft and structured')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Complete the fit' })).toBeInTheDocument()
+    expect(screen.getByText('Relaxed Cargo Pant')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recommended pieces' })).toBeInTheDocument()
     expect(screen.getByText('Zip Layer Hoodie')).toBeInTheDocument()
   })
@@ -209,7 +221,7 @@ describe('ProductDetailPage', () => {
       refetch: vi.fn(),
     } as ReturnType<typeof useGetProductQuery>)
     mockUseGetProductsQuery.mockReturnValue(
-      createProductsQueryResult([currentProduct, relatedProduct])
+      createProductsQueryResult([currentProduct, relatedProduct, outfitProduct])
     )
 
     const { store } = renderProductDetail()
@@ -243,7 +255,7 @@ describe('ProductDetailPage', () => {
       refetch: vi.fn(),
     } as ReturnType<typeof useGetProductQuery>)
     mockUseGetProductsQuery.mockReturnValue(
-      createProductsQueryResult([currentProduct, relatedProduct])
+      createProductsQueryResult([currentProduct, relatedProduct, outfitProduct])
     )
 
     renderProductDetail()

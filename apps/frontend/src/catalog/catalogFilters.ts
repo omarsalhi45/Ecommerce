@@ -195,6 +195,48 @@ export const getRelatedProducts = (products: Product[], product: Product, limit 
   return [...sameCategory, ...fallback].slice(0, limit)
 }
 
+const getOutfitCategoryPriority = (category: string): string[] => {
+  const normalizedCategory = category.toLowerCase()
+
+  if (normalizedCategory.includes('bottom')) {
+    return ['tees', 'hoodies', 'outerwear', 'accessories']
+  }
+
+  if (normalizedCategory.includes('tee')) {
+    return ['bottoms', 'outerwear', 'hoodies', 'accessories']
+  }
+
+  if (normalizedCategory.includes('accessor')) {
+    return ['hoodies', 'tees', 'bottoms', 'outerwear']
+  }
+
+  return ['bottoms', 'tees', 'accessories', 'outerwear', 'hoodies']
+}
+
+export const getCompleteTheFitProducts = (
+  products: Product[],
+  product: Product,
+  limit = 3
+): Product[] => {
+  const priority = getOutfitCategoryPriority(product.category)
+
+  return products
+    .filter((candidate) => candidate.id !== product.id && candidate.category !== product.category)
+    .sort((first, second) => {
+      const firstPriority = priority.indexOf(first.category)
+      const secondPriority = priority.indexOf(second.category)
+      const normalizedFirstPriority = firstPriority === -1 ? priority.length : firstPriority
+      const normalizedSecondPriority = secondPriority === -1 ? priority.length : secondPriority
+
+      if (normalizedFirstPriority !== normalizedSecondPriority) {
+        return normalizedFirstPriority - normalizedSecondPriority
+      }
+
+      return (second.popularityScore ?? 0) - (first.popularityScore ?? 0)
+    })
+    .slice(0, limit)
+}
+
 export const getSearchSuggestions = (
   products: Product[],
   searchTerm: string,

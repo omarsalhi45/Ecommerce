@@ -35,7 +35,9 @@ test('shopper can browse products, add to cart, and reach checkout', async ({ pa
   await expect(page.getByText('Estimated total $72.29')).toBeVisible()
 })
 
-test('shopper can open product details with variants and related products', async ({ page }) => {
+test('shopper can open product details with variants and outfit recommendations', async ({
+  page,
+}) => {
   await mockProductApi(page)
 
   await page.goto(storefrontUrl)
@@ -55,5 +57,5 @@ test('shopper can open product details with variants and related products', asyn
   await expect(page.getByText('8 available in M / Black.')).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Reviews' })).toBeVisible()
   await expect(page.getByText('Soft and structured')).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Recommended pieces' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Complete the fit' })).toBeVisible()
 })

@@ -4,6 +4,7 @@ import {
   ALL_CATEGORIES,
   applyProductDiscovery,
   formatCategoryLabel,
+  getCompleteTheFitProducts,
   getNoResultsRecommendations,
   getProductCategories,
   getProductColors,
@@ -189,6 +190,40 @@ describe('catalogFilters', () => {
     )
 
     expect(relatedProducts.map((product) => product.id)).toEqual(['tee-002', 'jacket-001'])
+  })
+
+  it('returns outfit-style cross-sells from complementary categories', () => {
+    const completeTheFitProducts = getCompleteTheFitProducts(
+      [
+        ...products,
+        {
+          id: 'bottom-001',
+          name: 'Relaxed Cargo Pant',
+          description: 'Roomy twill pants',
+          price: 69,
+          imageUrl: 'pants.jpg',
+          category: 'bottoms',
+          popularityScore: 83,
+        },
+        {
+          id: 'cap-001',
+          name: 'Everyday Cap',
+          description: 'Low profile cap',
+          price: 24,
+          imageUrl: 'cap.jpg',
+          category: 'accessories',
+          popularityScore: 99,
+        },
+      ],
+      products[2],
+      3
+    )
+
+    expect(completeTheFitProducts.map((product) => product.id)).toEqual([
+      'bottom-001',
+      'shirt-001',
+      'cap-001',
+    ])
   })
 
   it('returns useful recommendations when current filters have no results', () => {
