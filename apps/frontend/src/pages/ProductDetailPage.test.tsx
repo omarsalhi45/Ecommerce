@@ -269,4 +269,28 @@ describe('ProductDetailPage', () => {
 
     expect(screen.getByText('Choose a size and color to check availability.')).toBeInTheDocument()
   })
+
+  it('lets shoppers join a waitlist for sold-out variants', () => {
+    mockUseGetProductQuery.mockReturnValue({
+      data: currentProduct,
+      error: undefined,
+      isLoading: false,
+      refetch: vi.fn(),
+    } as ReturnType<typeof useGetProductQuery>)
+    mockUseGetProductsQuery.mockReturnValue(
+      createProductsQueryResult([currentProduct, relatedProduct, outfitProduct])
+    )
+
+    renderProductDetail()
+
+    expect(screen.getByText('Sold out in your size?')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sold-out option')).toHaveValue('hoodie-001-black-xl')
+
+    fireEvent.change(screen.getByLabelText('Waitlist email'), {
+      target: { value: 'omar@example.com' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Join waitlist' }))
+
+    expect(screen.getByText("You're on the waitlist for XL / Black.")).toBeInTheDocument()
+  })
 })

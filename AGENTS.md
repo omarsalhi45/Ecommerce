@@ -222,8 +222,8 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Display available color swatches on product cards.
 - [x] Improve wishlist affordance so saved state is clearer than a plain star icon.
 - [x] Add honest inventory urgency such as "Only 3 left in M" when stock is genuinely low.
-- [ ] Add back-in-stock email capture for sold-out variants.
-- [ ] Add waitlist support for sold-out products or variants.
+- [x] Add back-in-stock email capture for sold-out variants.
+- [x] Add waitlist support for sold-out products or variants.
 - [ ] Add fit feedback from reviews such as runs small, true to size, oversized, or roomy.
 - [x] Add product Q&A for common shopper questions.
 - [x] Add a "Why this piece" or product comparison block that explains what makes the item different.

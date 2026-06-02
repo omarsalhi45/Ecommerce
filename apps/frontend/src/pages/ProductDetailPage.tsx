@@ -6,10 +6,13 @@ import {
   Container,
   Divider,
   Flex,
+  FormControl,
+  FormLabel,
   Grid,
   HStack,
   Heading,
   Image,
+  Input,
   Link,
   Modal,
   ModalBody,
@@ -17,6 +20,7 @@ import {
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Select,
   SimpleGrid,
   Skeleton,
   Stack,
@@ -32,7 +36,7 @@ import {
   useDisclosure,
   useToast,
 } from '@chakra-ui/react'
-import { useState } from 'react'
+import { type FormEvent, useState } from 'react'
 import { Link as RouterLink, useParams } from 'react-router-dom'
 import {
   useGetProductQuery,
@@ -79,6 +83,9 @@ const getUniqueVariantValues = (variants: ProductVariant[], key: 'size' | 'color
 
 const getVariantLabel = (variant: ProductVariant): string =>
   [variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku
+
+const getSoldOutVariants = (variants: ProductVariant[]): ProductVariant[] =>
+  variants.filter((variant) => variant.stockQuantity <= 0)
 
 const getProductMedia = (product: Product): ProductMediaItem[] => {
   const imageUrls = Array.from(new Set([product.imageUrl, ...(product.imageUrls ?? [])])).filter(
@@ -214,6 +221,9 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState<string>()
   const [selectedColor, setSelectedColor] = useState<string>()
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0)
+  const [waitlistEmail, setWaitlistEmail] = useState('')
+  const [selectedWaitlistVariantSku, setSelectedWaitlistVariantSku] = useState('')
+  const [joinedWaitlistLabel, setJoinedWaitlistLabel] = useState<string>()
   const {
     data: product,
     isLoading,
@@ -244,6 +254,11 @@ export default function ProductDetailPage() {
   const reviews = reviewsData?.reviews ?? []
   const isWishlisted = useAppSelector(selectIsWishlisted(productId))
   const variants = product?.variants ?? []
+  const soldOutVariants = getSoldOutVariants(variants)
+  const activeWaitlistVariantSku = selectedWaitlistVariantSku || soldOutVariants[0]?.sku || ''
+  const activeWaitlistVariant = soldOutVariants.find(
+    (variant) => variant.sku === activeWaitlistVariantSku
+  )
   const variantSizes = getUniqueVariantValues(variants, 'size')
   const variantColors = getUniqueVariantValues(variants, 'color')
   const hasSizeChoices = variantSizes.length > 0
@@ -342,6 +357,37 @@ export default function ProductDetailPage() {
       title: isWishlisted ? `${product.name} removed from wishlist` : `${product.name} saved`,
       status: isWishlisted ? 'info' : 'success',
       duration: 1800,
+      isClosable: true,
+      position: 'bottom-right',
+    })
+  }
+
+  const handleJoinWaitlist = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!activeWaitlistVariant) {
+      return
+    }
+
+    if (!waitlistEmail.trim()) {
+      toast({
+        title: 'Add your email first',
+        description: 'We need an email address for the restock alert.',
+        status: 'warning',
+        duration: 2200,
+        isClosable: true,
+        position: 'bottom-right',
+      })
+      return
+    }
+
+    const variantLabel = getVariantLabel(activeWaitlistVariant)
+    setJoinedWaitlistLabel(variantLabel)
+    toast({
+      title: `You're on the waitlist for ${variantLabel}`,
+      description: 'We will email you when this option comes back.',
+      status: 'success',
+      duration: 2400,
       isClosable: true,
       position: 'bottom-right',
     })
@@ -621,6 +667,63 @@ export default function ProductDetailPage() {
                   >
                     {variantStockMessage}
                   </Text>
+                ) : null}
+
+                {soldOutVariants.length > 0 ? (
+                  <Box
+                    as="form"
+                    onSubmit={handleJoinWaitlist}
+                    border="1px solid"
+                    borderColor="neutral.200"
+                    borderRadius="lg"
+                    bg="neutral.50"
+                    p={4}
+                  >
+                    <Stack spacing={3}>
+                      <Box>
+                        <Text color="neutral.900" fontWeight="black">
+                          Sold out in your size?
+                        </Text>
+                        <Text color="neutral.600" fontSize="sm">
+                          Join the waitlist and we will email you when that option returns.
+                        </Text>
+                      </Box>
+                      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                        <FormControl>
+                          <FormLabel>Sold-out option</FormLabel>
+                          <Select
+                            value={activeWaitlistVariantSku}
+                            onChange={(event) => setSelectedWaitlistVariantSku(event.target.value)}
+                          >
+                            {soldOutVariants.map((variant) => (
+                              <option key={variant.sku} value={variant.sku}>
+                                {getVariantLabel(variant)}
+                              </option>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <FormControl>
+                          <FormLabel>Waitlist email</FormLabel>
+                          <Input
+                            type="email"
+                            value={waitlistEmail}
+                            onChange={(event) => setWaitlistEmail(event.target.value)}
+                            placeholder="you@example.com"
+                          />
+                        </FormControl>
+                      </SimpleGrid>
+                      <Flex align={{ base: 'stretch', sm: 'center' }} gap={3} wrap="wrap">
+                        <Button type="submit" colorScheme="brand">
+                          Join waitlist
+                        </Button>
+                        {joinedWaitlistLabel ? (
+                          <Text color="green.700" fontSize="sm" fontWeight="bold">
+                            You're on the waitlist for {joinedWaitlistLabel}.
+                          </Text>
+                        ) : null}
+                      </Flex>
+                    </Stack>
+                  </Box>
                 ) : null}
               </Stack>
             ) : null}
