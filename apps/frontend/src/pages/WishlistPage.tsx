@@ -3,13 +3,17 @@ import { Box, Button, Container, Heading, SimpleGrid, Text, VStack } from '@chak
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
 import ProductList from '../components/ProductList'
+import { selectCartItems } from '../slices/cartSlice'
 import { selectWishlistProductIds } from '../slices/wishlistSlice'
 import { useAppSelector } from '../store/hooks'
 
 export default function WishlistPage() {
   const { data: products = [], isLoading } = useGetProductsQuery()
   const wishlistProductIds = useAppSelector(selectWishlistProductIds)
-  const wishlistProducts = products.filter((product) => wishlistProductIds.includes(product.id))
+  const cartProductIds = useAppSelector(selectCartItems).map((item) => item.productId)
+  const wishlistProducts = products.filter(
+    (product) => wishlistProductIds.includes(product.id) && !cartProductIds.includes(product.id)
+  )
 
   return (
     <Container maxW="7xl" py={{ base: 8, md: 12 }}>
@@ -19,7 +23,7 @@ export default function WishlistPage() {
             Saved pieces
           </Text>
           <Heading as="h1" size="2xl" color="neutral.900">
-            Wishlist
+            Saved for later
           </Heading>
         </Box>
 
@@ -44,7 +48,7 @@ export default function WishlistPage() {
               No saved pieces yet.
             </Heading>
             <Text color="neutral.600" textAlign="center">
-              Save products from the collection so you can come back to them quickly.
+              Save pieces from the collection or move them here from your cart.
             </Text>
             <Button as={RouterLink} to="/" leftIcon={<ArrowBackIcon />} colorScheme="brand">
               Back to shop

@@ -77,5 +77,19 @@ describe('ProductList', () => {
 
     expect(savedButton).toHaveTextContent('Saved')
     expect(savedButton).toHaveAttribute('aria-pressed', 'true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'L' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(store.getState().wishlist.productIds).toEqual([])
+    expect(store.getState().cart.items).toEqual([
+      {
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-l',
+        size: 'L',
+        color: 'Black',
+        quantity: 1,
+      },
+    ])
   })
 })

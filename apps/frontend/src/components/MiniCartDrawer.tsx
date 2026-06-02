@@ -13,20 +13,26 @@ import {
   Stack,
   Text,
   VStack,
+  useToast,
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
 import {
   FREE_SHIPPING_THRESHOLD,
+  addItem,
   calculateCartSummary,
+  decrementItem,
   getCartLineKey,
+  removeItem,
   selectCartItems,
 } from '../slices/cartSlice'
 import { closeMiniCart, selectIsMiniCartOpen } from '../slices/cartUiSlice'
+import { addWishlistItem } from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 export default function MiniCartDrawer() {
   const dispatch = useAppDispatch()
+  const toast = useToast()
   const isOpen = useAppSelector(selectIsMiniCartOpen)
   const cartItems = useAppSelector(selectCartItems)
   const { data: products = [] } = useGetProductsQuery()
@@ -40,6 +46,17 @@ export default function MiniCartDrawer() {
   }))
 
   const handleClose = () => dispatch(closeMiniCart())
+  const saveForLater = (item: (typeof enrichedItems)[number]) => {
+    dispatch(addWishlistItem({ productId: item.productId }))
+    dispatch(removeItem({ productId: item.productId, variantSku: item.variantSku }))
+    toast({
+      title: `${item.product?.name ?? 'Item'} saved for later`,
+      status: 'success',
+      duration: 1800,
+      isClosable: true,
+      position: 'bottom-right',
+    })
+  }
 
   return (
     <Drawer isOpen={isOpen} placement="right" onClose={handleClose} size="sm">
@@ -70,33 +87,89 @@ export default function MiniCartDrawer() {
 
             <VStack align="stretch" spacing={4}>
               {enrichedItems.map((item) => (
-                <HStack key={getCartLineKey(item)} align="center" spacing={3}>
-                  {item.product ? (
-                    <Image
-                      src={item.product.imageUrl}
-                      alt={item.product.name}
-                      boxSize="72px"
-                      objectFit="cover"
-                      borderRadius="md"
-                    />
-                  ) : null}
-                  <Box flex={1} minW={0}>
-                    <Text color="neutral.900" fontWeight="black" noOfLines={1}>
-                      {item.product?.name ?? item.productId}
-                    </Text>
-                    {[item.size, item.color].filter(Boolean).length > 0 ? (
-                      <Text color="neutral.500" fontSize="sm" fontWeight="semibold">
-                        {[item.size, item.color].filter(Boolean).join(' / ')}
-                      </Text>
+                <Stack
+                  key={getCartLineKey(item)}
+                  border="1px solid"
+                  borderColor="neutral.200"
+                  borderRadius="lg"
+                  p={3}
+                  spacing={3}
+                >
+                  <HStack align="center" spacing={3}>
+                    {item.product ? (
+                      <Image
+                        src={item.product.imageUrl}
+                        alt={item.product.name}
+                        boxSize="72px"
+                        objectFit="cover"
+                        borderRadius="md"
+                      />
                     ) : null}
-                    <Text color="neutral.600" fontSize="sm">
-                      Qty {item.quantity}
+                    <Box flex={1} minW={0}>
+                      <Text color="neutral.900" fontWeight="black" noOfLines={1}>
+                        {item.product?.name ?? item.productId}
+                      </Text>
+                      {[item.size, item.color].filter(Boolean).length > 0 ? (
+                        <Text color="neutral.500" fontSize="sm" fontWeight="semibold">
+                          {[item.size, item.color].filter(Boolean).join(' / ')}
+                        </Text>
+                      ) : null}
+                      <Text color="neutral.600" fontSize="sm">
+                        Qty {item.quantity}
+                      </Text>
+                    </Box>
+                    <Text color="neutral.900" fontWeight="black">
+                      ${((item.product?.price ?? 0) * item.quantity).toFixed(2)}
                     </Text>
-                  </Box>
-                  <Text color="neutral.900" fontWeight="black">
-                    ${((item.product?.price ?? 0) * item.quantity).toFixed(2)}
-                  </Text>
-                </HStack>
+                  </HStack>
+                  <HStack flexWrap="wrap" spacing={2}>
+                    <Button
+                      size="xs"
+                      onClick={() =>
+                        dispatch(
+                          decrementItem({
+                            productId: item.productId,
+                            variantSku: item.variantSku,
+                          })
+                        )
+                      }
+                    >
+                      -
+                    </Button>
+                    <Button
+                      size="xs"
+                      onClick={() =>
+                        dispatch(
+                          addItem({
+                            productId: item.productId,
+                            variantSku: item.variantSku,
+                            size: item.size,
+                            color: item.color,
+                          })
+                        )
+                      }
+                    >
+                      +
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      onClick={() =>
+                        dispatch(
+                          removeItem({
+                            productId: item.productId,
+                            variantSku: item.variantSku,
+                          })
+                        )
+                      }
+                    >
+                      Remove
+                    </Button>
+                    <Button size="xs" variant="outline" onClick={() => saveForLater(item)}>
+                      Save for later
+                    </Button>
+                  </HStack>
+                </Stack>
               ))}
             </VStack>
           </Stack>

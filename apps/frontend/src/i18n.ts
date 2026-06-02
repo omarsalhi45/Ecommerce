@@ -8,7 +8,7 @@ const dictionaries = {
   en: {
     'brand.tagline': 'Street-ready essentials',
     'nav.shop': 'Shop',
-    'nav.wishlist': 'Wishlist',
+    'nav.wishlist': 'Saved',
     'nav.cart': 'Cart',
     'nav.track': 'Track',
     'nav.checkout': 'Checkout',
@@ -24,7 +24,7 @@ const dictionaries = {
   fr: {
     'brand.tagline': 'Essentiels streetwear',
     'nav.shop': 'Boutique',
-    'nav.wishlist': 'Favoris',
+    'nav.wishlist': 'Sauvegardes',
     'nav.cart': 'Panier',
     'nav.track': 'Suivi',
     'nav.checkout': 'Paiement',

@@ -62,4 +62,65 @@ describe('MiniCartDrawer', () => {
 
     expect(store.getState().cartUi.isMiniCartOpen).toBe(false)
   })
+
+  it('lets shoppers edit drawer item quantities and remove items', () => {
+    mockUseGetProductsQuery.mockReturnValue({
+      data: products,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGetProductsQuery>)
+
+    const { store } = renderWithProviders(<MiniCartDrawer />)
+
+    act(() => {
+      store.dispatch(
+        addItem({
+          productId: 'hoodie-001',
+          variantSku: 'hoodie-001-black-m',
+          size: 'M',
+          color: 'Black',
+        })
+      )
+      store.dispatch(openMiniCart())
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: '+' }))
+
+    expect(store.getState().cart.items[0]?.quantity).toBe(2)
+    expect(screen.getByText('Qty 2')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '-' }))
+
+    expect(store.getState().cart.items[0]?.quantity).toBe(1)
+    expect(screen.getByText('Qty 1')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+
+    expect(store.getState().cart.items).toEqual([])
+  })
+
+  it('saves drawer items for later using the wishlist', () => {
+    mockUseGetProductsQuery.mockReturnValue({
+      data: products,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGetProductsQuery>)
+
+    const { store } = renderWithProviders(<MiniCartDrawer />)
+
+    act(() => {
+      store.dispatch(
+        addItem({
+          productId: 'hoodie-001',
+          variantSku: 'hoodie-001-black-m',
+          size: 'M',
+          color: 'Black',
+        })
+      )
+      store.dispatch(openMiniCart())
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save for later' }))
+
+    expect(store.getState().cart.items).toEqual([])
+    expect(store.getState().wishlist.productIds).toEqual(['hoodie-001'])
+  })
 })

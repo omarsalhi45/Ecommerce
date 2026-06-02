@@ -4,7 +4,11 @@ import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
-import { selectWishlistProductIds, toggleWishlistItem } from '../slices/wishlistSlice'
+import {
+  removeWishlistItem,
+  selectWishlistProductIds,
+  toggleWishlistItem,
+} from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Product, ProductVariant } from '../types'
 
@@ -40,6 +44,9 @@ export default function ProductList({ products }: { products: Product[] }) {
         color: selectedVariant?.color,
       })
     )
+    if (wishlistProductIds.includes(product.id)) {
+      dispatch(removeWishlistItem({ productId: product.id }))
+    }
     dispatch(openMiniCart())
     toast({
       title: `${product.name} added to cart`,

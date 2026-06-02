@@ -2,6 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useGetProductsQuery } from '../api/productsApi'
 import { addItem } from '../slices/cartSlice'
+import { addWishlistItem } from '../slices/wishlistSlice'
 import { renderWithProviders } from '../test/render'
 import type { Product } from '../types'
 import CartPage from './CartPage'
@@ -153,6 +154,35 @@ describe('CartPage', () => {
         variantSku: 'hoodie-001-black-m',
         size: 'M',
         color: 'Black',
+        quantity: 1,
+      },
+    ])
+  })
+
+  it('shows wishlisted products as saved for later in the cart', () => {
+    mockUseGetProductsQuery.mockReturnValue({
+      data: products,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGetProductsQuery>)
+
+    const { store } = renderWithProviders(<CartPage />)
+
+    act(() => {
+      store.dispatch(addWishlistItem({ productId: 'tee-001' }))
+    })
+
+    expect(screen.getByRole('heading', { name: 'Not ready today' })).toBeInTheDocument()
+    expect(screen.getByText('Box Fit Street Tee')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move to cart' }))
+
+    expect(store.getState().wishlist.productIds).toEqual([])
+    expect(store.getState().cart.items).toEqual([
+      {
+        productId: 'tee-001',
+        variantSku: 'tee-001-white-l',
+        size: 'L',
+        color: 'White',
         quantity: 1,
       },
     ])

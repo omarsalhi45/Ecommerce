@@ -3,15 +3,12 @@ import type { ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { type Language, useTranslation } from '../i18n'
 import { selectCurrentUser } from '../slices/authSlice'
-import { selectCartItemCount } from '../slices/cartSlice'
-import { selectWishlistCount } from '../slices/wishlistSlice'
+import { selectCartItemCount, selectCartItems } from '../slices/cartSlice'
+import { selectWishlistProductIds } from '../slices/wishlistSlice'
 import { useAppSelector } from '../store/hooks'
 import MiniCartDrawer from './MiniCartDrawer'
 
 const navItems = [
-  { labelKey: 'nav.shop', to: '/' },
-  { labelKey: 'nav.wishlist', to: '/wishlist' },
-  { labelKey: 'nav.cart', to: '/cart' },
   { labelKey: 'nav.track', to: '/track-order' },
   { labelKey: 'nav.checkout', to: '/checkout' },
 ] as const
@@ -19,7 +16,10 @@ const navItems = [
 export default function AppLayout({ children }: { children: ReactNode }) {
   const { language, setLanguage, t } = useTranslation()
   const cartItemCount = useAppSelector(selectCartItemCount)
-  const wishlistCount = useAppSelector(selectWishlistCount)
+  const cartProductIds = useAppSelector(selectCartItems).map((item) => item.productId)
+  const savedProductIds = useAppSelector(selectWishlistProductIds).filter(
+    (productId) => !cartProductIds.includes(productId)
+  )
   const currentUser = useAppSelector(selectCurrentUser)
 
   return (
@@ -93,9 +93,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               size="sm"
               borderRadius="full"
               display={{ base: 'none', lg: 'inline-flex' }}
+              data-testid="saved-count-link"
             >
               {t('nav.wishlist')}
-              {wishlistCount > 0 ? ` ${wishlistCount}` : ''}
+              {savedProductIds.length > 0 ? ` ${savedProductIds.length}` : ''}
             </Button>
 
             <Button
