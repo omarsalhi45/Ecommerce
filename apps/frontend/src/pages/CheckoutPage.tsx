@@ -324,7 +324,7 @@ export default function CheckoutPage() {
   }
 
   const buildCheckoutPayload = (): CreateOrderRequest => {
-    return {
+    const checkoutPayload: CreateOrderRequest = {
       customer: {
         email: formState.email,
         firstName: formState.firstName,
@@ -339,9 +339,10 @@ export default function CheckoutPage() {
         postalCode: formState.postalCode,
         country: formState.country,
       },
-      promoCode: appliedPromoCode,
       items: cartItems,
     }
+
+    return appliedPromoCode ? { ...checkoutPayload, promoCode: appliedPromoCode } : checkoutPayload
   }
 
   const handleReviewSubmit = async (event: FormEvent<HTMLFormElement>) => {

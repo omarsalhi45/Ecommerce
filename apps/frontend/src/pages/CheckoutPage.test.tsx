@@ -27,6 +27,14 @@ vi.mock('../api/productsApi', async () => {
   }
 })
 
+vi.mock('../config', () => ({
+  frontendConfig: {
+    apiBaseUrl: 'http://localhost:4000/api',
+    enableDebug: false,
+    stripePublishableKey: undefined,
+  },
+}))
+
 const mockUseCreateCheckoutPaymentIntentMutation = vi.mocked(useCreateCheckoutPaymentIntentMutation)
 const mockUseCreateOrderMutation = vi.mocked(useCreateOrderMutation)
 const mockUseGetProductsQuery = vi.mocked(useGetProductsQuery)
@@ -203,7 +211,7 @@ describe('CheckoutPage', () => {
   })
 
   it('applies promo codes and sends them with checkout payloads', () => {
-    const { createCheckoutPaymentIntent } = setupCheckoutMocks()
+    const { createOrder } = setupCheckoutMocks()
     const { store } = renderCheckout()
 
     act(() => {
@@ -227,9 +235,9 @@ describe('CheckoutPage', () => {
     fireEvent.change(screen.getByLabelText(/City/), { target: { value: 'Paris' } })
     fireEvent.change(screen.getByLabelText(/Postal code/), { target: { value: '75001' } })
     fireEvent.click(screen.getByRole('button', { name: 'Continue to review' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Continue to payment' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Place mocked order' }))
 
-    expect(createCheckoutPaymentIntent).toHaveBeenCalledWith(
+    expect(createOrder).toHaveBeenCalledWith(
       expect.objectContaining({
         promoCode: 'OSAI10',
       })
