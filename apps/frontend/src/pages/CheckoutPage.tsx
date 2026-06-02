@@ -863,7 +863,10 @@ export default function CheckoutPage() {
               <Stack spacing={3}>
                 {[
                   ['Secure payment', 'Encrypted payment handled by Stripe'],
-                  ['Returns', '30-day returns on unworn items'],
+                  [
+                    'Returns',
+                    'Exchanges are free. Refund returns deduct $6 unless the item is defective.',
+                  ],
                   ['Support', 'Email support after order confirmation'],
                 ].map(([title, body]) => (
                   <Box key={title}>

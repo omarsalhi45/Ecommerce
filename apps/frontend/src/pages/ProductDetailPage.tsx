@@ -782,7 +782,7 @@ export default function ProductDetailPage() {
             <SimpleGrid columns={{ base: 1, md: 4 }} spacing={3}>
               {[
                 ['Delivery', 'Ships in 2-4 business days'],
-                ['Returns', '30-day returns on unworn items'],
+                ['Returns', '30-day returns. Exchanges are free; refund returns deduct $6.'],
                 ['Checkout', 'Secure Stripe payment'],
                 ['Support', 'Help before and after your order'],
               ].map(([title, body]) => (
@@ -966,7 +966,12 @@ export default function ProductDetailPage() {
                 (variants.length > 0 ? 'Choose size and color' : product.name)}
             </Text>
           </Box>
-          <Button colorScheme="brand" onClick={handleAddToCart} minW="136px">
+          <Button
+            aria-label="Sticky add to cart"
+            colorScheme="brand"
+            onClick={handleAddToCart}
+            minW="136px"
+          >
             Add to cart
           </Button>
         </HStack>

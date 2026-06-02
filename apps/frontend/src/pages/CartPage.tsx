@@ -399,7 +399,10 @@ export default function CartPage() {
             {[
               ['Delivery estimate', 'Arrives in 3-6 business days after shipping'],
               ['Secure payment', 'Stripe handles encrypted card details'],
-              ['Returns clarity', '30-day returns on unworn items'],
+              [
+                'Returns clarity',
+                'Exchanges are free. Refund returns deduct $6 unless the item is defective.',
+              ],
             ].map(([title, body]) => (
               <Box
                 key={title}

@@ -244,15 +244,15 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add stronger inline checkout validation and field-level error messages.
 - [ ] Add express payment wallet support when Stripe configuration supports it.
 - [x] Add checkout trust microcopy for secure payment, returns, support, and delivery.
-- [ ] Add return cost clarity before checkout so shoppers know whether returns are free, paid, or conditional.
+- [x] Add return cost clarity before checkout so shoppers know whether returns are free, paid, or conditional.
 - [ ] Add customer order history for signed-in users.
-- [ ] Add public order tracking page for order status and shipping updates.
+- [x] Add public order tracking page for order status and shipping updates.
 - [ ] Add customer return request flow for eligible orders.
 - [x] Add tests for product detail variant selection before add-to-cart.
 - [x] Add tests for product card quick-add variant selection.
 - [x] Add tests for product discovery filters.
 - [x] Add tests for search suggestions, typo-tolerant matching, and no-results recommendations.
-- [ ] Add or improve tests for sticky add-to-cart, cart drawer, discounts, and checkout steps.
+- [x] Add or improve tests for sticky add-to-cart, cart drawer, discounts, and checkout steps.
 
 ### Phase 10: OAuth & Social Features (Future)
 

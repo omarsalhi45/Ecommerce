@@ -76,9 +76,16 @@ export default function OrderConfirmationPage() {
             <Text fontWeight="black">Total: ${order.totals.total.toFixed(2)}</Text>
           </Stack>
         )}
-        <Button as={RouterLink} to="/" colorScheme="brand">
-          Back to shop
-        </Button>
+        <HStack spacing={3}>
+          <Button as={RouterLink} to="/" colorScheme="brand">
+            Back to shop
+          </Button>
+          {order ? (
+            <Button as={RouterLink} to={`/track-order?orderId=${order.id}`} variant="outline">
+              Track order
+            </Button>
+          ) : null}
+        </HStack>
       </Box>
     </Container>
   )

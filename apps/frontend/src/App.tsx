@@ -7,6 +7,7 @@ import CheckoutPage from './pages/CheckoutPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import OrderConfirmationPage from './pages/OrderConfirmationPage'
+import OrderTrackingPage from './pages/OrderTrackingPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import ProfilePage from './pages/ProfilePage'
 import SignupPage from './pages/SignupPage'
@@ -24,6 +25,7 @@ function App() {
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/checkout/:checkoutStep" element={<CheckoutPage />} />
           <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+          <Route path="/track-order" element={<OrderTrackingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />

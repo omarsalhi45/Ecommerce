@@ -12,6 +12,7 @@ const navItems = [
   { labelKey: 'nav.shop', to: '/' },
   { labelKey: 'nav.wishlist', to: '/wishlist' },
   { labelKey: 'nav.cart', to: '/cart' },
+  { labelKey: 'nav.track', to: '/track-order' },
   { labelKey: 'nav.checkout', to: '/checkout' },
 ] as const
 

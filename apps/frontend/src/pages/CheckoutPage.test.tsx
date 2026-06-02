@@ -183,7 +183,9 @@ describe('CheckoutPage', () => {
     expect(screen.getByText('Qty 1 x $59.99')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Edit cart' })).toHaveAttribute('href', '/cart')
     expect(screen.getByText('Secure payment')).toBeInTheDocument()
-    expect(screen.getByText('30-day returns on unworn items')).toBeInTheDocument()
+    expect(
+      screen.getByText('Exchanges are free. Refund returns deduct $6 unless the item is defective.')
+    ).toBeInTheDocument()
   })
 
   it('lets shoppers continue when state or region is missing', () => {

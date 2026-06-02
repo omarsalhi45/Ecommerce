@@ -91,6 +91,9 @@ describe('CartPage', () => {
     expect(screen.getByText('Delivery estimate')).toBeInTheDocument()
     expect(screen.getByText('Secure payment')).toBeInTheDocument()
     expect(screen.getByText('Returns clarity')).toBeInTheDocument()
+    expect(
+      screen.getByText('Exchanges are free. Refund returns deduct $6 unless the item is defective.')
+    ).toBeInTheDocument()
 
     const recommendation = screen.getByText('Box Fit Street Tee').closest('div')
     fireEvent.click(

@@ -197,6 +197,7 @@ describe('ProductDetailPage', () => {
     expect(screen.getByRole('button', { name: 'Select color Black' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Select size XL (sold out)' })).toBeDisabled()
     expect(screen.getByText('Choose a size and color to check availability.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sticky add to cart' })).toBeInTheDocument()
     expect(screen.getByText('Fit & fabric')).toBeInTheDocument()
     expect(screen.getByText('6 ft, wearing M')).toBeInTheDocument()
     expect(screen.getByText('Soft midweight fleece with a brushed inside.')).toBeInTheDocument()
@@ -211,6 +212,9 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('Relaxed Cargo Pant')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Recommended pieces' })).toBeInTheDocument()
     expect(screen.getByText('Zip Layer Hoodie')).toBeInTheDocument()
+    expect(
+      screen.getByText('30-day returns. Exchanges are free; refund returns deduct $6.')
+    ).toBeInTheDocument()
   })
 
   it('requires a variant choice before adding a detailed product to the cart', () => {
