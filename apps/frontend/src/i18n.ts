@@ -8,6 +8,12 @@ type TranslationValues = Record<string, string | number | undefined>
 const dictionaries = {
   en: {
     'brand.tagline': 'Street-ready essentials',
+    'header.offerShipping': 'Free shipping over $100',
+    'header.offerReturns': '30-day returns',
+    'header.offerPayment': 'Secure Stripe checkout',
+    'header.mainNavigation': 'Main navigation',
+    'header.actions': 'Account and cart actions',
+    'header.savedCount': '{label} {count}',
     'common.add': 'Add',
     'common.apply': 'Apply',
     'common.back': 'Back',
@@ -371,6 +377,12 @@ const dictionaries = {
   },
   fr: {
     'brand.tagline': 'Essentiels streetwear',
+    'header.offerShipping': 'Livraison offerte des 100 $',
+    'header.offerReturns': 'Retours 30 jours',
+    'header.offerPayment': 'Paiement Stripe securise',
+    'header.mainNavigation': 'Navigation principale',
+    'header.actions': 'Actions compte et panier',
+    'header.savedCount': '{label} {count}',
     'common.add': 'Ajouter',
     'common.apply': 'Appliquer',
     'common.back': 'Retour',
