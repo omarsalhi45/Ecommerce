@@ -3,11 +3,13 @@ import { Box, Button, Container, Heading, SimpleGrid, Text, VStack } from '@chak
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
 import ProductList from '../components/ProductList'
+import { useTranslation } from '../i18n'
 import { selectCartItems } from '../slices/cartSlice'
 import { selectWishlistProductIds } from '../slices/wishlistSlice'
 import { useAppSelector } from '../store/hooks'
 
 export default function WishlistPage() {
+  const { t } = useTranslation()
   const { data: products = [], isLoading } = useGetProductsQuery()
   const wishlistProductIds = useAppSelector(selectWishlistProductIds)
   const cartProductIds = useAppSelector(selectCartItems).map((item) => item.productId)
@@ -20,15 +22,15 @@ export default function WishlistPage() {
       <VStack align="stretch" spacing={8}>
         <Box>
           <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-            Saved pieces
+            {t('wishlist.eyebrow')}
           </Text>
           <Heading as="h1" size="2xl" color="neutral.900">
-            Saved for later
+            {t('wishlist.title')}
           </Heading>
         </Box>
 
         {isLoading ? (
-          <Text color="neutral.600">Loading wishlist...</Text>
+          <Text color="neutral.600">{t('wishlist.loading')}</Text>
         ) : wishlistProducts.length > 0 ? (
           <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
             <ProductList products={wishlistProducts} />
@@ -45,13 +47,13 @@ export default function WishlistPage() {
             spacing={4}
           >
             <Heading as="h2" size="md">
-              No saved pieces yet.
+              {t('wishlist.emptyTitle')}
             </Heading>
             <Text color="neutral.600" textAlign="center">
-              Save pieces from the collection or move them here from your cart.
+              {t('wishlist.emptyCopy')}
             </Text>
             <Button as={RouterLink} to="/" leftIcon={<ArrowBackIcon />} colorScheme="brand">
-              Back to shop
+              {t('common.backToShop')}
             </Button>
           </VStack>
         )}

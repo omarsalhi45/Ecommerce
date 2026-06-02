@@ -15,10 +15,12 @@ import {
 import { type FormEvent, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { useLoginMutation } from '../api/authApi'
+import { useTranslation } from '../i18n'
 import { setCredentials } from '../slices/authSlice'
 import { useAppDispatch } from '../store/hooks'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [login, { isLoading }] = useLoginMutation()
@@ -35,7 +37,7 @@ export default function LoginPage() {
       dispatch(setCredentials(authResponse))
       navigate('/profile')
     } catch {
-      setErrorMessage('Login failed. Check your email and password.')
+      setErrorMessage(t('auth.loginError'))
     }
   }
 
@@ -46,9 +48,9 @@ export default function LoginPage() {
           <Stack spacing={5}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Account
+                {t('auth.account')}
               </Text>
-              <Heading>Log in</Heading>
+              <Heading>{t('auth.loginTitle')}</Heading>
             </Box>
             {errorMessage ? (
               <Alert status="error" borderRadius="md">
@@ -57,7 +59,7 @@ export default function LoginPage() {
               </Alert>
             ) : null}
             <FormControl isRequired>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t('common.email')}</FormLabel>
               <Input
                 type="email"
                 value={email}
@@ -65,7 +67,7 @@ export default function LoginPage() {
               />
             </FormControl>
             <FormControl isRequired>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{t('common.password')}</FormLabel>
               <Input
                 type="password"
                 value={password}
@@ -73,12 +75,12 @@ export default function LoginPage() {
               />
             </FormControl>
             <Button type="submit" colorScheme="brand" isLoading={isLoading}>
-              Log in
+              {t('auth.loginTitle')}
             </Button>
             <Text color="neutral.600">
-              New here?{' '}
+              {t('auth.newHere')}{' '}
               <Link as={RouterLink} to="/signup" color="accent.600" fontWeight="bold">
-                Create an account
+                {t('auth.createAccount')}
               </Link>
             </Text>
           </Stack>

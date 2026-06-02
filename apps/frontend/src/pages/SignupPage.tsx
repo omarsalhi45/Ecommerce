@@ -16,10 +16,12 @@ import {
 import { type FormEvent, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { useRegisterMutation } from '../api/authApi'
+import { useTranslation } from '../i18n'
 import { setCredentials } from '../slices/authSlice'
 import { useAppDispatch } from '../store/hooks'
 
 export default function SignupPage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const [register, { isLoading }] = useRegisterMutation()
@@ -37,7 +39,7 @@ export default function SignupPage() {
       dispatch(setCredentials(authResponse))
       navigate('/profile')
     } catch {
-      setErrorMessage('Signup failed. Use a valid email and a password with at least 8 characters.')
+      setErrorMessage(t('auth.signupError'))
     }
   }
 
@@ -48,9 +50,9 @@ export default function SignupPage() {
           <Stack spacing={5}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Account
+                {t('auth.account')}
               </Text>
-              <Heading>Create account</Heading>
+              <Heading>{t('auth.signupTitle')}</Heading>
             </Box>
             {errorMessage ? (
               <Alert status="error" borderRadius="md">
@@ -59,11 +61,11 @@ export default function SignupPage() {
               </Alert>
             ) : null}
             <FormControl isRequired>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>{t('common.name')}</FormLabel>
               <Input value={name} onChange={(event) => setName(event.target.value)} />
             </FormControl>
             <FormControl isRequired>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t('common.email')}</FormLabel>
               <Input
                 type="email"
                 value={email}
@@ -71,21 +73,21 @@ export default function SignupPage() {
               />
             </FormControl>
             <FormControl isRequired>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>{t('common.password')}</FormLabel>
               <Input
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
               />
-              <FormHelperText>Use at least 8 characters.</FormHelperText>
+              <FormHelperText>{t('auth.passwordHelp')}</FormHelperText>
             </FormControl>
             <Button type="submit" colorScheme="brand" isLoading={isLoading}>
-              Create account
+              {t('auth.signupTitle')}
             </Button>
             <Text color="neutral.600">
-              Already have one?{' '}
+              {t('auth.alreadyHaveAccount')}{' '}
               <Link as={RouterLink} to="/login" color="accent.600" fontWeight="bold">
-                Log in
+                {t('auth.loginTitle')}
               </Link>
             </Text>
           </Stack>

@@ -26,6 +26,7 @@ import { useCreateCheckoutPaymentIntentMutation, useCreateOrderMutation } from '
 import { useGetProductsQuery } from '../api/productsApi'
 import StripePaymentForm from '../components/StripePaymentForm'
 import { frontendConfig } from '../config'
+import { useTranslation } from '../i18n'
 import { calculateCartSummary, clearCart, selectCartItems } from '../slices/cartSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { CreateCheckoutPaymentIntentResponse, CreateOrderRequest } from '../types'
@@ -46,6 +47,15 @@ const initialFormState = {
 type CheckoutFormState = typeof initialFormState
 type ShippingMethodId = 'standard' | 'priority'
 type CheckoutStepId = 'contact' | 'shipping' | 'review' | 'payment'
+type TranslationKey = Parameters<ReturnType<typeof useTranslation>['t']>[0]
+type CheckoutFieldKey =
+  | 'checkout.firstName'
+  | 'checkout.lastName'
+  | 'common.email'
+  | 'checkout.address1'
+  | 'checkout.city'
+  | 'checkout.postalCode'
+  | 'checkout.country'
 
 interface CheckoutDraft {
   readonly formState: CheckoutFormState
@@ -64,36 +74,36 @@ const promoCodeDetails: Record<
 
 const shippingMethods: Array<{
   readonly id: ShippingMethodId
-  readonly label: string
-  readonly estimate: string
-  readonly note: string
+  readonly labelKey: TranslationKey
+  readonly estimateKey: TranslationKey
+  readonly noteKey: TranslationKey
 }> = [
   {
     id: 'standard',
-    label: 'Standard shipping',
-    estimate: '3-6 business days',
-    note: 'Best for everyday orders',
+    labelKey: 'checkout.standardShipping',
+    estimateKey: 'checkout.standardEstimate',
+    noteKey: 'checkout.standardNote',
   },
   {
     id: 'priority',
-    label: 'Priority handling',
-    estimate: '2-4 business days',
-    note: 'Packed first when the warehouse opens',
+    labelKey: 'checkout.priorityShipping',
+    estimateKey: 'checkout.priorityEstimate',
+    noteKey: 'checkout.priorityNote',
   },
 ]
 
-const checkoutSteps: Array<{ readonly id: CheckoutStepId; readonly label: string }> = [
-  { id: 'contact', label: 'Contact' },
-  { id: 'shipping', label: 'Shipping' },
-  { id: 'review', label: 'Review' },
-  { id: 'payment', label: 'Payment' },
+const checkoutSteps: Array<{ readonly id: CheckoutStepId; readonly labelKey: TranslationKey }> = [
+  { id: 'contact', labelKey: 'checkout.contact' },
+  { id: 'shipping', labelKey: 'checkout.shipping' },
+  { id: 'review', labelKey: 'checkout.review' },
+  { id: 'payment', labelKey: 'checkout.payment' },
 ]
 
 const stripePromise = frontendConfig.stripePublishableKey
   ? loadStripe(frontendConfig.stripePublishableKey)
   : null
 
-const getFieldPreview = (value: string, fallback = 'Not entered yet') => value.trim() || fallback
+const getFieldPreview = (value: string, fallback: string) => value.trim() || fallback
 const roundMoney = (value: number): number => Math.round(value * 100) / 100
 
 const normalizePromoCode = (promoCode: string): string => promoCode.trim().toUpperCase()
@@ -117,47 +127,49 @@ const getCheckoutPath = (step: CheckoutStepId) =>
 const getCheckoutStep = (value: string | undefined): CheckoutStepId =>
   checkoutSteps.some((step) => step.id === value) ? (value as CheckoutStepId) : 'contact'
 
-const getMissingContactField = (formState: CheckoutFormState): string | undefined => {
+const getMissingContactField = (formState: CheckoutFormState): CheckoutFieldKey | undefined => {
   if (!formState.firstName.trim()) {
-    return 'First name'
+    return 'checkout.firstName'
   }
 
   if (!formState.lastName.trim()) {
-    return 'Last name'
+    return 'checkout.lastName'
   }
 
   if (!formState.email.trim()) {
-    return 'Email'
+    return 'common.email'
   }
 
   return undefined
 }
 
-const getMissingShippingField = (formState: CheckoutFormState): string | undefined => {
+const getMissingShippingField = (formState: CheckoutFormState): CheckoutFieldKey | undefined => {
   if (!formState.line1.trim()) {
-    return 'Address line 1'
+    return 'checkout.address1'
   }
 
   if (!formState.city.trim()) {
-    return 'City'
+    return 'checkout.city'
   }
 
   if (!formState.postalCode.trim()) {
-    return 'Postal code'
+    return 'checkout.postalCode'
   }
 
   if (!formState.country.trim()) {
-    return 'Country'
+    return 'checkout.country'
   }
 
   return undefined
 }
 
-const getMissingCheckoutField = (formState: CheckoutFormState): string | undefined =>
+const getMissingCheckoutField = (formState: CheckoutFormState): CheckoutFieldKey | undefined =>
   getMissingContactField(formState) ?? getMissingShippingField(formState)
 
-const getCheckoutStepForMissingField = (fieldName: string): CheckoutStepId =>
-  ['First name', 'Last name', 'Email'].includes(fieldName) ? 'contact' : 'shipping'
+const getCheckoutStepForMissingField = (fieldName: CheckoutFieldKey): CheckoutStepId =>
+  ['checkout.firstName', 'checkout.lastName', 'common.email'].includes(fieldName)
+    ? 'contact'
+    : 'shipping'
 
 const readCheckoutDraft = (): CheckoutDraft => {
   if (typeof window === 'undefined') {
@@ -187,6 +199,7 @@ const readCheckoutDraft = (): CheckoutDraft => {
 }
 
 export default function CheckoutPage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
   const { checkoutStep } = useParams()
@@ -256,14 +269,14 @@ export default function CheckoutPage() {
     const normalizedCode = normalizePromoCode(promoInput)
 
     if (!normalizedCode) {
-      setPromoMessage('Enter a promo code first.')
+      setPromoMessage(t('checkout.enterPromoFirst'))
       return
     }
 
     const promoDetails = promoCodeDetails[normalizedCode]
 
     if (!promoDetails) {
-      setPromoMessage('That promo code is not available.')
+      setPromoMessage(t('checkout.promoUnavailable'))
       setAppliedPromoCode(undefined)
       setPaymentIntentResponse(undefined)
       return
@@ -271,7 +284,10 @@ export default function CheckoutPage() {
 
     if (promoDetails.minimumSubtotal && summary.subtotal < promoDetails.minimumSubtotal) {
       setPromoMessage(
-        `${normalizedCode} needs at least $${promoDetails.minimumSubtotal.toFixed(2)} in products.`
+        t('checkout.promoNeedsMinimum', {
+          code: normalizedCode,
+          amount: promoDetails.minimumSubtotal.toFixed(2),
+        })
       )
       setAppliedPromoCode(undefined)
       setPaymentIntentResponse(undefined)
@@ -280,7 +296,7 @@ export default function CheckoutPage() {
 
     setAppliedPromoCode(normalizedCode)
     setPromoInput(normalizedCode)
-    setPromoMessage(`${normalizedCode} applied. The API will validate it before payment.`)
+    setPromoMessage(t('checkout.promoApplied', { code: normalizedCode }))
     setPaymentIntentResponse(undefined)
   }
 
@@ -296,8 +312,8 @@ export default function CheckoutPage() {
     navigate(getCheckoutPath(step))
   }
 
-  const showMissingFieldError = (fieldName: string) => {
-    setErrorMessage(`${fieldName} is required.`)
+  const showMissingFieldError = (fieldName: CheckoutFieldKey) => {
+    setErrorMessage(t('checkout.requiredError', { field: t(fieldName) }))
     navigate(getCheckoutPath(getCheckoutStepForMissingField(fieldName)))
   }
 
@@ -351,7 +367,7 @@ export default function CheckoutPage() {
     setPaymentIntentResponse(undefined)
 
     if (cartItems.length === 0) {
-      setErrorMessage('Add at least one item to your cart before checking out.')
+      setErrorMessage(t('checkout.emptyCartError'))
       return
     }
 
@@ -378,7 +394,7 @@ export default function CheckoutPage() {
       dispatch(clearCart())
       navigate(`/order-confirmation?orderId=${order.id}`)
     } catch {
-      setErrorMessage('Checkout could not be completed. Check your details and try again.')
+      setErrorMessage(t('checkout.failedError'))
     }
   }
 
@@ -386,32 +402,32 @@ export default function CheckoutPage() {
     <Stack spacing={6}>
       <Box>
         <Badge borderRadius="full" colorScheme="gray" mb={3}>
-          Step 1
+          {t('checkout.step', { step: 1 })}
         </Badge>
         <Heading as="h1" size="xl">
-          Contact details
+          {t('checkout.contactTitle')}
         </Heading>
         <Text color="neutral.600" mt={2}>
-          Tell us where to send your order confirmation.
+          {t('checkout.contactCopy')}
         </Text>
       </Box>
       <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={4}>
         <FormControl isRequired>
-          <FormLabel>First name</FormLabel>
+          <FormLabel>{t('checkout.firstName')}</FormLabel>
           <Input
             value={formState.firstName}
             onChange={(event) => updateField('firstName', event.target.value)}
           />
         </FormControl>
         <FormControl isRequired>
-          <FormLabel>Last name</FormLabel>
+          <FormLabel>{t('checkout.lastName')}</FormLabel>
           <Input
             value={formState.lastName}
             onChange={(event) => updateField('lastName', event.target.value)}
           />
         </FormControl>
         <FormControl isRequired>
-          <FormLabel>Email</FormLabel>
+          <FormLabel>{t('common.email')}</FormLabel>
           <Input
             type="email"
             value={formState.email}
@@ -419,7 +435,7 @@ export default function CheckoutPage() {
           />
         </FormControl>
         <FormControl>
-          <FormLabel>Phone</FormLabel>
+          <FormLabel>{t('common.phone')}</FormLabel>
           <Input
             value={formState.phone}
             onChange={(event) => updateField('phone', event.target.value)}
@@ -428,7 +444,7 @@ export default function CheckoutPage() {
       </Grid>
       <HStack justify="flex-end">
         <Button colorScheme="brand" onClick={continueToShipping}>
-          Continue to shipping
+          {t('checkout.continueToShipping')}
         </Button>
       </HStack>
     </Stack>
@@ -438,25 +454,25 @@ export default function CheckoutPage() {
     <Stack spacing={6}>
       <Box>
         <Badge borderRadius="full" colorScheme="gray" mb={3}>
-          Step 2
+          {t('checkout.step', { step: 2 })}
         </Badge>
         <Heading as="h1" size="xl">
-          Shipping
+          {t('checkout.shippingTitle')}
         </Heading>
         <Text color="neutral.600" mt={2}>
-          Add the delivery address and choose how fast you want it packed.
+          {t('checkout.shippingCopy')}
         </Text>
       </Box>
       <Stack spacing={4}>
         <FormControl isRequired>
-          <FormLabel>Address line 1</FormLabel>
+          <FormLabel>{t('checkout.address1')}</FormLabel>
           <Input
             value={formState.line1}
             onChange={(event) => updateField('line1', event.target.value)}
           />
         </FormControl>
         <FormControl>
-          <FormLabel>Address line 2</FormLabel>
+          <FormLabel>{t('checkout.address2')}</FormLabel>
           <Input
             value={formState.line2}
             onChange={(event) => updateField('line2', event.target.value)}
@@ -464,21 +480,21 @@ export default function CheckoutPage() {
         </FormControl>
         <Grid templateColumns={{ base: '1fr', md: '1.4fr 0.8fr 0.8fr' }} gap={4}>
           <FormControl isRequired>
-            <FormLabel>City</FormLabel>
+            <FormLabel>{t('checkout.city')}</FormLabel>
             <Input
               value={formState.city}
               onChange={(event) => updateField('city', event.target.value)}
             />
           </FormControl>
           <FormControl>
-            <FormLabel>State / region</FormLabel>
+            <FormLabel>{t('checkout.state')}</FormLabel>
             <Input
               value={formState.state}
               onChange={(event) => updateField('state', event.target.value)}
             />
           </FormControl>
           <FormControl isRequired>
-            <FormLabel>Postal code</FormLabel>
+            <FormLabel>{t('checkout.postalCode')}</FormLabel>
             <Input
               value={formState.postalCode}
               onChange={(event) => updateField('postalCode', event.target.value)}
@@ -486,14 +502,14 @@ export default function CheckoutPage() {
           </FormControl>
         </Grid>
         <FormControl isRequired>
-          <FormLabel>Country</FormLabel>
+          <FormLabel>{t('checkout.country')}</FormLabel>
           <Input
             value={formState.country}
             onChange={(event) => updateField('country', event.target.value)}
           />
         </FormControl>
         <FormControl as="fieldset">
-          <FormLabel as="legend">Shipping method</FormLabel>
+          <FormLabel as="legend">{t('checkout.shippingMethod')}</FormLabel>
           <RadioGroup
             value={shippingMethod}
             onChange={(value) => setShippingMethod(value as ShippingMethodId)}
@@ -510,10 +526,10 @@ export default function CheckoutPage() {
                 >
                   <Radio value={method.id} colorScheme="brand">
                     <Text as="span" fontWeight="black">
-                      {method.label}
+                      {t(method.labelKey)}
                     </Text>
                     <Text color="neutral.600" fontSize="sm">
-                      {method.estimate}. {method.note}.
+                      {t(method.estimateKey)}. {t(method.noteKey)}.
                     </Text>
                   </Radio>
                 </Box>
@@ -524,10 +540,10 @@ export default function CheckoutPage() {
       </Stack>
       <HStack justify="space-between">
         <Button variant="outline" onClick={() => navigateToStep('contact')}>
-          Back
+          {t('common.back')}
         </Button>
         <Button colorScheme="brand" onClick={continueToReview}>
-          Continue to review
+          {t('checkout.continueToReview')}
         </Button>
       </HStack>
     </Stack>
@@ -538,13 +554,13 @@ export default function CheckoutPage() {
       <Stack spacing={6}>
         <Box>
           <Badge borderRadius="full" colorScheme="gray" mb={3}>
-            Step 3
+            {t('checkout.step', { step: 3 })}
           </Badge>
           <Heading as="h1" size="xl">
-            Review your order
+            {t('checkout.reviewTitle')}
           </Heading>
           <Text color="neutral.600" mt={2}>
-            Confirm the details before payment opens.
+            {t('checkout.reviewCopy')}
           </Text>
         </Box>
         <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={4}>
@@ -552,17 +568,20 @@ export default function CheckoutPage() {
             <HStack justify="space-between" align="start">
               <Box>
                 <Text color="neutral.900" fontWeight="black">
-                  Contact
+                  {t('checkout.contact')}
                 </Text>
                 <Text color="neutral.600" fontSize="sm">
-                  {getFieldPreview(`${formState.firstName} ${formState.lastName}`.trim())}
+                  {getFieldPreview(
+                    `${formState.firstName} ${formState.lastName}`.trim(),
+                    t('checkout.notEntered')
+                  )}
                 </Text>
                 <Text color="neutral.600" fontSize="sm">
-                  {getFieldPreview(formState.email)}
+                  {getFieldPreview(formState.email, t('checkout.notEntered'))}
                 </Text>
               </Box>
               <Button size="sm" variant="ghost" onClick={() => navigateToStep('contact')}>
-                Edit
+                {t('common.edit')}
               </Button>
             </HStack>
           </Box>
@@ -570,21 +589,24 @@ export default function CheckoutPage() {
             <HStack justify="space-between" align="start">
               <Box>
                 <Text color="neutral.900" fontWeight="black">
-                  Delivery
+                  {t('checkout.delivery')}
                 </Text>
                 <Text color="neutral.600" fontSize="sm">
-                  {selectedShippingMethod?.label} - {selectedShippingMethod?.estimate}
+                  {selectedShippingMethod
+                    ? `${t(selectedShippingMethod.labelKey)} - ${t(selectedShippingMethod.estimateKey)}`
+                    : ''}
                 </Text>
                 <Text color="neutral.600" fontSize="sm">
                   {getFieldPreview(
                     [formState.line1, formState.city, formState.state, formState.postalCode]
                       .filter(Boolean)
-                      .join(', ')
+                      .join(', '),
+                    t('checkout.notEntered')
                   )}
                 </Text>
               </Box>
               <Button size="sm" variant="ghost" onClick={() => navigateToStep('shipping')}>
-                Edit
+                {t('common.edit')}
               </Button>
             </HStack>
           </Box>
@@ -593,14 +615,18 @@ export default function CheckoutPage() {
           <HStack justify="space-between" align="start" mb={4}>
             <Box>
               <Text color="neutral.900" fontWeight="black">
-                Items
+                {t('checkout.items')}
               </Text>
               <Text color="neutral.600" fontSize="sm">
-                {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart.
+                {t('checkout.itemsInCart', {
+                  count: cartItems.length,
+                  unit:
+                    cartItems.length === 1 ? t('checkout.itemSingular') : t('checkout.itemPlural'),
+                })}
               </Text>
             </Box>
             <Button as={RouterLink} to="/cart" size="sm" variant="ghost">
-              Edit cart
+              {t('checkout.editCart')}
             </Button>
           </HStack>
           <Stack spacing={3}>
@@ -627,7 +653,10 @@ export default function CheckoutPage() {
                       </Text>
                     ) : null}
                     <Text color="neutral.600" fontSize="sm">
-                      Qty {item.quantity} x ${unitPrice.toFixed(2)}
+                      {t('checkout.qtyLine', {
+                        quantity: item.quantity,
+                        price: unitPrice.toFixed(2),
+                      })}
                     </Text>
                   </Box>
                   <Text color="neutral.900" fontWeight="black">
@@ -640,11 +669,11 @@ export default function CheckoutPage() {
         </Box>
         <Alert status="info" borderRadius="lg">
           <AlertIcon />
-          Payment opens after the API recalculates the trusted total.
+          {t('checkout.paymentInfo')}
         </Alert>
         <HStack justify="space-between">
           <Button variant="outline" onClick={() => navigateToStep('shipping')}>
-            Back
+            {t('common.back')}
           </Button>
           <Button
             type="submit"
@@ -653,7 +682,7 @@ export default function CheckoutPage() {
             isLoading={isSubmitting}
             isDisabled={cartItems.length === 0}
           >
-            {isStripeConfigured ? 'Continue to payment' : 'Place mocked order'}
+            {isStripeConfigured ? t('checkout.continueToPayment') : t('checkout.placeMockOrder')}
           </Button>
         </HStack>
       </Stack>
@@ -664,15 +693,15 @@ export default function CheckoutPage() {
     <Stack spacing={6}>
       <Box ref={paymentSectionRef} tabIndex={-1} outline="none">
         <Badge borderRadius="full" colorScheme="gray" mb={3}>
-          Step 4
+          {t('checkout.step', { step: 4 })}
         </Badge>
         <Heading as="h1" size="xl">
-          Secure payment
+          {t('checkout.securePaymentTitle')}
         </Heading>
         <Text color="neutral.600" mt={2}>
           {paymentIntentResponse
-            ? `Order ${paymentIntentResponse.order.id} is ready for payment.`
-            : 'Payment will appear here after order review.'}
+            ? t('checkout.readyForPayment', { orderId: paymentIntentResponse.order.id })
+            : t('checkout.paymentWaiting')}
         </Text>
       </Box>
       {paymentIntentResponse && stripePromise ? (
@@ -692,12 +721,12 @@ export default function CheckoutPage() {
       ) : (
         <Alert status="warning" borderRadius="lg">
           <AlertIcon />
-          Go back to review to create the secure payment session.
+          {t('checkout.createPaymentWarning')}
         </Alert>
       )}
       <HStack justify="space-between">
         <Button variant="outline" onClick={() => navigateToStep('review')}>
-          Back to review
+          {t('checkout.backToReview')}
         </Button>
       </HStack>
     </Stack>
@@ -733,14 +762,14 @@ export default function CheckoutPage() {
           <Stack spacing={6}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Checkout
+                {t('checkout.eyebrow')}
               </Text>
-              <Heading>Finish your order</Heading>
+              <Heading>{t('checkout.title')}</Heading>
             </Box>
             <Stack
               direction={{ base: 'column', md: 'row' }}
               spacing={3}
-              aria-label="Checkout steps"
+              aria-label={t('checkout.stepsAria')}
             >
               {checkoutSteps.map((step, index) => {
                 const isActive = step.id === currentStep
@@ -761,14 +790,14 @@ export default function CheckoutPage() {
                   >
                     <Box textAlign="left">
                       <Text color="neutral.500" fontSize="xs" fontWeight="black">
-                        Step {index + 1}
+                        {t('checkout.step', { step: index + 1 })}
                       </Text>
                       <Text color="neutral.900" fontWeight="black">
-                        {step.label}
+                        {t(step.labelKey)}
                       </Text>
                       {isComplete ? (
                         <Text color="green.600" fontSize="xs">
-                          Complete
+                          {t('common.complete')}
                         </Text>
                       ) : null}
                     </Box>
@@ -797,33 +826,44 @@ export default function CheckoutPage() {
           top={{ lg: 24 }}
         >
           <Heading as="h2" size="md" mb={4}>
-            Order summary
+            {t('checkout.orderSummary')}
           </Heading>
           {cartItems.length === 0 ? (
             <VStack align="stretch" spacing={4}>
-              <Text color="neutral.600">Your cart is empty.</Text>
+              <Text color="neutral.600">{t('checkout.cartEmpty')}</Text>
               <Button as={RouterLink} to="/" variant="outline">
-                Continue shopping
+                {t('common.continueShopping')}
               </Button>
             </VStack>
           ) : (
             <Stack spacing={3}>
               <Stack spacing={2}>
-                <Text color="neutral.600">Subtotal ${summary.subtotal.toFixed(2)}</Text>
+                <Text color="neutral.600">
+                  {t('checkout.subtotalLine', { amount: summary.subtotal.toFixed(2) })}
+                </Text>
                 {promoDiscount > 0 ? (
                   <Text color="green.700" fontWeight="bold">
-                    Promo {appliedPromoCode} -${promoDiscount.toFixed(2)}
+                    {t('checkout.promoLine', {
+                      code: appliedPromoCode,
+                      amount: promoDiscount.toFixed(2),
+                    })}
                   </Text>
                 ) : null}
-                <Text color="neutral.600">Shipping ${summary.shipping.toFixed(2)}</Text>
-                <Text color="neutral.600">Tax ${estimatedTax.toFixed(2)}</Text>
+                <Text color="neutral.600">
+                  {t('checkout.shippingLine', { amount: summary.shipping.toFixed(2) })}
+                </Text>
+                <Text color="neutral.600">
+                  {t('checkout.taxLine', { amount: estimatedTax.toFixed(2) })}
+                </Text>
               </Stack>
               <Divider />
               <Stack spacing={2}>
-                <Text fontWeight="black">Estimated total ${estimatedTotal.toFixed(2)}</Text>
+                <Text fontWeight="black">
+                  {t('checkout.totalLine', { amount: estimatedTotal.toFixed(2) })}
+                </Text>
                 <Box>
                   <FormLabel color="neutral.900" fontSize="sm" fontWeight="black">
-                    Promo code
+                    {t('checkout.promoCode')}
                   </FormLabel>
                   <HStack align="start">
                     <Input
@@ -833,9 +873,9 @@ export default function CheckoutPage() {
                         setPromoMessage(undefined)
                       }}
                       placeholder="OSAI10"
-                      aria-label="Promo code"
+                      aria-label={t('checkout.promoCode')}
                     />
-                    <Button onClick={handleApplyPromoCode}>Apply</Button>
+                    <Button onClick={handleApplyPromoCode}>{t('common.apply')}</Button>
                   </HStack>
                   {promoMessage ? (
                     <Text
@@ -849,25 +889,20 @@ export default function CheckoutPage() {
                   ) : null}
                   {appliedPromoCode ? (
                     <Button mt={2} size="sm" variant="link" onClick={handleRemovePromoCode}>
-                      Remove promo
+                      {t('checkout.removePromo')}
                     </Button>
                   ) : null}
                 </Box>
               </Stack>
               <Text color="neutral.500" fontSize="sm">
-                {isStripeConfigured
-                  ? 'The API will recalculate the trusted total before creating payment.'
-                  : 'Stripe is not configured locally, so checkout will create a mocked paid order.'}
+                {isStripeConfigured ? t('checkout.trustedTotalCopy') : t('checkout.mockStripeCopy')}
               </Text>
               <Divider />
               <Stack spacing={3}>
                 {[
-                  ['Secure payment', 'Encrypted payment handled by Stripe'],
-                  [
-                    'Returns',
-                    'Exchanges are free. Refund returns deduct $6 unless the item is defective.',
-                  ],
-                  ['Support', 'Email support after order confirmation'],
+                  [t('common.securePayment'), t('cart.securePaymentCopy')],
+                  [t('cart.returnsClarity'), t('cart.returnsClarityCopy')],
+                  [t('common.support'), t('checkout.supportCopy')],
                 ].map(([title, body]) => (
                   <Box key={title}>
                     <Text color="neutral.900" fontSize="sm" fontWeight="black">

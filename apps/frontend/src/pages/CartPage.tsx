@@ -15,6 +15,7 @@ import {
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
+import { useTranslation } from '../i18n'
 import {
   FREE_SHIPPING_THRESHOLD,
   addItem,
@@ -42,6 +43,7 @@ const getDefaultVariant = (product: Product) =>
   product.variants?.find((variant) => variant.stockQuantity > 0)
 
 export default function CartPage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const toast = useToast()
   const cartItems = useAppSelector(selectCartItems)
@@ -69,7 +71,7 @@ export default function CartPage() {
     dispatch(addWishlistItem({ productId: item.productId }))
     dispatch(removeItem({ productId: item.productId, variantSku: item.variantSku }))
     toast({
-      title: `${item.product?.name ?? 'Item'} saved for later`,
+      title: t('cart.itemSavedForLater', { product: item.product?.name ?? t('common.item') }),
       status: 'success',
       duration: 1800,
       isClosable: true,
@@ -88,7 +90,7 @@ export default function CartPage() {
     )
     dispatch(removeWishlistItem({ productId: product.id }))
     toast({
-      title: `${product.name} moved to cart`,
+      title: t('cart.movedToCart', { product: product.name }),
       status: 'success',
       duration: 1800,
       isClosable: true,
@@ -101,9 +103,9 @@ export default function CartPage() {
         <VStack flex={1} align="stretch" spacing={5}>
           <Box>
             <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-              Your bag
+              {t('cart.eyebrow')}
             </Text>
-            <Heading>Cart</Heading>
+            <Heading>{t('cart.title')}</Heading>
           </Box>
 
           {enrichedItems.length === 0 ? (
@@ -114,12 +116,10 @@ export default function CartPage() {
               borderRadius="lg"
               bg="white"
             >
-              <Text fontWeight="bold">Your cart is empty.</Text>
-              <Text color="neutral.600">
-                Pick a few pieces and come back when the fit is ready.
-              </Text>
+              <Text fontWeight="bold">{t('cart.emptyTitle')}</Text>
+              <Text color="neutral.600">{t('cart.emptyCopy')}</Text>
               <Button as={RouterLink} to="/" colorScheme="brand">
-                Continue shopping
+                {t('common.continueShopping')}
               </Button>
             </VStack>
           ) : (
@@ -195,10 +195,10 @@ export default function CartPage() {
                         )
                       }
                     >
-                      Remove
+                      {t('common.remove')}
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => saveForLater(item)}>
-                      Save for later
+                      {t('cart.saveForLater')}
                     </Button>
                   </HStack>
                 </Box>
@@ -222,14 +222,14 @@ export default function CartPage() {
                     fontWeight="black"
                     textTransform="uppercase"
                   >
-                    Saved for later
+                    {t('cart.savedForLater')}
                   </Text>
                   <Heading as="h2" size="md">
-                    Not ready today
+                    {t('cart.notReady')}
                   </Heading>
                 </Box>
                 <Badge colorScheme="yellow" borderRadius="full" px={3} py={1}>
-                  {savedForLaterProducts.length} saved
+                  {t('cart.savedCount', { count: savedForLaterProducts.length })}
                 </Badge>
               </HStack>
               <Stack spacing={3}>
@@ -260,7 +260,7 @@ export default function CartPage() {
                       variant="outline"
                       onClick={() => moveSavedProductToCart(product)}
                     >
-                      Move to cart
+                      {t('cart.moveToCart')}
                     </Button>
                   </HStack>
                 ))}
@@ -284,14 +284,14 @@ export default function CartPage() {
                     fontWeight="black"
                     textTransform="uppercase"
                   >
-                    Add-on picks
+                    {t('cart.addOnPicks')}
                   </Text>
                   <Heading as="h2" size="md">
-                    Complete your cart
+                    {t('cart.completeCart')}
                   </Heading>
                 </Box>
                 <Badge colorScheme="green" borderRadius="full" px={3} py={1}>
-                  Ships together
+                  {t('cart.shipsTogether')}
                 </Badge>
               </HStack>
               <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
@@ -334,7 +334,7 @@ export default function CartPage() {
                             )
                           }
                         >
-                          Add to cart
+                          {t('cart.addToCart')}
                         </Button>
                       </Stack>
                     </Box>
@@ -354,7 +354,7 @@ export default function CartPage() {
           p={6}
         >
           <Heading as="h2" size="md" mb={4}>
-            Summary
+            {t('cart.summary')}
           </Heading>
           {summary.subtotal > 0 ? (
             <Box
@@ -367,8 +367,8 @@ export default function CartPage() {
             >
               <Text color="neutral.800" fontWeight="black" fontSize="sm">
                 {freeShippingRemaining > 0
-                  ? `$${freeShippingRemaining.toFixed(2)} away from free shipping`
-                  : 'Free shipping unlocked'}
+                  ? t('cart.awayFromFreeShipping', { amount: freeShippingRemaining.toFixed(2) })
+                  : t('cart.freeShippingUnlocked')}
               </Text>
               <Box bg="white" borderRadius="full" h="8px" mt={3} overflow="hidden">
                 <Box bg="black" h="full" w={`${freeShippingProgress}%`} />
@@ -376,33 +376,30 @@ export default function CartPage() {
             </Box>
           ) : null}
           <HStack justify="space-between">
-            <Text color="neutral.600">Subtotal</Text>
+            <Text color="neutral.600">{t('cart.subtotal')}</Text>
             <Text fontWeight="black">${summary.subtotal.toFixed(2)}</Text>
           </HStack>
           <HStack justify="space-between" mt={2}>
-            <Text color="neutral.600">Shipping</Text>
+            <Text color="neutral.600">{t('cart.shipping')}</Text>
             <Text fontWeight="semibold">${summary.shipping.toFixed(2)}</Text>
           </HStack>
           <HStack justify="space-between" mt={2}>
-            <Text color="neutral.600">Tax</Text>
+            <Text color="neutral.600">{t('cart.tax')}</Text>
             <Text fontWeight="semibold">${summary.tax.toFixed(2)}</Text>
           </HStack>
           <Divider my={4} />
           <HStack justify="space-between" mb={4}>
-            <Text fontWeight="black">Estimated total</Text>
+            <Text fontWeight="black">{t('cart.estimatedTotal')}</Text>
             <Text fontWeight="black">${summary.total.toFixed(2)}</Text>
           </HStack>
           <Text color="neutral.500" fontSize="sm" mb={4}>
-            Final totals are recalculated by the API when the order is created.
+            {t('cart.recalculatedCopy')}
           </Text>
           <SimpleGrid columns={1} spacing={3} mb={5}>
             {[
-              ['Delivery estimate', 'Arrives in 3-6 business days after shipping'],
-              ['Secure payment', 'Stripe handles encrypted card details'],
-              [
-                'Returns clarity',
-                'Exchanges are free. Refund returns deduct $6 unless the item is defective.',
-              ],
+              [t('cart.deliveryEstimate'), t('cart.deliveryEstimateCopy')],
+              [t('common.securePayment'), t('cart.securePaymentCopy')],
+              [t('cart.returnsClarity'), t('cart.returnsClarityCopy')],
             ].map(([title, body]) => (
               <Box
                 key={title}
@@ -423,11 +420,11 @@ export default function CartPage() {
           </SimpleGrid>
           {cartItems.length === 0 ? (
             <Button colorScheme="brand" w="full" isDisabled>
-              Checkout
+              {t('common.checkout')}
             </Button>
           ) : (
             <Button as={RouterLink} to="/checkout" colorScheme="brand" w="full">
-              Checkout
+              {t('common.checkout')}
             </Button>
           )}
         </Box>

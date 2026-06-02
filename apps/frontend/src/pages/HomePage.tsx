@@ -45,28 +45,30 @@ import {
 import ProductList from '../components/ProductList'
 import { useTranslation } from '../i18n'
 
-const sortOptions: { label: string; value: ProductSort }[] = [
-  { label: 'Featured', value: 'featured' },
-  { label: 'Latest drops', value: 'newest' },
-  { label: 'Most popular', value: 'popular' },
-  { label: 'Price: low to high', value: 'price-asc' },
-  { label: 'Price: high to low', value: 'price-desc' },
-  { label: 'Name', value: 'name' },
+const sortOptions: { labelKey: TranslationKey; value: ProductSort }[] = [
+  { labelKey: 'home.sort.featured', value: 'featured' },
+  { labelKey: 'home.sort.newest', value: 'newest' },
+  { labelKey: 'home.sort.popular', value: 'popular' },
+  { labelKey: 'home.sort.priceAsc', value: 'price-asc' },
+  { labelKey: 'home.sort.priceDesc', value: 'price-desc' },
+  { labelKey: 'home.sort.name', value: 'name' },
 ]
 
-const priceOptions: { label: string; value: ProductPriceRange }[] = [
-  { label: 'All prices', value: ALL_PRICES },
-  { label: 'Under $30', value: 'under-30' },
-  { label: '$30 to $60', value: '30-60' },
-  { label: '$60 to $90', value: '60-90' },
-  { label: '$90+', value: '90-plus' },
+const priceOptions: { labelKey: TranslationKey; value: ProductPriceRange }[] = [
+  { labelKey: 'home.price.all', value: ALL_PRICES },
+  { labelKey: 'home.price.under30', value: 'under-30' },
+  { labelKey: 'home.price.30to60', value: '30-60' },
+  { labelKey: 'home.price.60to90', value: '60-90' },
+  { labelKey: 'home.price.90plus', value: '90-plus' },
 ]
 
-const ratingOptions = [
-  { label: 'Any rating', value: 0 },
-  { label: '4+ stars', value: 4 },
-  { label: '4.5+ stars', value: 4.5 },
+const ratingOptions: { labelKey: TranslationKey; value: number }[] = [
+  { labelKey: 'home.rating.any', value: 0 },
+  { labelKey: 'home.rating.4plus', value: 4 },
+  { labelKey: 'home.rating.45plus', value: 4.5 },
 ]
+
+type TranslationKey = Parameters<ReturnType<typeof useTranslation>['t']>[0]
 
 interface AppliedFilter {
   readonly key: string
@@ -153,11 +155,15 @@ export default function HomePage() {
         }
       : undefined,
     searchTerm.trim()
-      ? { key: 'search', label: `Search: ${searchTerm.trim()}`, onRemove: () => setSearchTerm('') }
+      ? {
+          key: 'search',
+          label: t('home.searchChip', { term: searchTerm.trim() }),
+          onRemove: () => setSearchTerm(''),
+        }
       : undefined,
     ...selectedSizes.map((size) => ({
       key: `size-${size}`,
-      label: `Size ${size}`,
+      label: t('home.sizeChip', { size }),
       onRemove: () => setSelectedSizes((current) => current.filter((item) => item !== size)),
     })),
     ...selectedColors.map((color) => ({
@@ -168,15 +174,22 @@ export default function HomePage() {
     priceRange !== ALL_PRICES
       ? {
           key: 'price',
-          label: priceOptions.find((option) => option.value === priceRange)?.label ?? 'Price',
+          label: t(
+            priceOptions.find((option) => option.value === priceRange)?.labelKey ??
+              'home.priceChipFallback'
+          ),
           onRemove: () => setPriceRange(ALL_PRICES),
         }
       : undefined,
     inStockOnly
-      ? { key: 'stock', label: 'In stock', onRemove: () => setInStockOnly(false) }
+      ? { key: 'stock', label: t('home.inStock'), onRemove: () => setInStockOnly(false) }
       : undefined,
     minRating > 0
-      ? { key: 'rating', label: `${minRating}+ stars`, onRemove: () => setMinRating(0) }
+      ? {
+          key: 'rating',
+          label: t('home.starsPlus', { rating: minRating }),
+          onRemove: () => setMinRating(0),
+        }
       : undefined,
   ].filter((filter): filter is AppliedFilter => Boolean(filter))
   const appliedFilterCount = appliedFilters.length
@@ -212,10 +225,10 @@ export default function HomePage() {
     return (
       <VStack spacing={4} py={20}>
         <Text color="error.500" fontSize="lg" fontWeight="semibold">
-          We could not load the collection.
+          {t('home.loadErrorTitle')}
         </Text>
-        <Text color="neutral.600">Check the API connection and try again.</Text>
-        <Button onClick={() => refetch()}>Retry</Button>
+        <Text color="neutral.600">{t('home.loadErrorCopy')}</Text>
+        <Button onClick={() => refetch()}>{t('common.retry')}</Button>
       </VStack>
     )
   }
@@ -256,14 +269,14 @@ export default function HomePage() {
           <Flex justify="space-between" align={{ base: 'start', md: 'center' }} gap={4} wrap="wrap">
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Curated edits
+                {t('home.curatedEyebrow')}
               </Text>
               <Heading as="h2" size="xl" color="neutral.900">
-                Shop by mood
+                {t('home.shopByMood')}
               </Heading>
             </Box>
             <Text color="neutral.600" maxW="lg">
-              Start with the fit you need today, then build the rest of the cart around it.
+              {t('home.shopByMoodCopy')}
             </Text>
           </Flex>
 
@@ -292,15 +305,17 @@ export default function HomePage() {
                   fontWeight="black"
                   color={activeCategory === category ? 'white' : 'neutral.900'}
                 >
-                  {category === ALL_CATEGORIES ? 'All pieces' : formatCategoryLabel(category)}
+                  {category === ALL_CATEGORIES
+                    ? t('home.allPieces')
+                    : formatCategoryLabel(category)}
                 </Text>
                 <Text
                   color={activeCategory === category ? 'whiteAlpha.800' : 'neutral.500'}
                   fontSize="sm"
                 >
                   {category === ALL_CATEGORIES
-                    ? `${products.length} products`
-                    : 'Filter collection'}
+                    ? t('home.productCount', { count: products.length })
+                    : t('home.filterCollection')}
                 </Text>
               </Button>
             ))}
@@ -311,14 +326,14 @@ export default function HomePage() {
           <Flex justify="space-between" align={{ base: 'start', md: 'end' }} gap={4} wrap="wrap">
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Featured collection
+                {t('home.featuredEyebrow')}
               </Text>
               <Heading as="h2" size="2xl" color="neutral.900">
-                Built for repeat wear
+                {t('home.featuredTitle')}
               </Heading>
             </Box>
             <Text color="neutral.600" maxW="xl">
-              Premium-feeling pieces with simple styling, practical prices, and easy cart actions.
+              {t('home.featuredCopy')}
             </Text>
           </Flex>
 
@@ -338,8 +353,8 @@ export default function HomePage() {
                   onBlur={() => setIsSearchFocused(false)}
                   onChange={(event) => setSearchTerm(event.target.value)}
                   onFocus={() => setIsSearchFocused(true)}
-                  placeholder="Search tees, jackets, hoodies"
-                  aria-label="Search products"
+                  placeholder={t('home.searchPlaceholder')}
+                  aria-label={t('home.searchAria')}
                   bg="white"
                 />
               </InputGroup>
@@ -384,23 +399,28 @@ export default function HomePage() {
               onChange={(event) => setSort(event.target.value as ProductSort)}
               maxW={{ base: 'full', md: '64' }}
               bg="white"
-              aria-label="Sort products"
+              aria-label={t('home.sortAria')}
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {t(option.labelKey)}
                 </option>
               ))}
             </Select>
 
             <Button variant="outline" onClick={filterDrawer.onOpen}>
-              Filters{appliedFilterCount > 0 ? ` ${appliedFilterCount}` : ''}
+              {appliedFilterCount > 0
+                ? t('home.filtersWithCount', { count: appliedFilterCount })
+                : t('home.filters')}
             </Button>
           </Flex>
 
           <Flex justify="space-between" align={{ base: 'start', md: 'center' }} gap={4} wrap="wrap">
             <Text color="neutral.600" fontWeight="semibold">
-              Showing {visibleProducts.length} of {products.length} products
+              {t('home.showingProducts', {
+                visible: visibleProducts.length,
+                total: products.length,
+              })}
             </Text>
             {appliedFilterCount > 0 ? (
               <HStack spacing={2} flexWrap="wrap">
@@ -410,7 +430,7 @@ export default function HomePage() {
                   </Button>
                 ))}
                 <Button size="sm" colorScheme="brand" onClick={clearFilters}>
-                  Clear all
+                  {t('common.clearAll')}
                 </Button>
               </HStack>
             ) : null}
@@ -431,9 +451,9 @@ export default function HomePage() {
               bg="white"
             >
               <VStack spacing={3}>
-                <Text fontWeight="bold">No products match those filters.</Text>
+                <Text fontWeight="bold">{t('home.noFilterMatch')}</Text>
                 <Text color="neutral.600" textAlign="center">
-                  Try a different search, clear a filter, or start from these popular pieces.
+                  {t('home.noFilterMatchCopy')}
                 </Text>
               </VStack>
               <Button
@@ -443,7 +463,7 @@ export default function HomePage() {
                   clearFilters()
                 }}
               >
-                Clear filters
+                {t('common.clearAll')}
               </Button>
               {noResultsRecommendations.length > 0 ? (
                 <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5} pt={4}>
@@ -453,8 +473,8 @@ export default function HomePage() {
             </VStack>
           ) : (
             <VStack py={16} border="1px solid" borderColor="neutral.200" borderRadius="lg">
-              <Text fontWeight="bold">No products available yet.</Text>
-              <Text color="neutral.600">Add products in the API to fill the storefront.</Text>
+              <Text fontWeight="bold">{t('home.noProducts')}</Text>
+              <Text color="neutral.600">{t('home.noProductsCopy')}</Text>
             </VStack>
           )}
         </VStack>
@@ -463,10 +483,10 @@ export default function HomePage() {
           <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Recommended
+                {t('home.recommendedEyebrow')}
               </Text>
               <Heading as="h2" size="xl" color="neutral.900">
-                Popular right now
+                {t('home.popularNow')}
               </Heading>
             </Box>
             <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={5}>
@@ -480,12 +500,12 @@ export default function HomePage() {
         <DrawerOverlay />
         <DrawerContent>
           <DrawerCloseButton />
-          <DrawerHeader>Filter collection</DrawerHeader>
+          <DrawerHeader>{t('home.filterDrawerTitle')}</DrawerHeader>
           <DrawerBody>
             <Stack spacing={6}>
               <Box>
                 <Text color="neutral.900" fontWeight="black" mb={3}>
-                  Size
+                  {t('common.size')}
                 </Text>
                 <SimpleGrid columns={4} spacing={2}>
                   {sizes.map((size) => {
@@ -497,7 +517,7 @@ export default function HomePage() {
                         size="sm"
                         variant={isSelected ? 'solid' : 'outline'}
                         colorScheme={isSelected ? 'brand' : 'gray'}
-                        aria-label={`Filter size ${size}`}
+                        aria-label={t('home.filterSizeAria', { size })}
                         onClick={() => toggleSelection(size, setSelectedSizes)}
                       >
                         {size}
@@ -511,7 +531,7 @@ export default function HomePage() {
 
               <Box>
                 <Text color="neutral.900" fontWeight="black" mb={3}>
-                  Color
+                  {t('home.color')}
                 </Text>
                 <Stack spacing={2}>
                   {colors.map((color) => (
@@ -530,17 +550,17 @@ export default function HomePage() {
 
               <Box>
                 <Text color="neutral.900" fontWeight="black" mb={3}>
-                  Price
+                  {t('home.price')}
                 </Text>
                 <Select
                   value={priceRange}
                   onChange={(event) => setPriceRange(event.target.value as ProductPriceRange)}
                   bg="white"
-                  aria-label="Filter by price"
+                  aria-label={t('home.filterByPrice')}
                 >
                   {priceOptions.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelKey)}
                     </option>
                   ))}
                 </Select>
@@ -548,33 +568,33 @@ export default function HomePage() {
 
               <Box>
                 <Text color="neutral.900" fontWeight="black" mb={3}>
-                  Rating
+                  {t('home.rating')}
                 </Text>
                 <Select
                   value={minRating}
                   onChange={(event) => setMinRating(Number(event.target.value))}
                   bg="white"
-                  aria-label="Filter by rating"
+                  aria-label={t('home.filterByRating')}
                 >
                   {ratingOptions.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.labelKey)}
                     </option>
                   ))}
                 </Select>
               </Box>
 
               <Checkbox isChecked={inStockOnly} onChange={() => setInStockOnly((value) => !value)}>
-                In stock only
+                {t('home.inStockOnly')}
               </Checkbox>
             </Stack>
           </DrawerBody>
           <DrawerFooter borderTopWidth="1px">
             <Button variant="outline" mr={3} onClick={clearFilters}>
-              Clear
+              {t('common.clear')}
             </Button>
             <Button colorScheme="brand" onClick={filterDrawer.onClose}>
-              Show {visibleProducts.length} products
+              {t('home.showProducts', { count: visibleProducts.length })}
             </Button>
           </DrawerFooter>
         </DrawerContent>

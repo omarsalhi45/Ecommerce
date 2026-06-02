@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
+import { useTranslation } from '../i18n'
 import {
   FREE_SHIPPING_THRESHOLD,
   addItem,
@@ -31,6 +32,7 @@ import { addWishlistItem } from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 export default function MiniCartDrawer() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const toast = useToast()
   const isOpen = useAppSelector(selectIsMiniCartOpen)
@@ -50,7 +52,7 @@ export default function MiniCartDrawer() {
     dispatch(addWishlistItem({ productId: item.productId }))
     dispatch(removeItem({ productId: item.productId, variantSku: item.variantSku }))
     toast({
-      title: `${item.product?.name ?? 'Item'} saved for later`,
+      title: t('cart.itemSavedForLater', { product: item.product?.name ?? t('common.item') }),
       status: 'success',
       duration: 1800,
       isClosable: true,
@@ -63,7 +65,7 @@ export default function MiniCartDrawer() {
       <DrawerOverlay />
       <DrawerContent>
         <DrawerCloseButton />
-        <DrawerHeader borderBottomWidth="1px">Added to your cart</DrawerHeader>
+        <DrawerHeader borderBottomWidth="1px">{t('miniCart.title')}</DrawerHeader>
         <DrawerBody>
           <Stack spacing={5} py={2}>
             {summary.subtotal > 0 ? (
@@ -76,8 +78,8 @@ export default function MiniCartDrawer() {
               >
                 <Text color="neutral.800" fontWeight="black" fontSize="sm">
                   {freeShippingRemaining > 0
-                    ? `$${freeShippingRemaining.toFixed(2)} away from free shipping`
-                    : 'Free shipping unlocked'}
+                    ? t('cart.awayFromFreeShipping', { amount: freeShippingRemaining.toFixed(2) })
+                    : t('cart.freeShippingUnlocked')}
                 </Text>
                 <Box bg="white" borderRadius="full" h="8px" mt={3} overflow="hidden">
                   <Box bg="black" h="full" w={`${freeShippingProgress}%`} />
@@ -115,7 +117,7 @@ export default function MiniCartDrawer() {
                         </Text>
                       ) : null}
                       <Text color="neutral.600" fontSize="sm">
-                        Qty {item.quantity}
+                        {t('cart.qty', { quantity: item.quantity })}
                       </Text>
                     </Box>
                     <Text color="neutral.900" fontWeight="black">
@@ -163,10 +165,10 @@ export default function MiniCartDrawer() {
                         )
                       }
                     >
-                      Remove
+                      {t('common.remove')}
                     </Button>
                     <Button size="xs" variant="outline" onClick={() => saveForLater(item)}>
-                      Save for later
+                      {t('cart.saveForLater')}
                     </Button>
                   </HStack>
                 </Stack>
@@ -176,12 +178,12 @@ export default function MiniCartDrawer() {
         </DrawerBody>
         <DrawerFooter borderTopWidth="1px" display="block">
           <HStack justify="space-between" mb={4}>
-            <Text fontWeight="black">Estimated total</Text>
+            <Text fontWeight="black">{t('cart.estimatedTotal')}</Text>
             <Text fontWeight="black">${summary.total.toFixed(2)}</Text>
           </HStack>
           <Stack direction={{ base: 'column', sm: 'row' }} spacing={3}>
             <Button as={RouterLink} to="/cart" variant="outline" flex={1} onClick={handleClose}>
-              View cart
+              {t('common.viewCart')}
             </Button>
             <Button
               as={RouterLink}
@@ -190,7 +192,7 @@ export default function MiniCartDrawer() {
               flex={1}
               onClick={handleClose}
             >
-              Checkout
+              {t('common.checkout')}
             </Button>
           </Stack>
         </DrawerFooter>

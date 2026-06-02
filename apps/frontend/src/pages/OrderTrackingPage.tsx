@@ -16,26 +16,42 @@ import {
 import { type FormEvent, useState } from 'react'
 import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 import { useGetOrderQuery } from '../api/ordersApi'
+import { useTranslation } from '../i18n'
 import type { Order } from '../types'
 
-const orderStatusLabels: Record<Order['status'], string> = {
-  pending: 'Order received',
-  shipped: 'Shipped',
-  delivered: 'Delivered',
-  cancelled: 'Cancelled',
+const orderStatusLabelKeys: Record<
+  Order['status'],
+  | 'tracking.status.received'
+  | 'tracking.status.shipped'
+  | 'tracking.status.delivered'
+  | 'tracking.status.cancelled'
+> = {
+  pending: 'tracking.status.received',
+  shipped: 'tracking.status.shipped',
+  delivered: 'tracking.status.delivered',
+  cancelled: 'tracking.status.cancelled',
 }
 
-const paymentStatusLabels: Record<Order['paymentStatus'], string> = {
-  mock_paid: 'Paid',
-  paid: 'Paid',
-  payment_failed: 'Payment failed',
-  payment_required: 'Awaiting payment',
+const paymentStatusLabelKeys: Record<
+  Order['paymentStatus'],
+  'order.paymentStatus.paid' | 'order.paymentStatus.failed' | 'order.paymentStatus.required'
+> = {
+  mock_paid: 'order.paymentStatus.paid',
+  paid: 'order.paymentStatus.paid',
+  payment_failed: 'order.paymentStatus.failed',
+  payment_required: 'order.paymentStatus.required',
 }
 
-const orderMilestones: Array<{ readonly status: Order['status']; readonly label: string }> = [
-  { status: 'pending', label: 'Order received' },
-  { status: 'shipped', label: 'On the way' },
-  { status: 'delivered', label: 'Delivered' },
+const orderMilestones: Array<{
+  readonly status: Order['status']
+  readonly labelKey:
+    | 'tracking.status.received'
+    | 'tracking.milestone.onTheWay'
+    | 'tracking.status.delivered'
+}> = [
+  { status: 'pending', labelKey: 'tracking.status.received' },
+  { status: 'shipped', labelKey: 'tracking.milestone.onTheWay' },
+  { status: 'delivered', labelKey: 'tracking.status.delivered' },
 ]
 
 const getMilestoneIndex = (status: Order['status']) => {
@@ -47,6 +63,7 @@ const getMilestoneIndex = (status: Order['status']) => {
 }
 
 export default function OrderTrackingPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const trackedOrderId = searchParams.get('orderId')?.trim() ?? ''
   const [orderIdInput, setOrderIdInput] = useState(trackedOrderId)
@@ -75,13 +92,13 @@ export default function OrderTrackingPage() {
       <VStack align="stretch" spacing={6}>
         <Box>
           <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-            Order tracking
+            {t('tracking.eyebrow')}
           </Text>
           <Heading as="h1" size="2xl" color="neutral.900">
-            Track your OSAI order
+            {t('tracking.title')}
           </Heading>
           <Text color="neutral.600" mt={2}>
-            Enter the order ID from your confirmation email to see the latest fulfillment status.
+            {t('tracking.copy')}
           </Text>
         </Box>
 
@@ -96,7 +113,7 @@ export default function OrderTrackingPage() {
         >
           <Stack direction={{ base: 'column', md: 'row' }} spacing={3} align="end">
             <FormControl>
-              <FormLabel>Order ID</FormLabel>
+              <FormLabel>{t('tracking.orderIdLabel')}</FormLabel>
               <Input
                 value={orderIdInput}
                 onChange={(event) => setOrderIdInput(event.target.value)}
@@ -104,7 +121,7 @@ export default function OrderTrackingPage() {
               />
             </FormControl>
             <Button type="submit" colorScheme="brand" minW="140px">
-              Track order
+              {t('order.trackOrder')}
             </Button>
           </Stack>
         </Box>
@@ -118,7 +135,7 @@ export default function OrderTrackingPage() {
             p={{ base: 5, md: 6 }}
           >
             <Text color="neutral.700" fontWeight="semibold">
-              Your order ID appears on the confirmation page and in your order email.
+              {t('tracking.emptyHint')}
             </Text>
           </Box>
         ) : isLoading ? (
@@ -136,11 +153,9 @@ export default function OrderTrackingPage() {
             p={{ base: 5, md: 6 }}
           >
             <Heading as="h2" size="md" mb={2}>
-              We could not find that order.
+              {t('tracking.notFoundTitle')}
             </Heading>
-            <Text color="neutral.600">
-              Check the order ID and try again, or reply to your confirmation email for help.
-            </Text>
+            <Text color="neutral.600">{t('tracking.notFoundCopy')}</Text>
           </Box>
         ) : (
           <Box
@@ -153,12 +168,12 @@ export default function OrderTrackingPage() {
             <HStack justify="space-between" align="start" mb={5}>
               <Box>
                 <Text color="neutral.500" fontSize="sm">
-                  Order ID
+                  {t('tracking.orderIdLabel')}
                 </Text>
                 <Text fontWeight="black">{order.id}</Text>
               </Box>
               <Badge colorScheme={order.status === 'cancelled' ? 'red' : 'green'}>
-                {orderStatusLabels[order.status]}
+                {t(orderStatusLabelKeys[order.status])}
               </Badge>
             </HStack>
 
@@ -166,7 +181,7 @@ export default function OrderTrackingPage() {
               {order.status === 'cancelled' ? (
                 <Box border="1px solid" borderColor="red.200" borderRadius="lg" p={4}>
                   <Text color="red.700" fontWeight="black">
-                    This order was cancelled.
+                    {t('tracking.cancelledCopy')}
                   </Text>
                 </Box>
               ) : (
@@ -183,10 +198,10 @@ export default function OrderTrackingPage() {
                       />
                       <Box>
                         <Text color="neutral.900" fontWeight="black">
-                          {milestone.label}
+                          {t(milestone.labelKey)}
                         </Text>
                         <Text color="neutral.600" fontSize="sm">
-                          {isComplete ? 'Completed' : 'Coming next'}
+                          {isComplete ? t('tracking.completed') : t('tracking.comingNext')}
                         </Text>
                       </Box>
                     </HStack>
@@ -196,19 +211,21 @@ export default function OrderTrackingPage() {
             </Stack>
 
             <Stack mt={6} spacing={2}>
-              <Text color="neutral.600">Payment: {paymentStatusLabels[order.paymentStatus]}</Text>
-              <Text color="neutral.600">Total: ${order.totals.total.toFixed(2)}</Text>
               <Text color="neutral.600">
-                {isFetching
-                  ? 'Refreshing status...'
-                  : 'Status refreshes automatically while this page is open.'}
+                {t('order.payment')} {t(paymentStatusLabelKeys[order.paymentStatus])}
+              </Text>
+              <Text color="neutral.600">
+                {t('order.total', { total: order.totals.total.toFixed(2) })}
+              </Text>
+              <Text color="neutral.600">
+                {isFetching ? t('tracking.refreshing') : t('tracking.autoRefresh')}
               </Text>
             </Stack>
           </Box>
         )}
 
         <Button as={RouterLink} to="/" variant="outline" alignSelf="start">
-          Back to shop
+          {t('common.backToShop')}
         </Button>
       </VStack>
     </Container>

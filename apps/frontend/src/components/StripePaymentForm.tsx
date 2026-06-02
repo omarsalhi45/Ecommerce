@@ -1,6 +1,7 @@
 import { Alert, AlertIcon, Button, Stack, Text } from '@chakra-ui/react'
 import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { useState } from 'react'
+import { useTranslation } from '../i18n'
 
 interface StripePaymentFormProps {
   readonly orderId: string
@@ -8,6 +9,7 @@ interface StripePaymentFormProps {
 }
 
 export default function StripePaymentForm({ orderId, onPaymentReady }: StripePaymentFormProps) {
+  const { t } = useTranslation()
   const stripe = useStripe()
   const elements = useElements()
   const [errorMessage, setErrorMessage] = useState<string>()
@@ -17,7 +19,7 @@ export default function StripePaymentForm({ orderId, onPaymentReady }: StripePay
     setErrorMessage(undefined)
 
     if (!stripe || !elements) {
-      setErrorMessage('Payment form is still loading. Try again in a moment.')
+      setErrorMessage(t('payment.loadingError'))
       return
     }
 
@@ -32,7 +34,7 @@ export default function StripePaymentForm({ orderId, onPaymentReady }: StripePay
     setIsConfirming(false)
 
     if (result.error) {
-      setErrorMessage(result.error.message ?? 'Payment could not be confirmed.')
+      setErrorMessage(result.error.message ?? t('payment.confirmError'))
       return
     }
 
@@ -55,10 +57,10 @@ export default function StripePaymentForm({ orderId, onPaymentReady }: StripePay
         isLoading={isConfirming}
         isDisabled={!stripe || !elements}
       >
-        Pay securely
+        {t('payment.paySecurely')}
       </Button>
       <Text color="neutral.500" fontSize="sm">
-        OSAI never stores card details. Stripe handles the payment form and confirmation.
+        {t('payment.copy')}
       </Text>
     </Stack>
   )

@@ -2,6 +2,7 @@ import { StarIcon } from '@chakra-ui/icons'
 import { Badge, Box, Button, HStack, Image, Stack, Text, VStack, useToast } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { useTranslation } from '../i18n'
 import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
 import {
@@ -13,6 +14,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Product, ProductVariant } from '../types'
 
 export default function ProductList({ products }: { products: Product[] }) {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const wishlistProductIds = useAppSelector(selectWishlistProductIds)
   const toast = useToast()
@@ -26,8 +28,8 @@ export default function ProductList({ products }: { products: Product[] }) {
 
     if (inStockVariants.length > 0 && !selectedVariant) {
       toast({
-        title: 'Pick a size first',
-        description: `Choose the option you want for ${product.name}.`,
+        title: t('product.pickSizeFirst'),
+        description: t('product.pickSizeDescription', { product: product.name }),
         status: 'warning',
         duration: 2200,
         isClosable: true,
@@ -49,10 +51,10 @@ export default function ProductList({ products }: { products: Product[] }) {
     }
     dispatch(openMiniCart())
     toast({
-      title: `${product.name} added to cart`,
+      title: t('product.addedToCart', { product: product.name }),
       description: selectedVariant
-        ? `${getVariantLabel(selectedVariant)} is in your bag.`
-        : 'Your cart is ready when you are.',
+        ? t('product.variantInBag', { variant: getVariantLabel(selectedVariant) })
+        : t('product.cartReady'),
       status: 'success',
       duration: 2200,
       isClosable: true,
@@ -65,7 +67,9 @@ export default function ProductList({ products }: { products: Product[] }) {
 
     dispatch(toggleWishlistItem({ productId: product.id }))
     toast({
-      title: isWishlisted ? `${product.name} removed from wishlist` : `${product.name} saved`,
+      title: isWishlisted
+        ? t('product.removedFromWishlist', { product: product.name })
+        : t('product.savedToast', { product: product.name }),
       status: isWishlisted ? 'info' : 'success',
       duration: 1800,
       isClosable: true,
@@ -79,7 +83,8 @@ export default function ProductList({ products }: { products: Product[] }) {
         const inStockVariants =
           product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
         const selectedVariant = getSelectedVariant(product, selectedVariantByProductId[product.id])
-        const addLabel = inStockVariants.length > 1 && !selectedVariant ? 'Pick size' : 'Add'
+        const addLabel =
+          inStockVariants.length > 1 && !selectedVariant ? t('product.pickSize') : t('common.add')
         const isWishlisted = wishlistProductIds.includes(product.id)
 
         return (
@@ -122,10 +127,10 @@ export default function ProductList({ products }: { products: Product[] }) {
                 >
                   {product.category}
                 </Badge>
-                {getProductBadges(product).map((badge) => (
+                {getProductBadges(product).map((badgeKey) => (
                   <Badge
-                    key={badge}
-                    bg={badge === 'Low stock' ? 'orange.700' : 'black'}
+                    key={badgeKey}
+                    bg={badgeKey === 'product.lowStock' ? 'orange.700' : 'black'}
                     color="white"
                     borderRadius="full"
                     px={3}
@@ -133,15 +138,15 @@ export default function ProductList({ products }: { products: Product[] }) {
                     fontSize="xs"
                     fontWeight="semibold"
                   >
-                    {badge}
+                    {t(badgeKey)}
                   </Badge>
                 ))}
               </VStack>
               <Button
                 aria-label={
                   isWishlisted
-                    ? `Remove ${product.name} from wishlist`
-                    : `Save ${product.name} to wishlist`
+                    ? t('product.removeSavedAria', { product: product.name })
+                    : t('product.saveAria', { product: product.name })
                 }
                 aria-pressed={isWishlisted}
                 leftIcon={<StarIcon color={isWishlisted ? 'yellow.300' : 'neutral.500'} />}
@@ -159,7 +164,7 @@ export default function ProductList({ products }: { products: Product[] }) {
                 }}
                 onClick={() => handleToggleWishlist(product)}
               >
-                {isWishlisted ? 'Saved' : 'Save'}
+                {isWishlisted ? t('common.saved') : t('common.save')}
               </Button>
             </Box>
 
@@ -182,12 +187,15 @@ export default function ProductList({ products }: { products: Product[] }) {
                     <StarIcon color="yellow.400" boxSize={3.5} />
                     <Text>
                       {product.ratingSummary.averageRating.toFixed(1)} / 5 -{' '}
-                      {product.ratingSummary.reviewCount} reviews
+                      {t('product.reviews', { count: product.ratingSummary.reviewCount })}
                     </Text>
                   </HStack>
                 ) : null}
                 {getAvailableColors(product).length > 0 ? (
-                  <HStack spacing={2} aria-label={`${product.name} available colors`}>
+                  <HStack
+                    spacing={2}
+                    aria-label={t('product.availableColorsAria', { product: product.name })}
+                  >
                     {getAvailableColors(product).map((color) => (
                       <Box
                         key={color}
@@ -209,7 +217,7 @@ export default function ProductList({ products }: { products: Product[] }) {
                 <HStack
                   spacing={2}
                   flexWrap="wrap"
-                  aria-label={`${product.name} quick add options`}
+                  aria-label={t('product.quickAddOptionsAria', { product: product.name })}
                 >
                   {inStockVariants.map((variant) => {
                     const isSelected = selectedVariant?.sku === variant.sku
@@ -230,7 +238,7 @@ export default function ProductList({ products }: { products: Product[] }) {
                           }))
                         }
                       >
-                        {variant.size ?? variant.color ?? 'One'}
+                        {variant.size ?? variant.color ?? t('product.oneOption')}
                       </Button>
                     )
                   })}
@@ -256,7 +264,7 @@ export default function ProductList({ products }: { products: Product[] }) {
                     borderRadius="full"
                     flex={{ base: 1, sm: 'initial' }}
                   >
-                    Details
+                    {t('common.details')}
                   </Button>
                   <Button
                     colorScheme="brand"
@@ -299,18 +307,18 @@ const getSelectedVariant = (
 const getVariantLabel = (variant: ProductVariant): string =>
   [variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku
 
-const getProductBadges = (product: Product): string[] => {
-  const badges: string[] = []
+const getProductBadges = (product: Product): Array<'product.bestSeller' | 'product.lowStock'> => {
+  const badges: Array<'product.bestSeller' | 'product.lowStock'> = []
   const hasLowStockVariant = product.variants?.some(
     (variant) => variant.stockQuantity > 0 && variant.stockQuantity <= 5
   )
 
   if ((product.popularityScore ?? 0) >= 90) {
-    badges.push('Best seller')
+    badges.push('product.bestSeller')
   }
 
   if (hasLowStockVariant) {
-    badges.push('Low stock')
+    badges.push('product.lowStock')
   }
 
   return badges

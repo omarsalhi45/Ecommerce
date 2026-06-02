@@ -1,9 +1,11 @@
 import { Box, Button, Container, Heading, Stack, Text } from '@chakra-ui/react'
 import { Navigate, Link as RouterLink } from 'react-router-dom'
+import { useTranslation } from '../i18n'
 import { logout, selectCurrentUser, selectIsAuthenticated } from '../slices/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 export default function ProfilePage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const isAuthenticated = useAppSelector(selectIsAuthenticated)
   const user = useAppSelector(selectCurrentUser)
@@ -17,17 +19,17 @@ export default function ProfilePage() {
       <Box bg="white" border="1px solid" borderColor="neutral.200" borderRadius="lg" p={8}>
         <Stack spacing={4}>
           <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-            Profile
+            {t('profile.title')}
           </Text>
           <Heading>{user?.name}</Heading>
           <Text color="neutral.600">{user?.email}</Text>
-          <Text color="neutral.600">Role: {user?.role}</Text>
+          <Text color="neutral.600">{t('profile.role', { role: user?.role })}</Text>
           <Stack direction={{ base: 'column', sm: 'row' }} spacing={3}>
             <Button as={RouterLink} to="/checkout" colorScheme="brand">
-              Go to checkout
+              {t('profile.goToCheckout')}
             </Button>
             <Button variant="outline" onClick={() => dispatch(logout())}>
-              Log out
+              {t('profile.logout')}
             </Button>
           </Stack>
         </Stack>

@@ -50,6 +50,7 @@ import {
   getRelatedProducts,
 } from '../catalog/catalogFilters'
 import ProductList from '../components/ProductList'
+import { useTranslation } from '../i18n'
 import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
 import { selectIsWishlisted, toggleWishlistItem } from '../slices/wishlistSlice'
@@ -59,14 +60,14 @@ import type { Product, ProductVariant } from '../types'
 interface FitProfile {
   readonly modelHeight: string
   readonly modelSize: string
-  readonly fit: string
-  readonly material: string
-  readonly care: string
+  readonly fitKey: TranslationKey
+  readonly materialKey: TranslationKey
+  readonly careKey: TranslationKey
 }
 
 interface ProductQuestion {
-  readonly question: string
-  readonly answer: string
+  readonly questionKey: TranslationKey
+  readonly answerKey: TranslationKey
 }
 
 interface ProductMediaItem {
@@ -74,6 +75,8 @@ interface ProductMediaItem {
   readonly url: string
   readonly label: string
 }
+
+type TranslationKey = Parameters<ReturnType<typeof useTranslation>['t']>[0]
 
 const isString = (value: string | undefined): value is string => Boolean(value)
 
@@ -135,9 +138,9 @@ const getFitProfile = (product: Product): FitProfile => {
     return {
       modelHeight: '6 ft 1 in',
       modelSize: 'L',
-      fit: 'Relaxed shell fit with room for a hoodie underneath.',
-      material: 'Lightweight woven nylon blend with a smooth lining.',
-      care: 'Machine wash cold, hang dry, avoid bleach.',
+      fitKey: 'productDetail.fit.jacketFit',
+      materialKey: 'productDetail.fit.jacketMaterial',
+      careKey: 'productDetail.fit.jacketCare',
     }
   }
 
@@ -145,9 +148,9 @@ const getFitProfile = (product: Product): FitProfile => {
     return {
       modelHeight: '5 ft 11 in',
       modelSize: 'M',
-      fit: 'Boxy street fit with dropped shoulders.',
-      material: 'Heavy cotton jersey that keeps its shape.',
-      care: 'Wash inside out cold, tumble dry low.',
+      fitKey: 'productDetail.fit.teeFit',
+      materialKey: 'productDetail.fit.teeMaterial',
+      careKey: 'productDetail.fit.teeCare',
     }
   }
 
@@ -155,36 +158,36 @@ const getFitProfile = (product: Product): FitProfile => {
     return {
       modelHeight: '6 ft',
       modelSize: 'M',
-      fit: 'Relaxed through the leg with easy movement.',
-      material: 'Structured cotton twill with light stretch.',
-      care: 'Machine wash cold, line dry for best shape.',
+      fitKey: 'productDetail.fit.pantsFit',
+      materialKey: 'productDetail.fit.pantsMaterial',
+      careKey: 'productDetail.fit.pantsCare',
     }
   }
 
   return {
     modelHeight: '6 ft',
     modelSize: 'M',
-    fit: 'Relaxed everyday fit, designed for layering.',
-    material: 'Soft midweight fleece with a brushed inside.',
-    care: 'Machine wash cold, tumble dry low.',
+    fitKey: 'productDetail.fit.defaultFit',
+    materialKey: 'productDetail.fit.defaultMaterial',
+    careKey: 'productDetail.fit.defaultCare',
   }
 }
 
-const getProductReasons = (product: Product): string[] => {
-  const reasons = ['Easy to style with the rest of the OSAI catalog']
+const getProductReasons = (product: Product): TranslationKey[] => {
+  const reasons: TranslationKey[] = ['productDetail.reason.easyStyle']
 
   if ((product.popularityScore ?? 0) >= 90) {
-    reasons.unshift('One of the most saved pieces in the current drop')
+    reasons.unshift('productDetail.reason.mostSaved')
   }
 
   if ((product.ratingSummary?.averageRating ?? 0) >= 4.7) {
-    reasons.push('Strong shopper rating for comfort and shape')
+    reasons.push('productDetail.reason.strongRating')
   }
 
   if (
     product.variants?.some((variant) => variant.stockQuantity > 0 && variant.stockQuantity <= 5)
   ) {
-    reasons.push('Limited stock in select options')
+    reasons.push('productDetail.reason.limitedStock')
   }
 
   return reasons.slice(0, 3)
@@ -196,23 +199,24 @@ const getProductQuestions = (product: Product): ProductQuestion[] => {
 
   return [
     {
-      question: 'How does it fit?',
-      answer: isOuterwear
-        ? 'Roomy enough for a hoodie layer. Size down only if you want a sharper fit.'
-        : 'Relaxed without feeling oversized. Choose your usual size for the intended look.',
+      questionKey: 'productDetail.question.fit',
+      answerKey: isOuterwear
+        ? 'productDetail.question.outerwearAnswer'
+        : 'productDetail.question.defaultFitAnswer',
     },
     {
-      question: 'When will it arrive?',
-      answer: 'Orders usually ship in 2-4 business days with tracking after confirmation.',
+      questionKey: 'productDetail.question.arrival',
+      answerKey: 'productDetail.question.arrivalAnswer',
     },
     {
-      question: 'Can I return it?',
-      answer: 'Yes. Unworn items can be returned within 30 days after delivery.',
+      questionKey: 'productDetail.question.return',
+      answerKey: 'productDetail.question.returnAnswer',
     },
   ]
 }
 
 export default function ProductDetailPage() {
+  const { t } = useTranslation()
   const { productId = '' } = useParams()
   const dispatch = useAppDispatch()
   const toast = useToast()
@@ -268,12 +272,25 @@ export default function ProductDetailPage() {
   const selectedVariantLabel = selectedVariant ? getVariantLabel(selectedVariant) : undefined
   const variantStockMessage = selectedVariant
     ? selectedVariant.stockQuantity <= 0
-      ? `${selectedVariantLabel} is sold out. Try another option.`
+      ? t('productDetail.variantSoldOut', { variant: selectedVariantLabel })
       : selectedVariant.stockQuantity <= 5
-        ? `Only ${selectedVariant.stockQuantity} left in ${selectedVariantLabel}.`
-        : `${selectedVariant.stockQuantity} available in ${selectedVariantLabel}.`
+        ? t('productDetail.variantLowStock', {
+            count: selectedVariant.stockQuantity,
+            variant: selectedVariantLabel,
+          })
+        : t('productDetail.variantAvailable', {
+            count: selectedVariant.stockQuantity,
+            variant: selectedVariantLabel,
+          })
     : hasStructuredChoices
-      ? `Choose ${hasSizeChoices && hasColorChoices ? 'a size and color' : hasSizeChoices ? 'a size' : 'a color'} to check availability.`
+      ? t('productDetail.chooseAvailability', {
+          choice:
+            hasSizeChoices && hasColorChoices
+              ? t('productDetail.sizeAndColor')
+              : hasSizeChoices
+                ? t('productDetail.sizeOnly')
+                : t('productDetail.colorOnly'),
+        })
       : undefined
 
   const findMatchingVariant = (nextSize = selectedSize, nextColor = selectedColor) => {
@@ -304,8 +321,8 @@ export default function ProductDetailPage() {
 
     if (variants.length > 0 && !selectedVariant) {
       toast({
-        title: 'Choose your option first',
-        description: 'Pick the size and color you want before adding this piece.',
+        title: t('productDetail.chooseOptionFirst'),
+        description: t('productDetail.chooseOptionFirstCopy'),
         status: 'warning',
         duration: 2400,
         isClosable: true,
@@ -316,8 +333,8 @@ export default function ProductDetailPage() {
 
     if (selectedVariant && selectedVariant.stockQuantity <= 0) {
       toast({
-        title: 'That option is sold out',
-        description: 'Pick another size or color before adding this piece.',
+        title: t('productDetail.optionSoldOut'),
+        description: t('productDetail.optionSoldOutCopy'),
         status: 'warning',
         duration: 2400,
         isClosable: true,
@@ -336,10 +353,10 @@ export default function ProductDetailPage() {
     )
     dispatch(openMiniCart())
     toast({
-      title: `${product.name} added to cart`,
+      title: t('product.addedToCart', { product: product.name }),
       description: selectedVariantLabel
-        ? `${selectedVariantLabel} is in your bag.`
-        : 'Your cart is ready when you are.',
+        ? t('product.variantInBag', { variant: selectedVariantLabel })
+        : t('product.cartReady'),
       status: 'success',
       duration: 2200,
       isClosable: true,
@@ -354,7 +371,9 @@ export default function ProductDetailPage() {
 
     dispatch(toggleWishlistItem({ productId: product.id }))
     toast({
-      title: isWishlisted ? `${product.name} removed from wishlist` : `${product.name} saved`,
+      title: isWishlisted
+        ? t('product.removedFromWishlist', { product: product.name })
+        : t('product.savedToast', { product: product.name }),
       status: isWishlisted ? 'info' : 'success',
       duration: 1800,
       isClosable: true,
@@ -371,8 +390,8 @@ export default function ProductDetailPage() {
 
     if (!waitlistEmail.trim()) {
       toast({
-        title: 'Add your email first',
-        description: 'We need an email address for the restock alert.',
+        title: t('productDetail.addEmailFirst'),
+        description: t('productDetail.addEmailFirstCopy'),
         status: 'warning',
         duration: 2200,
         isClosable: true,
@@ -384,8 +403,8 @@ export default function ProductDetailPage() {
     const variantLabel = getVariantLabel(activeWaitlistVariant)
     setJoinedWaitlistLabel(variantLabel)
     toast({
-      title: `You're on the waitlist for ${variantLabel}`,
-      description: 'We will email you when this option comes back.',
+      title: t('productDetail.onWaitlist', { variant: variantLabel }),
+      description: t('productDetail.waitlistSuccessCopy'),
       status: 'success',
       duration: 2400,
       isClosable: true,
@@ -414,16 +433,16 @@ export default function ProductDetailPage() {
       <Container maxW="4xl" py={20}>
         <VStack spacing={4}>
           <Heading as="h1" size="xl">
-            Product not found
+            {t('productDetail.notFoundTitle')}
           </Heading>
           <Text color="neutral.600" textAlign="center">
-            This item may have been removed from the collection or the link is out of date.
+            {t('productDetail.notFoundCopy')}
           </Text>
           <HStack spacing={3}>
             <Button as={RouterLink} to="/" leftIcon={<ArrowBackIcon />} variant="outline">
-              Back to shop
+              {t('common.backToShop')}
             </Button>
-            <Button onClick={() => refetch()}>Retry</Button>
+            <Button onClick={() => refetch()}>{t('common.retry')}</Button>
           </HStack>
         </VStack>
       </Container>
@@ -434,7 +453,7 @@ export default function ProductDetailPage() {
     <Box>
       <Container maxW="7xl" py={{ base: 6, md: 10 }} pb={{ base: 28, lg: 10 }}>
         <Button as={RouterLink} to="/" leftIcon={<ArrowBackIcon />} variant="ghost" mb={6}>
-          Back to shop
+          {t('common.backToShop')}
         </Button>
 
         <Grid templateColumns={{ base: '1fr', lg: '1.05fr 0.95fr' }} gap={{ base: 8, lg: 12 }}>
@@ -471,14 +490,18 @@ export default function ProductDetailPage() {
             </Box>
 
             {productMedia.length > 1 ? (
-              <SimpleGrid columns={{ base: 4, md: 5 }} spacing={3} aria-label="Product media">
+              <SimpleGrid
+                columns={{ base: 4, md: 5 }}
+                spacing={3}
+                aria-label={t('productDetail.productMediaAria')}
+              >
                 {productMedia.map((media, index) => {
                   const isSelected = index === selectedMediaIndex
 
                   return (
                     <Button
                       key={`${media.type}-${media.url}`}
-                      aria-label={`Show ${media.label}`}
+                      aria-label={t('productDetail.showMediaAria', { label: media.label })}
                       aria-pressed={isSelected}
                       h="auto"
                       minH={20}
@@ -494,9 +517,9 @@ export default function ProductDetailPage() {
                         <Image src={media.url} alt="" objectFit="cover" w="full" aspectRatio="1" />
                       ) : (
                         <VStack spacing={1} color="neutral.900" px={2}>
-                          <Text fontWeight="black">Video</Text>
+                          <Text fontWeight="black">{t('productDetail.video')}</Text>
                           <Text color="neutral.500" fontSize="xs">
-                            0:15
+                            {t('productDetail.videoLength')}
                           </Text>
                         </VStack>
                       )}
@@ -547,7 +570,7 @@ export default function ProductDetailPage() {
                 <HStack justify="space-between" align="center">
                   <Box>
                     <Text color="neutral.900" fontWeight="black">
-                      Choose your option
+                      {t('productDetail.chooseOption')}
                     </Text>
                   </Box>
                   <Button
@@ -556,14 +579,14 @@ export default function ProductDetailPage() {
                     fontWeight="black"
                     onClick={sizeGuide.onOpen}
                   >
-                    Size guide
+                    {t('productDetail.sizeGuide')}
                   </Button>
                 </HStack>
 
                 {hasSizeChoices ? (
                   <Box>
                     <Text color="neutral.600" fontSize="sm" fontWeight="bold" mb={2}>
-                      Size
+                      {t('common.size')}
                     </Text>
                     <HStack spacing={2} flexWrap="wrap">
                       {variantSizes.map((size) => {
@@ -575,7 +598,10 @@ export default function ProductDetailPage() {
                           <Button
                             key={size}
                             type="button"
-                            aria-label={`Select size ${size}${hasStock ? '' : ' (sold out)'}`}
+                            aria-label={t('productDetail.selectSizeAria', {
+                              size,
+                              suffix: hasStock ? '' : t('productDetail.soldOutSuffix'),
+                            })}
                             aria-pressed={selectedSize === size}
                             size="sm"
                             variant={selectedSize === size ? 'solid' : 'outline'}
@@ -595,7 +621,7 @@ export default function ProductDetailPage() {
                 {hasColorChoices ? (
                   <Box>
                     <Text color="neutral.600" fontSize="sm" fontWeight="bold" mb={2}>
-                      Color
+                      {t('home.color')}
                     </Text>
                     <HStack spacing={2} flexWrap="wrap">
                       {variantColors.map((color) => {
@@ -607,7 +633,10 @@ export default function ProductDetailPage() {
                           <Button
                             key={color}
                             type="button"
-                            aria-label={`Select color ${color}${hasStock ? '' : ' (sold out)'}`}
+                            aria-label={t('productDetail.selectColorAria', {
+                              color,
+                              suffix: hasStock ? '' : t('productDetail.soldOutSuffix'),
+                            })}
                             aria-pressed={selectedColor === color}
                             size="sm"
                             variant={selectedColor === color ? 'solid' : 'outline'}
@@ -649,7 +678,9 @@ export default function ProductDetailPage() {
                         isDisabled={variant.stockQuantity <= 0}
                         onClick={() => setSelectedVariantSku(variant.sku)}
                       >
-                        {variant.stockQuantity > 0 ? 'Standard' : 'Sold out'}
+                        {variant.stockQuantity > 0
+                          ? t('productDetail.standard')
+                          : t('productDetail.soldOut')}
                       </Button>
                     ))}
                   </SimpleGrid>
@@ -682,15 +713,15 @@ export default function ProductDetailPage() {
                     <Stack spacing={3}>
                       <Box>
                         <Text color="neutral.900" fontWeight="black">
-                          Sold out in your size?
+                          {t('productDetail.soldOutInSize')}
                         </Text>
                         <Text color="neutral.600" fontSize="sm">
-                          Join the waitlist and we will email you when that option returns.
+                          {t('productDetail.waitlistCopy')}
                         </Text>
                       </Box>
                       <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                         <FormControl>
-                          <FormLabel>Sold-out option</FormLabel>
+                          <FormLabel>{t('productDetail.soldOutOption')}</FormLabel>
                           <Select
                             value={activeWaitlistVariantSku}
                             onChange={(event) => setSelectedWaitlistVariantSku(event.target.value)}
@@ -703,7 +734,7 @@ export default function ProductDetailPage() {
                           </Select>
                         </FormControl>
                         <FormControl>
-                          <FormLabel>Waitlist email</FormLabel>
+                          <FormLabel>{t('productDetail.waitlistEmail')}</FormLabel>
                           <Input
                             type="email"
                             value={waitlistEmail}
@@ -714,11 +745,11 @@ export default function ProductDetailPage() {
                       </SimpleGrid>
                       <Flex align={{ base: 'stretch', sm: 'center' }} gap={3} wrap="wrap">
                         <Button type="submit" colorScheme="brand">
-                          Join waitlist
+                          {t('productDetail.joinWaitlist')}
                         </Button>
                         {joinedWaitlistLabel ? (
                           <Text color="green.700" fontSize="sm" fontWeight="bold">
-                            You're on the waitlist for {joinedWaitlistLabel}.
+                            {t('productDetail.waitlistInline', { variant: joinedWaitlistLabel })}
                           </Text>
                         ) : null}
                       </Flex>
@@ -730,15 +761,21 @@ export default function ProductDetailPage() {
 
             <Stack spacing={4}>
               <Text color="neutral.900" fontWeight="black">
-                Fit & fabric
+                {t('productDetail.fitFabric')}
               </Text>
               <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                 {fitProfile
                   ? [
-                      ['Model', `${fitProfile.modelHeight}, wearing ${fitProfile.modelSize}`],
-                      ['Fit', fitProfile.fit],
-                      ['Material', fitProfile.material],
-                      ['Care', fitProfile.care],
+                      [
+                        t('productDetail.model'),
+                        t('productDetail.modelWearing', {
+                          height: fitProfile.modelHeight,
+                          size: fitProfile.modelSize,
+                        }),
+                      ],
+                      [t('productDetail.fit'), t(fitProfile.fitKey)],
+                      [t('productDetail.material'), t(fitProfile.materialKey)],
+                      [t('productDetail.care'), t(fitProfile.careKey)],
                     ].map(([title, body]) => (
                       <Box
                         key={title}
@@ -763,7 +800,7 @@ export default function ProductDetailPage() {
 
             <Flex gap={3} direction={{ base: 'column', sm: 'row' }}>
               <Button colorScheme="brand" size="lg" onClick={handleAddToCart}>
-                Add to cart
+                {t('cart.addToCart')}
               </Button>
               <Button
                 leftIcon={<StarIcon />}
@@ -772,19 +809,19 @@ export default function ProductDetailPage() {
                 size="lg"
                 onClick={handleToggleWishlist}
               >
-                {isWishlisted ? 'Saved' : 'Save'}
+                {isWishlisted ? t('common.saved') : t('common.save')}
               </Button>
               <Button as={RouterLink} to="/checkout" variant="outline" size="lg">
-                Checkout
+                {t('common.checkout')}
               </Button>
             </Flex>
 
             <SimpleGrid columns={{ base: 1, md: 4 }} spacing={3}>
               {[
-                ['Delivery', 'Ships in 2-4 business days'],
-                ['Returns', '30-day returns. Exchanges are free; refund returns deduct $6.'],
-                ['Checkout', 'Secure Stripe payment'],
-                ['Support', 'Help before and after your order'],
+                [t('productDetail.delivery'), t('productDetail.deliveryCopy')],
+                [t('cart.returnsClarity'), t('productDetail.returnsCopy')],
+                [t('common.checkout'), t('productDetail.checkoutCopy')],
+                [t('common.support'), t('productDetail.supportCopy')],
               ].map(([title, body]) => (
                 <Box
                   key={title}
@@ -816,10 +853,10 @@ export default function ProductDetailPage() {
             p={{ base: 5, md: 6 }}
           >
             <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-              Product notes
+              {t('productDetail.productNotes')}
             </Text>
             <Heading as="h2" size="lg" color="neutral.900" mt={1} mb={4}>
-              Why this piece
+              {t('productDetail.whyThisPiece')}
             </Heading>
             <Stack spacing={3}>
               {productReasons.map((reason) => (
@@ -833,7 +870,7 @@ export default function ProductDetailPage() {
                     mt="0.55rem"
                   />
                   <Text color="neutral.700" fontWeight="semibold">
-                    {reason}
+                    {t(reason)}
                   </Text>
                 </HStack>
               ))}
@@ -848,19 +885,19 @@ export default function ProductDetailPage() {
             p={{ base: 5, md: 6 }}
           >
             <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-              Quick answers
+              {t('productDetail.quickAnswers')}
             </Text>
             <Heading as="h2" size="lg" color="neutral.900" mt={1} mb={4}>
-              Questions shoppers ask
+              {t('productDetail.questionsAsk')}
             </Heading>
             <Stack spacing={4} divider={<Divider />}>
               {productQuestions.map((item) => (
-                <Box key={item.question}>
+                <Box key={item.questionKey}>
                   <Text color="neutral.900" fontWeight="black">
-                    {item.question}
+                    {t(item.questionKey)}
                   </Text>
                   <Text color="neutral.600" fontSize="sm" mt={1}>
-                    {item.answer}
+                    {t(item.answerKey)}
                   </Text>
                 </Box>
               ))}
@@ -872,14 +909,16 @@ export default function ProductDetailPage() {
           <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Community rating
+                {t('productDetail.communityRating')}
               </Text>
               <Heading as="h2" size="xl" color="neutral.900">
-                Reviews
+                {t('productDetail.reviewsTitle')}
               </Heading>
               <Text color="neutral.600" mt={2}>
-                Average {ratingSummary.averageRating.toFixed(1)} out of 5 from{' '}
-                {ratingSummary.reviewCount} shoppers.
+                {t('productDetail.averageReviews', {
+                  average: ratingSummary.averageRating.toFixed(1),
+                  count: ratingSummary.reviewCount,
+                })}
               </Text>
             </Box>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
@@ -912,13 +951,13 @@ export default function ProductDetailPage() {
           <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Outfit builder
+                {t('productDetail.outfitBuilder')}
               </Text>
               <Heading as="h2" size="xl" color="neutral.900">
-                Complete the fit
+                {t('productDetail.completeFit')}
               </Heading>
               <Text color="neutral.600" mt={2}>
-                Add complementary pieces that balance the shape, layer, and color of this item.
+                {t('productDetail.completeFitCopy')}
               </Text>
             </Box>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
@@ -931,10 +970,10 @@ export default function ProductDetailPage() {
           <VStack align="stretch" spacing={6} mt={{ base: 12, md: 16 }}>
             <Box>
               <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-                Keep browsing
+                {t('productDetail.keepBrowsing')}
               </Text>
               <Heading as="h2" size="xl" color="neutral.900">
-                Recommended pieces
+                {t('productDetail.recommendedPieces')}
               </Heading>
             </Box>
             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
@@ -963,16 +1002,16 @@ export default function ProductDetailPage() {
             <Text fontWeight="black">${product.price.toFixed(2)}</Text>
             <Text color="neutral.500" fontSize="sm" noOfLines={1}>
               {selectedVariantLabel ??
-                (variants.length > 0 ? 'Choose size and color' : product.name)}
+                (variants.length > 0 ? t('productDetail.chooseSizeColor') : product.name)}
             </Text>
           </Box>
           <Button
-            aria-label="Sticky add to cart"
+            aria-label={t('productDetail.stickyAddAria')}
             colorScheme="brand"
             onClick={handleAddToCart}
             minW="136px"
           >
-            Add to cart
+            {t('cart.addToCart')}
           </Button>
         </HStack>
       </Box>
@@ -980,19 +1019,19 @@ export default function ProductDetailPage() {
       <Modal isOpen={sizeGuide.isOpen} onClose={sizeGuide.onClose} size="lg">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Size guide</ModalHeader>
+          <ModalHeader>{t('productDetail.sizeGuide')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
             <Text color="neutral.600" mb={4}>
-              OSAI pieces are cut relaxed. Choose your usual size for a roomy street fit.
+              {t('productDetail.sizeGuideCopy')}
             </Text>
             <TableContainer>
               <Table size="sm">
                 <Thead>
                   <Tr>
-                    <Th>Size</Th>
-                    <Th>Chest</Th>
-                    <Th>Length</Th>
+                    <Th>{t('common.size')}</Th>
+                    <Th>{t('productDetail.chest')}</Th>
+                    <Th>{t('productDetail.length')}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -1012,11 +1051,11 @@ export default function ProductDetailPage() {
               </Table>
             </TableContainer>
             <Text color="neutral.500" fontSize="sm" mt={4}>
-              Need help?{' '}
+              {t('productDetail.needHelp')}{' '}
               <Link as={RouterLink} to="/cart" fontWeight="bold">
-                Review your bag
+                {t('productDetail.reviewBag')}
               </Link>{' '}
-              before checkout.
+              {t('productDetail.beforeCheckout')}
             </Text>
           </ModalBody>
         </ModalContent>

@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react'
 import { Link as RouterLink, useSearchParams } from 'react-router-dom'
 import { useGetOrderQuery } from '../api/ordersApi'
+import { useTranslation } from '../i18n'
 import type { Order } from '../types'
 
 const paymentStatusColorSchemes: Record<Order['paymentStatus'], string> = {
@@ -20,14 +21,21 @@ const paymentStatusColorSchemes: Record<Order['paymentStatus'], string> = {
   payment_failed: 'red',
   payment_required: 'yellow',
 }
-const paymentStatusLabels: Record<Order['paymentStatus'], string> = {
-  mock_paid: 'mock paid',
-  paid: 'paid',
-  payment_failed: 'failed',
-  payment_required: 'awaiting payment',
+const paymentStatusLabelKeys: Record<
+  Order['paymentStatus'],
+  | 'order.paymentStatus.mockPaid'
+  | 'order.paymentStatus.paid'
+  | 'order.paymentStatus.failed'
+  | 'order.paymentStatus.required'
+> = {
+  mock_paid: 'order.paymentStatus.mockPaid',
+  paid: 'order.paymentStatus.paid',
+  payment_failed: 'order.paymentStatus.failed',
+  payment_required: 'order.paymentStatus.required',
 }
 
 export default function OrderConfirmationPage() {
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const orderId = searchParams.get('orderId') ?? ''
   const {
@@ -49,9 +57,9 @@ export default function OrderConfirmationPage() {
         p={{ base: 6, md: 8 }}
       >
         <Text color="accent.600" fontSize="sm" fontWeight="black" textTransform="uppercase">
-          Order placed
+          {t('order.placed')}
         </Text>
-        <Heading mb={3}>Thanks for your order.</Heading>
+        <Heading mb={3}>{t('order.thanks')}</Heading>
         {isLoading ? (
           <Stack spacing={3} mb={6}>
             <Skeleton h={5} />
@@ -60,29 +68,33 @@ export default function OrderConfirmationPage() {
           </Stack>
         ) : isError || !order ? (
           <Text color="neutral.600" mb={6}>
-            Your order was created, but the confirmation details could not be loaded.
+            {t('order.loadError')}
           </Text>
         ) : (
           <Stack spacing={3} mb={6}>
-            <Text color="neutral.600">Order ID: {order.id}</Text>
-            <Text color="neutral.600">Fulfillment status: {order.status}</Text>
+            <Text color="neutral.600">{t('order.id', { id: order.id })}</Text>
+            <Text color="neutral.600">
+              {t('order.fulfillmentStatus', { status: order.status })}
+            </Text>
             <HStack>
-              <Text color="neutral.600">Payment:</Text>
+              <Text color="neutral.600">{t('order.payment')}</Text>
               <Badge colorScheme={paymentStatusColorSchemes[order.paymentStatus]}>
-                {paymentStatusLabels[order.paymentStatus]}
+                {t(paymentStatusLabelKeys[order.paymentStatus])}
               </Badge>
             </HStack>
             <Divider />
-            <Text fontWeight="black">Total: ${order.totals.total.toFixed(2)}</Text>
+            <Text fontWeight="black">
+              {t('order.total', { total: order.totals.total.toFixed(2) })}
+            </Text>
           </Stack>
         )}
         <HStack spacing={3}>
           <Button as={RouterLink} to="/" colorScheme="brand">
-            Back to shop
+            {t('common.backToShop')}
           </Button>
           {order ? (
             <Button as={RouterLink} to={`/track-order?orderId=${order.id}`} variant="outline">
-              Track order
+              {t('order.trackOrder')}
             </Button>
           ) : null}
         </HStack>
