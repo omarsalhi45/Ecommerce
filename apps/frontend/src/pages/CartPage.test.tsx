@@ -114,4 +114,44 @@ describe('CartPage', () => {
       },
     ])
   })
+
+  it('moves cart items to saved for later and restores them', () => {
+    mockUseGetProductsQuery.mockReturnValue({
+      data: products,
+      refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useGetProductsQuery>)
+
+    const { store } = renderWithProviders(<CartPage />)
+
+    act(() => {
+      store.dispatch(
+        addItem({
+          productId: 'hoodie-001',
+          variantSku: 'hoodie-001-black-m',
+          size: 'M',
+          color: 'Black',
+        })
+      )
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save for later' }))
+
+    expect(store.getState().cart.items).toEqual([])
+    expect(store.getState().wishlist.productIds).toEqual(['hoodie-001'])
+    expect(screen.getByRole('heading', { name: 'Not ready today' })).toBeInTheDocument()
+    expect(screen.getByText('Everyday Weight Hoodie')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move to cart' }))
+
+    expect(store.getState().wishlist.productIds).toEqual([])
+    expect(store.getState().cart.items).toEqual([
+      {
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-m',
+        size: 'M',
+        color: 'Black',
+        quantity: 1,
+      },
+    ])
+  })
 })

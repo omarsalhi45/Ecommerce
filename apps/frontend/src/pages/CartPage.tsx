@@ -11,6 +11,7 @@ import {
   Stack,
   Text,
   VStack,
+  useToast,
 } from '@chakra-ui/react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useGetProductsQuery } from '../api/productsApi'
@@ -23,12 +24,17 @@ import {
   removeItem,
   selectCartItems,
 } from '../slices/cartSlice'
+import {
+  addWishlistItem,
+  removeWishlistItem,
+  selectWishlistProductIds,
+} from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Product } from '../types'
 
-const getRecommendedCartProducts = (cartProductIds: string[], products: Product[]) =>
+const getRecommendedCartProducts = (excludedProductIds: string[], products: Product[]) =>
   products
-    .filter((product) => !cartProductIds.includes(product.id))
+    .filter((product) => !excludedProductIds.includes(product.id))
     .sort((first, second) => (second.popularityScore ?? 0) - (first.popularityScore ?? 0))
     .slice(0, 3)
 
@@ -37,10 +43,18 @@ const getDefaultVariant = (product: Product) =>
 
 export default function CartPage() {
   const dispatch = useAppDispatch()
+  const toast = useToast()
   const cartItems = useAppSelector(selectCartItems)
+  const wishlistProductIds = useAppSelector(selectWishlistProductIds)
   const { data: products = [] } = useGetProductsQuery()
   const cartProductIds = cartItems.map((item) => item.productId)
-  const recommendedProducts = getRecommendedCartProducts(cartProductIds, products)
+  const savedForLaterProducts = products.filter(
+    (product) => wishlistProductIds.includes(product.id) && !cartProductIds.includes(product.id)
+  )
+  const recommendedProducts = getRecommendedCartProducts(
+    [...cartProductIds, ...wishlistProductIds],
+    products
+  )
 
   const enrichedItems = cartItems.map((item) => ({
     ...item,
@@ -51,6 +65,35 @@ export default function CartPage() {
   const freeShippingRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - summary.subtotal)
   const freeShippingProgress =
     summary.subtotal > 0 ? Math.min((summary.subtotal / FREE_SHIPPING_THRESHOLD) * 100, 100) : 0
+  const saveForLater = (item: (typeof enrichedItems)[number]) => {
+    dispatch(addWishlistItem({ productId: item.productId }))
+    dispatch(removeItem({ productId: item.productId, variantSku: item.variantSku }))
+    toast({
+      title: `${item.product?.name ?? 'Item'} saved for later`,
+      status: 'success',
+      duration: 1800,
+      isClosable: true,
+    })
+  }
+  const moveSavedProductToCart = (product: Product) => {
+    const variant = getDefaultVariant(product)
+
+    dispatch(
+      addItem({
+        productId: product.id,
+        variantSku: variant?.sku,
+        size: variant?.size,
+        color: variant?.color,
+      })
+    )
+    dispatch(removeWishlistItem({ productId: product.id }))
+    toast({
+      title: `${product.name} moved to cart`,
+      status: 'success',
+      duration: 1800,
+      isClosable: true,
+    })
+  }
 
   return (
     <Container maxW="7xl" py={{ base: 8, md: 12 }}>
@@ -154,11 +197,76 @@ export default function CartPage() {
                     >
                       Remove
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => saveForLater(item)}>
+                      Save for later
+                    </Button>
                   </HStack>
                 </Box>
               </HStack>
             ))
           )}
+
+          {savedForLaterProducts.length > 0 ? (
+            <Box
+              bg="white"
+              border="1px solid"
+              borderColor="neutral.200"
+              borderRadius="lg"
+              p={{ base: 4, md: 5 }}
+            >
+              <HStack justify="space-between" align="start" mb={4}>
+                <Box>
+                  <Text
+                    color="accent.600"
+                    fontSize="sm"
+                    fontWeight="black"
+                    textTransform="uppercase"
+                  >
+                    Saved for later
+                  </Text>
+                  <Heading as="h2" size="md">
+                    Not ready today
+                  </Heading>
+                </Box>
+                <Badge colorScheme="yellow" borderRadius="full" px={3} py={1}>
+                  {savedForLaterProducts.length} saved
+                </Badge>
+              </HStack>
+              <Stack spacing={3}>
+                {savedForLaterProducts.map((product) => (
+                  <HStack
+                    key={product.id}
+                    border="1px solid"
+                    borderColor="neutral.200"
+                    borderRadius="lg"
+                    p={3}
+                    spacing={3}
+                  >
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      boxSize="72px"
+                      objectFit="cover"
+                      borderRadius="md"
+                    />
+                    <Box flex={1}>
+                      <Text fontWeight="black">{product.name}</Text>
+                      <Text color="neutral.600" fontSize="sm">
+                        ${product.price.toFixed(2)}
+                      </Text>
+                    </Box>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => moveSavedProductToCart(product)}
+                    >
+                      Move to cart
+                    </Button>
+                  </HStack>
+                ))}
+              </Stack>
+            </Box>
+          ) : null}
 
           {enrichedItems.length > 0 && recommendedProducts.length > 0 ? (
             <Box

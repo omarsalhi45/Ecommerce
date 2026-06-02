@@ -236,7 +236,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add free-shipping threshold messaging in cart.
 - [x] Add free-shipping threshold messaging in mini-cart once the cart drawer exists.
 - [x] Add promo code UI and backend discount validation.
-- [ ] Add save-for-later cart actions using wishlist or a dedicated saved-items list.
+- [x] Add save-for-later cart actions using wishlist or a dedicated saved-items list.
 - [x] Add cart-level product recommendations and add-on suggestions.
 - [x] Add delivery estimate and payment trust badges to cart.
 - [x] Upgrade checkout into a clearer step flow: Contact, Shipping, Payment, Review.
