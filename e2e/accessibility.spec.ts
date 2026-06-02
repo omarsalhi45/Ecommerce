@@ -32,15 +32,16 @@ test('storefront primary navigation is keyboard reachable', async ({ page }) => 
   await expect(page.getByLabel('OSAI home')).toBeFocused()
 
   await page.keyboard.press('Tab')
-  await expect(page.getByRole('link', { name: 'Shop', exact: true })).toBeFocused()
+  await expect(page.getByRole('link', { name: 'Track', exact: true })).toBeFocused()
 
   await page.keyboard.press('Tab')
-  await expect(
-    page.getByLabel('Main navigation').getByRole('link', { name: 'Wishlist', exact: true })
-  ).toBeFocused()
+  await expect(page.getByRole('link', { name: 'Checkout', exact: true })).toBeFocused()
 
   await page.keyboard.press('Tab')
-  await expect(page.getByRole('link', { name: 'Cart' }).first()).toBeFocused()
+  await expect(page.getByLabel('Language')).toBeFocused()
+
+  await page.keyboard.press('Tab')
+  await expect(page.getByTestId('saved-count-link')).toBeFocused()
 })
 
 test('admin login form exposes keyboard-reachable labeled fields', async ({ page }) => {
