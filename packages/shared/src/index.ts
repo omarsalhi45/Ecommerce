@@ -5,6 +5,7 @@ export interface CartItem {
 
 export interface CartSummary {
   readonly subtotal: number
+  readonly discount?: number
   readonly shipping: number
   readonly tax: number
   readonly total: number
@@ -29,6 +30,7 @@ export interface ShippingAddress {
 export interface CreateOrderRequest {
   readonly customer: CheckoutCustomer
   readonly shippingAddress: ShippingAddress
+  readonly promoCode?: string
   readonly items: CartItem[]
 }
 
@@ -52,8 +54,15 @@ export interface Order {
   readonly shippingAddress: ShippingAddress
   readonly items: OrderItem[]
   readonly totals: CartSummary
+  readonly discount?: AppliedDiscount
   readonly userId?: string
   readonly createdAt: string
+}
+
+export interface AppliedDiscount {
+  readonly code: string
+  readonly label: string
+  readonly amount: number
 }
 
 export interface OrderListResponse {

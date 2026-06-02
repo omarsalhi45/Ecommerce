@@ -48,21 +48,66 @@ const products: Product[] = [
       },
     ],
   },
+  {
+    id: 'tee-001',
+    name: 'Core Logo Tee',
+    description: 'Soft cotton tee',
+    price: 32,
+    imageUrl: 'tee.jpg',
+    category: 'tees',
+    variants: [
+      {
+        sku: 'tee-001-white-m',
+        size: 'M',
+        color: 'White',
+        stockQuantity: 12,
+      },
+    ],
+  },
 ]
 
 const setupCheckoutMocks = () => {
+  const createOrder = vi.fn(() => ({
+    unwrap: vi.fn().mockResolvedValue({
+      id: 'order_test_1',
+      paymentStatus: 'mock_paid',
+      totals: {
+        subtotal: 59.99,
+        discount: 6,
+        shipping: 7.5,
+        tax: 4.32,
+        total: 65.81,
+      },
+    }),
+  }))
+  const createCheckoutPaymentIntent = vi.fn(() => ({
+    unwrap: vi.fn().mockResolvedValue({
+      order: {
+        id: 'order_test_1',
+      },
+      paymentIntent: {
+        id: 'pi_test_1',
+        clientSecret: 'pi_test_secret',
+        amount: 6581,
+        currency: 'usd',
+      },
+    }),
+  }))
+
   mockUseGetProductsQuery.mockReturnValue({
     data: products,
     refetch: vi.fn(),
   } as unknown as ReturnType<typeof useGetProductsQuery>)
   mockUseCreateOrderMutation.mockReturnValue([
-    vi.fn(),
+    createOrder,
     { isLoading: false },
   ] as unknown as ReturnType<typeof useCreateOrderMutation>)
   mockUseCreateCheckoutPaymentIntentMutation.mockReturnValue([
-    vi.fn(),
+    createCheckoutPaymentIntent,
     { isLoading: false },
   ] as unknown as ReturnType<typeof useCreateCheckoutPaymentIntentMutation>)
+
+  return { createCheckoutPaymentIntent, createOrder }
 }
 
 const renderCheckout = () =>
@@ -155,5 +200,53 @@ describe('CheckoutPage', () => {
     expect(screen.getByRole('heading', { name: 'Review your order' })).toBeInTheDocument()
     expect(screen.getByText('10 Market Street, Paris, 75001')).toBeInTheDocument()
     expect(screen.queryByText('State / region is required.')).not.toBeInTheDocument()
+  })
+
+  it('applies promo codes and sends them with checkout payloads', () => {
+    const { createCheckoutPaymentIntent } = setupCheckoutMocks()
+    const { store } = renderCheckout()
+
+    act(() => {
+      store.dispatch(addItem({ productId: 'hoodie-001' }))
+    })
+
+    fireEvent.change(screen.getByLabelText('Promo code'), { target: { value: 'osai10' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(screen.getByText('Promo OSAI10 -$6.00')).toBeInTheDocument()
+    expect(screen.getByText('Estimated total $65.81')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText(/First name/), { target: { value: 'Omar' } })
+    fireEvent.change(screen.getByLabelText(/Last name/), { target: { value: 'Salhi' } })
+    fireEvent.change(screen.getByLabelText(/Email/), { target: { value: 'omar@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to shipping' }))
+
+    fireEvent.change(screen.getByLabelText(/Address line 1/), {
+      target: { value: '10 Market Street' },
+    })
+    fireEvent.change(screen.getByLabelText(/City/), { target: { value: 'Paris' } })
+    fireEvent.change(screen.getByLabelText(/Postal code/), { target: { value: '75001' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to review' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Continue to payment' }))
+
+    expect(createCheckoutPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        promoCode: 'OSAI10',
+      })
+    )
+  })
+
+  it('blocks minimum-subtotal promo codes before payment', () => {
+    const { store } = renderCheckout()
+
+    act(() => {
+      store.dispatch(addItem({ productId: 'tee-001' }))
+    })
+
+    fireEvent.change(screen.getByLabelText('Promo code'), { target: { value: 'welcome15' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    expect(screen.getByText('WELCOME15 needs at least $50.00 in products.')).toBeInTheDocument()
+    expect(screen.queryByText(/Promo WELCOME15/)).not.toBeInTheDocument()
   })
 })

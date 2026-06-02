@@ -175,6 +175,45 @@ describe('api app', () => {
     })
   })
 
+  it('applies valid promo codes through checkout order creation', async () => {
+    const response = await fetch(`${baseUrl}/api/orders`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        customer: {
+          email: 'promo-shopper@example.com',
+          firstName: 'Promo',
+          lastName: 'Shopper',
+        },
+        shippingAddress: {
+          line1: '1 Main Street',
+          city: 'Austin',
+          postalCode: '78701',
+          country: 'US',
+        },
+        promoCode: 'osai10',
+        items: [{ productId: 'hoodie-001', quantity: 1 }],
+      }),
+    })
+    const body = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(body).toMatchObject({
+      discount: {
+        code: 'OSAI10',
+        label: '10% off',
+        amount: 6,
+      },
+      totals: {
+        subtotal: 59.99,
+        discount: 6,
+        shipping: 7.5,
+        tax: 4.32,
+        total: 65.81,
+      },
+    })
+  })
+
   it('returns a single product for product detail pages', async () => {
     const response = await fetch(`${baseUrl}/api/products/hoodie-001`)
     const body = await response.json()

@@ -25,6 +25,61 @@ describe('orderService', () => {
     })
   })
 
+  it('applies validated promo codes to trusted checkout totals', async () => {
+    expect(calculateOrderTotals(59.99, 'OSAI10')).toEqual({
+      subtotal: 59.99,
+      discount: 6,
+      shipping: 7.5,
+      tax: 4.32,
+      total: 65.81,
+    })
+
+    const order = await createOrder({
+      customer: {
+        email: 'promo-shopper@example.com',
+        firstName: 'Promo',
+        lastName: 'Shopper',
+      },
+      shippingAddress: {
+        line1: '1 Main Street',
+        city: 'Austin',
+        state: 'TX',
+        postalCode: '78701',
+        country: 'US',
+      },
+      promoCode: 'osai10',
+      items: [{ productId: 'hoodie-001', quantity: 1 }],
+    })
+
+    expect(order.discount).toEqual({
+      code: 'OSAI10',
+      label: '10% off',
+      amount: 6,
+    })
+    expect(order.totals.total).toBe(65.81)
+  })
+
+  it('rejects invalid promo codes before creating an order', async () => {
+    await expect(
+      createOrder({
+        customer: {
+          email: 'promo-shopper@example.com',
+          firstName: 'Promo',
+          lastName: 'Shopper',
+        },
+        shippingAddress: {
+          line1: '1 Main Street',
+          city: 'Austin',
+          state: 'TX',
+          postalCode: '78701',
+          country: 'US',
+        },
+        promoCode: 'NOPE',
+        items: [{ productId: 'hoodie-001', quantity: 1 }],
+      })
+    ).rejects.toThrow('Promo code is not valid')
+  })
+
   it('creates a mocked paid order from product snapshots', async () => {
     const order = await createOrder({
       customer: {

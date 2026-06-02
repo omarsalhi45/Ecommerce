@@ -78,6 +78,9 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping NUMERIC(10, 2) NOT NULL CHECK (shipping >= 0),
   tax NUMERIC(10, 2) NOT NULL CHECK (tax >= 0),
   total NUMERIC(10, 2) NOT NULL CHECK (total >= 0),
+  discount_code TEXT,
+  discount_label TEXT,
+  discount_amount NUMERIC(10, 2) CHECK (discount_amount IS NULL OR discount_amount >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

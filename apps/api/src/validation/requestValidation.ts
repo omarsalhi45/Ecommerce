@@ -76,6 +76,7 @@ export const validateCheckoutRequest = (body: unknown): CreateOrderRequest => {
       postalCode: readRequiredString(body.shippingAddress.postalCode, 'Postal code'),
       country: readRequiredString(body.shippingAddress.country, 'Country'),
     },
+    promoCode: readOptionalString(body.promoCode)?.toUpperCase(),
     items,
   }
 }

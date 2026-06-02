@@ -20,6 +20,9 @@ interface OrderRow {
   readonly shipping: string
   readonly tax: string
   readonly total: string
+  readonly discount_code: string | null
+  readonly discount_label: string | null
+  readonly discount_amount: string | null
   readonly created_at: Date
 }
 
@@ -60,10 +63,19 @@ const mapOrder = (row: OrderRow, items: OrderItem[]): Order => ({
   items,
   totals: {
     subtotal: Number(row.subtotal),
+    discount: row.discount_amount ? Number(row.discount_amount) : undefined,
     shipping: Number(row.shipping),
     tax: Number(row.tax),
     total: Number(row.total),
   },
+  discount:
+    row.discount_code && row.discount_label && row.discount_amount
+      ? {
+          code: row.discount_code,
+          label: row.discount_label,
+          amount: Number(row.discount_amount),
+        }
+      : undefined,
   userId: row.user_id ?? undefined,
   createdAt: row.created_at.toISOString(),
 })
@@ -101,9 +113,12 @@ export const insertOrderIntoDb = async (order: Order): Promise<Order> => {
          subtotal,
          shipping,
          tax,
-         total
+         total,
+         discount_code,
+         discount_label,
+         discount_amount
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
       [
         order.id,
         order.userId,
@@ -123,6 +138,9 @@ export const insertOrderIntoDb = async (order: Order): Promise<Order> => {
         order.totals.shipping,
         order.totals.tax,
         order.totals.total,
+        order.discount?.code ?? null,
+        order.discount?.label ?? null,
+        order.discount?.amount ?? null,
       ]
     )
 

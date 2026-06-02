@@ -1,4 +1,5 @@
 import type {
+  AppliedDiscount,
   CartSummary,
   CreateOrderRequest,
   Order,
@@ -39,22 +40,81 @@ const SHIPPING_RATE = 7.5
 const FREE_SHIPPING_THRESHOLD = 100
 const orders: Order[] = []
 
+const promoCodes: Record<
+  string,
+  {
+    readonly label: string
+    readonly percentOff: number
+    readonly minimumSubtotal?: number
+  }
+> = {
+  OSAI10: {
+    label: '10% off',
+    percentOff: 0.1,
+  },
+  WELCOME15: {
+    label: '15% off orders $50+',
+    percentOff: 0.15,
+    minimumSubtotal: 50,
+  },
+}
+
 const roundMoney = (value: number): number => Math.round(value * 100) / 100
 
 export const isRevenueRecognizedPaymentStatus = (paymentStatus: OrderPaymentStatus): boolean => {
   return paymentStatus === 'paid' || paymentStatus === 'mock_paid'
 }
 
-export const calculateOrderTotals = (subtotal: number): CartSummary => {
-  const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD ? SHIPPING_RATE : 0
-  const tax = roundMoney(subtotal * TAX_RATE)
+export const normalizePromoCode = (promoCode: string | undefined): string | undefined => {
+  const normalizedCode = promoCode?.trim().toUpperCase()
+  return normalizedCode || undefined
+}
+
+export const calculateOrderDiscount = (
+  subtotal: number,
+  promoCode: string | undefined
+): AppliedDiscount | undefined => {
+  const normalizedCode = normalizePromoCode(promoCode)
+
+  if (!normalizedCode) {
+    return undefined
+  }
+
+  const promo = promoCodes[normalizedCode]
+
+  if (!promo) {
+    throw new ApiError(400, 'Promo code is not valid', 'INVALID_PROMO_CODE')
+  }
+
+  if (promo.minimumSubtotal && subtotal < promo.minimumSubtotal) {
+    throw new ApiError(
+      400,
+      `${normalizedCode} requires a $${promo.minimumSubtotal.toFixed(2)} subtotal`,
+      'PROMO_MINIMUM_NOT_MET'
+    )
+  }
 
   return {
+    code: normalizedCode,
+    label: promo.label,
+    amount: roundMoney(subtotal * promo.percentOff),
+  }
+}
+
+export const calculateOrderTotals = (subtotal: number, promoCode?: string): CartSummary => {
+  const discount = calculateOrderDiscount(subtotal, promoCode)
+  const discountedSubtotal = roundMoney(subtotal - (discount?.amount ?? 0))
+  const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_THRESHOLD ? SHIPPING_RATE : 0
+  const tax = roundMoney(discountedSubtotal * TAX_RATE)
+
+  const totals: CartSummary = {
     subtotal: roundMoney(subtotal),
     shipping,
     tax,
-    total: roundMoney(subtotal + shipping + tax),
+    total: roundMoney(discountedSubtotal + shipping + tax),
   }
+
+  return discount ? { ...totals, discount: discount.amount } : totals
 }
 
 export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
@@ -78,6 +138,7 @@ export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
   }
 
   const subtotal = items.reduce((total, item) => total + item.lineTotal, 0)
+  const discount = calculateOrderDiscount(subtotal, input.promoCode)
   const order: Order = {
     id: `order_${Date.now()}_${orders.length + 1}`,
     status: 'pending',
@@ -85,7 +146,8 @@ export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
     customer: input.customer,
     shippingAddress: input.shippingAddress,
     items,
-    totals: calculateOrderTotals(subtotal),
+    totals: calculateOrderTotals(subtotal, input.promoCode),
+    discount,
     userId: input.userId,
     createdAt: new Date().toISOString(),
   }

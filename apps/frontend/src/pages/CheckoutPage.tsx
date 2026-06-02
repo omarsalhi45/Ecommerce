@@ -50,9 +50,17 @@ type CheckoutStepId = 'contact' | 'shipping' | 'review' | 'payment'
 interface CheckoutDraft {
   readonly formState: CheckoutFormState
   readonly shippingMethod: ShippingMethodId
+  readonly promoCode?: string
 }
 
 const checkoutDraftStorageKey = 'osai.checkoutDraft'
+const promoCodeDetails: Record<
+  string,
+  { readonly label: string; readonly percentOff: number; readonly minimumSubtotal?: number }
+> = {
+  OSAI10: { label: '10% off', percentOff: 0.1 },
+  WELCOME15: { label: '15% off', percentOff: 0.15, minimumSubtotal: 50 },
+}
 
 const shippingMethods: Array<{
   readonly id: ShippingMethodId
@@ -86,6 +94,22 @@ const stripePromise = frontendConfig.stripePublishableKey
   : null
 
 const getFieldPreview = (value: string, fallback = 'Not entered yet') => value.trim() || fallback
+const roundMoney = (value: number): number => Math.round(value * 100) / 100
+
+const normalizePromoCode = (promoCode: string): string => promoCode.trim().toUpperCase()
+
+const calculatePromoPreview = (subtotal: number, promoCode: string | undefined): number => {
+  if (!promoCode) {
+    return 0
+  }
+
+  const details = promoCodeDetails[promoCode]
+  if (details?.minimumSubtotal && subtotal < details.minimumSubtotal) {
+    return 0
+  }
+
+  return details ? roundMoney(subtotal * details.percentOff) : 0
+}
 
 const getCheckoutPath = (step: CheckoutStepId) =>
   step === 'contact' ? '/checkout' : `/checkout/${step}`
@@ -149,11 +173,13 @@ const readCheckoutDraft = (): CheckoutDraft => {
     const parsedDraft = JSON.parse(rawDraft) as {
       formState?: Partial<CheckoutFormState>
       shippingMethod?: ShippingMethodId
+      promoCode?: string
     }
 
     return {
       formState: { ...initialFormState, ...parsedDraft.formState },
       shippingMethod: parsedDraft.shippingMethod === 'priority' ? 'priority' : 'standard',
+      promoCode: typeof parsedDraft.promoCode === 'string' ? parsedDraft.promoCode : undefined,
     }
   } catch {
     return { formState: initialFormState, shippingMethod: 'standard' }
@@ -174,6 +200,9 @@ export default function CheckoutPage() {
   const draft = useMemo(readCheckoutDraft, [])
   const [formState, setFormState] = useState<CheckoutFormState>(draft.formState)
   const [shippingMethod, setShippingMethod] = useState<ShippingMethodId>(draft.shippingMethod)
+  const [promoInput, setPromoInput] = useState(draft.promoCode ?? '')
+  const [appliedPromoCode, setAppliedPromoCode] = useState<string | undefined>(draft.promoCode)
+  const [promoMessage, setPromoMessage] = useState<string>()
   const [errorMessage, setErrorMessage] = useState<string>()
   const [paymentIntentResponse, setPaymentIntentResponse] =
     useState<CreateCheckoutPaymentIntentResponse>()
@@ -186,13 +215,20 @@ export default function CheckoutPage() {
   const isStripeConfigured = Boolean(stripePromise)
   const isSubmitting = isMockOrderLoading || isPaymentIntentLoading
   const selectedShippingMethod = shippingMethods.find((method) => method.id === shippingMethod)
+  const promoDiscount = calculatePromoPreview(summary.subtotal, appliedPromoCode)
+  const discountedSubtotal = roundMoney(summary.subtotal - promoDiscount)
+  const estimatedTax = promoDiscount > 0 ? roundMoney(discountedSubtotal * 0.08) : summary.tax
+  const estimatedTotal =
+    promoDiscount > 0
+      ? roundMoney(discountedSubtotal + summary.shipping + estimatedTax)
+      : summary.total
 
   useEffect(() => {
     window.sessionStorage.setItem(
       checkoutDraftStorageKey,
-      JSON.stringify({ formState, shippingMethod })
+      JSON.stringify({ formState, shippingMethod, promoCode: appliedPromoCode })
     )
-  }, [formState, shippingMethod])
+  }, [appliedPromoCode, formState, shippingMethod])
 
   useEffect(() => {
     if (checkoutStep && currentStep === 'contact') {
@@ -213,6 +249,45 @@ export default function CheckoutPage() {
 
   const updateField = (field: keyof CheckoutFormState, value: string) => {
     setFormState((current) => ({ ...current, [field]: value }))
+    setPaymentIntentResponse(undefined)
+  }
+
+  const handleApplyPromoCode = () => {
+    const normalizedCode = normalizePromoCode(promoInput)
+
+    if (!normalizedCode) {
+      setPromoMessage('Enter a promo code first.')
+      return
+    }
+
+    const promoDetails = promoCodeDetails[normalizedCode]
+
+    if (!promoDetails) {
+      setPromoMessage('That promo code is not available.')
+      setAppliedPromoCode(undefined)
+      setPaymentIntentResponse(undefined)
+      return
+    }
+
+    if (promoDetails.minimumSubtotal && summary.subtotal < promoDetails.minimumSubtotal) {
+      setPromoMessage(
+        `${normalizedCode} needs at least $${promoDetails.minimumSubtotal.toFixed(2)} in products.`
+      )
+      setAppliedPromoCode(undefined)
+      setPaymentIntentResponse(undefined)
+      return
+    }
+
+    setAppliedPromoCode(normalizedCode)
+    setPromoInput(normalizedCode)
+    setPromoMessage(`${normalizedCode} applied. The API will validate it before payment.`)
+    setPaymentIntentResponse(undefined)
+  }
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromoCode(undefined)
+    setPromoInput('')
+    setPromoMessage(undefined)
     setPaymentIntentResponse(undefined)
   }
 
@@ -264,6 +339,7 @@ export default function CheckoutPage() {
         postalCode: formState.postalCode,
         country: formState.country,
       },
+      promoCode: appliedPromoCode,
       items: cartItems,
     }
   }
@@ -733,11 +809,50 @@ export default function CheckoutPage() {
             <Stack spacing={3}>
               <Stack spacing={2}>
                 <Text color="neutral.600">Subtotal ${summary.subtotal.toFixed(2)}</Text>
+                {promoDiscount > 0 ? (
+                  <Text color="green.700" fontWeight="bold">
+                    Promo {appliedPromoCode} -${promoDiscount.toFixed(2)}
+                  </Text>
+                ) : null}
                 <Text color="neutral.600">Shipping ${summary.shipping.toFixed(2)}</Text>
-                <Text color="neutral.600">Tax ${summary.tax.toFixed(2)}</Text>
+                <Text color="neutral.600">Tax ${estimatedTax.toFixed(2)}</Text>
               </Stack>
               <Divider />
-              <Text fontWeight="black">Estimated total ${summary.total.toFixed(2)}</Text>
+              <Stack spacing={2}>
+                <Text fontWeight="black">Estimated total ${estimatedTotal.toFixed(2)}</Text>
+                <Box>
+                  <FormLabel color="neutral.900" fontSize="sm" fontWeight="black">
+                    Promo code
+                  </FormLabel>
+                  <HStack align="start">
+                    <Input
+                      value={promoInput}
+                      onChange={(event) => {
+                        setPromoInput(event.target.value)
+                        setPromoMessage(undefined)
+                      }}
+                      placeholder="OSAI10"
+                      aria-label="Promo code"
+                    />
+                    <Button onClick={handleApplyPromoCode}>Apply</Button>
+                  </HStack>
+                  {promoMessage ? (
+                    <Text
+                      color={appliedPromoCode ? 'green.700' : 'orange.600'}
+                      fontSize="sm"
+                      fontWeight="bold"
+                      mt={2}
+                    >
+                      {promoMessage}
+                    </Text>
+                  ) : null}
+                  {appliedPromoCode ? (
+                    <Button mt={2} size="sm" variant="link" onClick={handleRemovePromoCode}>
+                      Remove promo
+                    </Button>
+                  ) : null}
+                </Box>
+              </Stack>
               <Text color="neutral.500" fontSize="sm">
                 {isStripeConfigured
                   ? 'The API will recalculate the trusted total before creating payment.'
