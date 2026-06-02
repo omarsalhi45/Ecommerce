@@ -267,8 +267,8 @@ Netlify hosts the storefront and admin as separate sites from the same repositor
 
 | App | Build command | Publish directory |
 | --- | --- | --- |
-| Storefront | `pnpm --filter @osai/frontend build` | `apps/frontend/dist` |
-| Admin | `pnpm --filter @osai/admin build` | `apps/admin/dist` |
+| Storefront | `pnpm build:frontend` | `apps/frontend/dist` |
+| Admin | `pnpm build:admin` | `apps/admin/dist` |
 
 Both Vite apps include a `public/_redirects` file so direct reloads on client-side routes such as `/cart`, `/checkout`, `/products/:id`, and admin `/login` return `index.html`.
 

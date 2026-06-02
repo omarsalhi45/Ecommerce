@@ -329,15 +329,15 @@ export default function CheckoutPage() {
         email: formState.email,
         firstName: formState.firstName,
         lastName: formState.lastName,
-        phone: formState.phone || undefined,
+        ...(formState.phone ? { phone: formState.phone } : {}),
       },
       shippingAddress: {
         line1: formState.line1,
-        line2: formState.line2 || undefined,
         city: formState.city,
-        state: formState.state || undefined,
         postalCode: formState.postalCode,
         country: formState.country,
+        ...(formState.line2 ? { line2: formState.line2 } : {}),
+        ...(formState.state ? { state: formState.state } : {}),
       },
       items: cartItems,
     }

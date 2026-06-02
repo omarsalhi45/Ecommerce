@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm --filter @osai/admin build"
+  command = "pnpm build:admin"
   publish = "apps/admin/dist"
 
 [build.environment]
