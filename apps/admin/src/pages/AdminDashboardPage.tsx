@@ -41,11 +41,12 @@ import {
   useGetAdminUsersQuery,
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
+  useUpdateProductMutation,
   useUploadProductImageMutation,
 } from '../api/adminApi'
 import { logout, selectCurrentUser } from '../slices/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import type { Order } from '../types'
+import type { Order, Product } from '../types'
 
 const orderStatuses: Order['status'][] = ['pending', 'shipped', 'delivered', 'cancelled']
 const paymentStatusColorSchemes: Record<Order['paymentStatus'], string> = {
@@ -73,11 +74,32 @@ const emptyProductForm = {
 }
 const emptyImageSource = ''
 
+interface ProductEditForm {
+  readonly category: string
+  readonly compareAtPrice: string
+  readonly description: string
+  readonly imageUrl: string
+  readonly name: string
+  readonly price: string
+}
+
+const getProductEditForm = (product: Product): ProductEditForm => ({
+  category: product.category,
+  compareAtPrice: product.compareAtPrice?.toString() ?? '',
+  description: product.description,
+  imageUrl: product.imageUrl,
+  name: product.name,
+  price: product.price.toString(),
+})
+
 export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
   const currentUser = useAppSelector(selectCurrentUser)
   const [inventoryDrafts, setInventoryDrafts] = useState<Record<string, string>>({})
   const [productForm, setProductForm] = useState(emptyProductForm)
+  const [editingProductId, setEditingProductId] = useState<string | undefined>()
+  const [productEditForm, setProductEditForm] = useState<ProductEditForm | undefined>()
+  const [productEditError, setProductEditError] = useState<string | undefined>()
   const [externalImageUrl, setExternalImageUrl] = useState(emptyImageSource)
   const [productFormError, setProductFormError] = useState<string | undefined>()
   const [imageStatus, setImageStatus] = useState<string | undefined>()
@@ -102,6 +124,7 @@ export default function AdminDashboardPage() {
   })
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation()
   const [deleteProduct] = useDeleteProductMutation()
+  const [updateProduct, { isLoading: isUpdatingProduct }] = useUpdateProductMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
   const [updateInventory] = useUpdateInventoryMutation()
   const [uploadProductImage, { isLoading: isImageUploading }] = useUploadProductImageMutation()
@@ -139,6 +162,70 @@ export default function AdminDashboardPage() {
     setExternalImageUrl(value)
     setProductForm((current) => ({ ...current, imageUrl: value.trim() }))
     setImageStatus(value.trim() ? 'External image ready.' : undefined)
+  }
+
+  const startEditingProduct = (product: Product) => {
+    setEditingProductId(product.id)
+    setProductEditForm(getProductEditForm(product))
+    setProductEditError(undefined)
+  }
+
+  const cancelEditingProduct = () => {
+    setEditingProductId(undefined)
+    setProductEditForm(undefined)
+    setProductEditError(undefined)
+  }
+
+  const updateProductEditField = (field: keyof ProductEditForm, value: string) => {
+    setProductEditForm((current) => (current ? { ...current, [field]: value } : current))
+  }
+
+  const handleUpdateProduct = async (productId: string) => {
+    if (!productEditForm) {
+      return
+    }
+
+    const price = Number(productEditForm.price)
+    const compareAtPrice = productEditForm.compareAtPrice
+      ? Number(productEditForm.compareAtPrice)
+      : undefined
+
+    if (!productEditForm.name.trim() || !productEditForm.description.trim()) {
+      setProductEditError('Name and description are required.')
+      return
+    }
+
+    if (!productEditForm.imageUrl.trim()) {
+      setProductEditError('Product image URL is required.')
+      return
+    }
+
+    if (Number.isNaN(price) || price < 0) {
+      setProductEditError('Price must be a positive number.')
+      return
+    }
+
+    if (compareAtPrice !== undefined && (Number.isNaN(compareAtPrice) || compareAtPrice <= price)) {
+      setProductEditError('Original price must be higher than the current price.')
+      return
+    }
+
+    try {
+      await updateProduct({
+        productId,
+        updates: {
+          category: productEditForm.category.trim(),
+          compareAtPrice,
+          description: productEditForm.description.trim(),
+          imageUrl: productEditForm.imageUrl.trim(),
+          name: productEditForm.name.trim(),
+          price,
+        },
+      }).unwrap()
+      cancelEditingProduct()
+    } catch {
+      setProductEditError('Product could not be updated. Check the fields and try again.')
+    }
   }
 
   if (!currentUser) {
@@ -486,25 +573,148 @@ export default function AdminDashboardPage() {
               {isProductsError ? (
                 <Text color="error.600">Products could not be loaded.</Text>
               ) : null}
-              {productsData?.products.map((product) => (
-                <HStack key={product.id} justify="space-between">
-                  <Box>
-                    <Text fontWeight="bold">{product.name}</Text>
-                    <Text color="neutral.600" fontSize="sm">
-                      {product.category} · ${product.price.toFixed(2)}
-                      {product.compareAtPrice
-                        ? ` sale from $${product.compareAtPrice.toFixed(2)}`
-                        : ''}
-                    </Text>
+              {productsData?.products.map((product) => {
+                const isEditing = editingProductId === product.id
+
+                return (
+                  <Box
+                    key={product.id}
+                    border="1px solid"
+                    borderColor={isEditing ? 'neutral.300' : 'neutral.100'}
+                    borderRadius="md"
+                    p={3}
+                  >
+                    <HStack justify="space-between" align="start">
+                      <Box>
+                        <Text fontWeight="bold">{product.name}</Text>
+                        <Text color="neutral.600" fontSize="sm">
+                          {product.category} · ${product.price.toFixed(2)}
+                          {product.compareAtPrice
+                            ? ` sale from $${product.compareAtPrice.toFixed(2)}`
+                            : ''}
+                        </Text>
+                      </Box>
+                      <HStack>
+                        <Badge>{product.id}</Badge>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => startEditingProduct(product)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => deleteProduct(product.id)}
+                        >
+                          Delete
+                        </Button>
+                      </HStack>
+                    </HStack>
+
+                    {isEditing && productEditForm ? (
+                      <Box mt={4}>
+                        <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3}>
+                          <FormControl isRequired>
+                            <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                              Name
+                            </FormLabel>
+                            <Input
+                              value={productEditForm.name}
+                              onChange={(event) =>
+                                updateProductEditField('name', event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormControl isRequired>
+                            <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                              Category
+                            </FormLabel>
+                            <Input
+                              value={productEditForm.category}
+                              onChange={(event) =>
+                                updateProductEditField('category', event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormControl isRequired>
+                            <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                              Price
+                            </FormLabel>
+                            <Input
+                              min={0}
+                              step="0.01"
+                              type="number"
+                              value={productEditForm.price}
+                              onChange={(event) =>
+                                updateProductEditField('price', event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormControl>
+                            <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                              Original price
+                            </FormLabel>
+                            <Input
+                              min={0}
+                              step="0.01"
+                              type="number"
+                              value={productEditForm.compareAtPrice}
+                              onChange={(event) =>
+                                updateProductEditField('compareAtPrice', event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }} isRequired>
+                            <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                              Image URL
+                            </FormLabel>
+                            <Input
+                              value={productEditForm.imageUrl}
+                              onChange={(event) =>
+                                updateProductEditField('imageUrl', event.target.value)
+                              }
+                            />
+                          </FormControl>
+                          <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }} isRequired>
+                            <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                              Description
+                            </FormLabel>
+                            <Input
+                              value={productEditForm.description}
+                              onChange={(event) =>
+                                updateProductEditField('description', event.target.value)
+                              }
+                            />
+                          </FormControl>
+                        </Grid>
+
+                        {productEditError ? (
+                          <Alert status="error" borderRadius="md" mt={3}>
+                            <AlertIcon />
+                            {productEditError}
+                          </Alert>
+                        ) : null}
+
+                        <HStack mt={3}>
+                          <Button
+                            colorScheme="brand"
+                            isLoading={isUpdatingProduct}
+                            size="sm"
+                            onClick={() => handleUpdateProduct(product.id)}
+                          >
+                            Save changes
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={cancelEditingProduct}>
+                            Cancel
+                          </Button>
+                        </HStack>
+                      </Box>
+                    ) : null}
                   </Box>
-                  <HStack>
-                    <Badge>{product.id}</Badge>
-                    <Button size="xs" variant="outline" onClick={() => deleteProduct(product.id)}>
-                      Delete
-                    </Button>
-                  </HStack>
-                </HStack>
-              ))}
+                )
+              })}
             </VStack>
           </Box>
 

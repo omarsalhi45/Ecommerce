@@ -59,6 +59,25 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['AdminProducts', 'AdminInventory'],
     }),
+    updateProduct: builder.mutation<
+      Product,
+      {
+        productId: string
+        updates: Partial<
+          Pick<
+            Product,
+            'category' | 'compareAtPrice' | 'description' | 'imageUrl' | 'name' | 'price'
+          >
+        >
+      }
+    >({
+      query: ({ productId, updates }) => ({
+        url: `/admin/products/${productId}`,
+        method: 'PATCH',
+        body: updates,
+      }),
+      invalidatesTags: ['AdminProducts', 'AdminInventory'],
+    }),
     uploadProductImage: builder.mutation<ProductImageUploadResponse, File>({
       query: (image) => {
         const body = new FormData()
@@ -105,6 +124,7 @@ export const {
   useCreateProductMutation,
   useDeleteProductMutation,
   useUploadProductImageMutation,
+  useUpdateProductMutation,
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
 } = adminApi

@@ -7,6 +7,7 @@ import app from '../src/app'
 import { apiConfig } from '../src/config'
 import { registerUser, resetAuthStoreForTests } from '../src/services/authService'
 import { resetOrderStoreForTests } from '../src/services/orderService'
+import { resetProductStoreForTests } from '../src/services/productService'
 
 let server: Server
 let baseUrl: string
@@ -410,5 +411,62 @@ describe('api app', () => {
 
     expect(updateResponse.status).toBe(200)
     expect(updatedOrder.status).toBe('shipped')
+  })
+
+  it('allows admins to create and update products', async () => {
+    const admin = await registerUser(
+      'Product Admin',
+      'product-admin@example.com',
+      'password123',
+      'admin'
+    )
+
+    const createResponse = await fetch(`${baseUrl}/api/admin/products`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${admin.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        id: 'admin-edit-001',
+        name: 'Admin Test Tee',
+        description: 'Editable test product',
+        price: 39.99,
+        imageUrl: 'https://example.com/admin-test-tee.jpg',
+        category: 'tees',
+        sku: 'OSAI-ADMIN-TEE-M',
+        stockQuantity: 8,
+      }),
+    })
+
+    expect(createResponse.status).toBe(201)
+
+    const updateResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {
+      method: 'PATCH',
+      headers: {
+        authorization: `Bearer ${admin.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: 'Admin Test Tee Updated',
+        description: 'Updated editable test product',
+        price: 34.99,
+        compareAtPrice: 49.99,
+        imageUrl: 'https://example.com/admin-test-tee-updated.jpg',
+        category: 'sale-tees',
+      }),
+    })
+    const updatedProduct = await updateResponse.json()
+
+    expect(updateResponse.status).toBe(200)
+    expect(updatedProduct).toMatchObject({
+      id: 'admin-edit-001',
+      name: 'Admin Test Tee Updated',
+      price: 34.99,
+      compareAtPrice: 49.99,
+      category: 'sale-tees',
+    })
+
+    resetProductStoreForTests()
   })
 })
