@@ -1,5 +1,24 @@
 import { StarIcon } from '@chakra-ui/icons'
-import { Badge, Box, Button, HStack, Image, Stack, Text, VStack, useToast } from '@chakra-ui/react'
+import {
+  Badge,
+  Box,
+  Button,
+  Divider,
+  HStack,
+  Image,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  SimpleGrid,
+  Stack,
+  Text,
+  VStack,
+  useToast,
+} from '@chakra-ui/react'
 import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { useTranslation } from '../i18n'
@@ -13,31 +32,39 @@ import {
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { Product, ProductVariant } from '../types'
 
+interface QuickAddSelection {
+  readonly color?: string
+  readonly size?: string
+  readonly sku?: string
+}
+
 export default function ProductList({ products }: { products: Product[] }) {
   const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const wishlistProductIds = useAppSelector(selectWishlistProductIds)
   const toast = useToast()
-  const [selectedVariantByProductId, setSelectedVariantByProductId] = useState<
-    Record<string, string>
-  >({})
+  const [quickAddProductId, setQuickAddProductId] = useState<string>()
+  const [quickAddSelection, setQuickAddSelection] = useState<QuickAddSelection>({})
+  const quickAddProduct = products.find((product) => product.id === quickAddProductId)
+  const quickAddVariants =
+    quickAddProduct?.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
+  const quickAddSizes = getUniqueVariantValues(quickAddVariants, 'size')
+  const quickAddColors = getUniqueVariantValues(quickAddVariants, 'color')
+  const quickAddSelectedVariant = quickAddProduct
+    ? getSelectedVariant(quickAddProduct, quickAddSelection)
+    : undefined
+  const hasCompletedQuickAddSelection =
+    quickAddSizes.length === 0 && quickAddColors.length === 0
+      ? Boolean(quickAddSelection.sku)
+      : (quickAddSizes.length === 0 || Boolean(quickAddSelection.size)) &&
+        (quickAddColors.length === 0 || Boolean(quickAddSelection.color))
+  const quickAddStatusTone = quickAddSelectedVariant
+    ? 'success'
+    : hasCompletedQuickAddSelection
+      ? 'error'
+      : 'neutral'
 
-  const handleAddToCart = (product: Product) => {
-    const inStockVariants = product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
-    const selectedVariant = getSelectedVariant(product, selectedVariantByProductId[product.id])
-
-    if (inStockVariants.length > 0 && !selectedVariant) {
-      toast({
-        title: t('product.pickSizeFirst'),
-        description: t('product.pickSizeDescription', { product: product.name }),
-        status: 'warning',
-        duration: 2200,
-        isClosable: true,
-        position: 'bottom-right',
-      })
-      return
-    }
-
+  const addProductToCart = (product: Product, selectedVariant: ProductVariant | undefined) => {
     dispatch(
       addItem({
         productId: product.id,
@@ -62,6 +89,48 @@ export default function ProductList({ products }: { products: Product[] }) {
     })
   }
 
+  const handleAddButtonClick = (product: Product) => {
+    const inStockVariants = product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
+    const needsQuickAddModal = inStockVariants.length > 1
+
+    if (needsQuickAddModal) {
+      setQuickAddProductId(product.id)
+      setQuickAddSelection({})
+      return
+    }
+
+    addProductToCart(product, inStockVariants[0])
+  }
+
+  const closeQuickAddModal = () => {
+    setQuickAddProductId(undefined)
+    setQuickAddSelection({})
+  }
+
+  const hasAvailableQuickAddVariant = (selection: QuickAddSelection) =>
+    quickAddVariants.some((variant) => variantMatchesSelection(variant, selection))
+
+  const handleAddModalSelection = () => {
+    if (!quickAddProduct) {
+      return
+    }
+
+    if (!quickAddSelectedVariant) {
+      toast({
+        title: t('product.pickSizeFirst'),
+        description: t('product.pickSizeDescription', { product: quickAddProduct.name }),
+        status: 'warning',
+        duration: 2200,
+        isClosable: true,
+        position: 'bottom-right',
+      })
+      return
+    }
+
+    addProductToCart(quickAddProduct, quickAddSelectedVariant)
+    closeQuickAddModal()
+  }
+
   const handleToggleWishlist = (product: Product) => {
     const isWishlisted = wishlistProductIds.includes(product.id)
 
@@ -80,11 +149,6 @@ export default function ProductList({ products }: { products: Product[] }) {
   return (
     <>
       {products.map((product) => {
-        const inStockVariants =
-          product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
-        const selectedVariant = getSelectedVariant(product, selectedVariantByProductId[product.id])
-        const addLabel =
-          inStockVariants.length > 1 && !selectedVariant ? t('product.pickSize') : t('common.add')
         const isWishlisted = wishlistProductIds.includes(product.id)
 
         return (
@@ -213,38 +277,6 @@ export default function ProductList({ products }: { products: Product[] }) {
                 ) : null}
               </VStack>
 
-              {inStockVariants.length > 0 ? (
-                <HStack
-                  spacing={2}
-                  flexWrap="wrap"
-                  aria-label={t('product.quickAddOptionsAria', { product: product.name })}
-                >
-                  {inStockVariants.map((variant) => {
-                    const isSelected = selectedVariant?.sku === variant.sku
-
-                    return (
-                      <Button
-                        key={variant.sku}
-                        type="button"
-                        size="xs"
-                        minW={10}
-                        borderRadius="full"
-                        variant={isSelected ? 'solid' : 'outline'}
-                        colorScheme={isSelected ? 'brand' : 'gray'}
-                        onClick={() =>
-                          setSelectedVariantByProductId((current) => ({
-                            ...current,
-                            [product.id]: variant.sku,
-                          }))
-                        }
-                      >
-                        {variant.size ?? variant.color ?? t('product.oneOption')}
-                      </Button>
-                    )
-                  })}
-                </HStack>
-              ) : null}
-
               <Stack
                 direction={{ base: 'column', sm: 'row' }}
                 justify="space-between"
@@ -276,10 +308,10 @@ export default function ProductList({ products }: { products: Product[] }) {
                       transform: 'translateY(-1px)',
                       boxShadow: 'md',
                     }}
-                    onClick={() => handleAddToCart(product)}
+                    onClick={() => handleAddButtonClick(product)}
                     flex={{ base: 1, sm: 'initial' }}
                   >
-                    {addLabel}
+                    {t('common.add')}
                   </Button>
                 </HStack>
               </Stack>
@@ -287,22 +319,297 @@ export default function ProductList({ products }: { products: Product[] }) {
           </Box>
         )
       })}
+      <Modal isOpen={Boolean(quickAddProduct)} onClose={closeQuickAddModal} size="xl" isCentered>
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(2px)" />
+        <ModalContent borderRadius="2xl" overflow="hidden" boxShadow="2xl">
+          <ModalHeader bg="black" color="white" px={{ base: 5, md: 6 }} py={5}>
+            <Text fontSize="xs" fontWeight="black" color="accent.300" textTransform="uppercase">
+              {t('product.quickAddTitle')}
+            </Text>
+            <Text fontSize={{ base: '2xl', md: '3xl' }} fontWeight="black" lineHeight="short">
+              {quickAddProduct?.name}
+            </Text>
+          </ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody px={{ base: 5, md: 6 }} py={6}>
+            {quickAddProduct ? (
+              <Stack spacing={6}>
+                <HStack align="stretch" spacing={4}>
+                  <Image
+                    src={quickAddProduct.imageUrl}
+                    alt={quickAddProduct.name}
+                    boxSize={{ base: '112px', md: '148px' }}
+                    borderRadius="xl"
+                    objectFit="cover"
+                  />
+                  <Stack flex={1} justify="space-between" spacing={3}>
+                    <Box>
+                      <Badge bg="neutral.100" color="neutral.900" borderRadius="full" px={3} py={1}>
+                        {quickAddProduct.category}
+                      </Badge>
+                      <Text color="neutral.600" fontSize="sm" mt={3}>
+                        {t('product.quickAddCopy')}
+                      </Text>
+                    </Box>
+                    <HStack justify="space-between">
+                      <Text color="neutral.500" fontSize="sm" fontWeight="bold">
+                        {quickAddProduct.category}
+                      </Text>
+                      <Text color="neutral.900" fontSize="2xl" fontWeight="black">
+                        ${quickAddProduct.price.toFixed(2)}
+                      </Text>
+                    </HStack>
+                  </Stack>
+                </HStack>
+
+                <Divider />
+
+                <Stack spacing={5}>
+                  {quickAddSizes.length > 0 ? (
+                    <Box>
+                      <Text color="neutral.900" fontWeight="black" mb={3}>
+                        {t('common.size')}
+                      </Text>
+                      <HStack spacing={2} flexWrap="wrap">
+                        {quickAddSizes.map((size) => {
+                          const isSelected = quickAddSelection.size === size
+                          const isDisabled = !hasAvailableQuickAddVariant({
+                            ...quickAddSelection,
+                            size,
+                          })
+
+                          return (
+                            <Button
+                              key={size}
+                              type="button"
+                              minW={12}
+                              h={12}
+                              borderRadius="full"
+                              variant={isSelected ? 'solid' : 'outline'}
+                              bg={isSelected ? 'black' : undefined}
+                              color={isSelected ? 'white' : undefined}
+                              borderColor={isSelected ? 'black' : 'neutral.300'}
+                              isDisabled={isDisabled}
+                              aria-label={t('productDetail.selectSizeAria', { size, suffix: '' })}
+                              _hover={{
+                                bg: isSelected ? 'neutral.800' : 'neutral.50',
+                              }}
+                              onClick={() =>
+                                setQuickAddSelection((current) => {
+                                  const nextSelection = { ...current, size }
+
+                                  return hasAvailableQuickAddVariant(nextSelection)
+                                    ? nextSelection
+                                    : { size }
+                                })
+                              }
+                            >
+                              {size}
+                            </Button>
+                          )
+                        })}
+                      </HStack>
+                    </Box>
+                  ) : null}
+
+                  {quickAddColors.length > 0 ? (
+                    <Box>
+                      <Text color="neutral.900" fontWeight="black" mb={3}>
+                        {t('home.color')}
+                      </Text>
+                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                        {quickAddColors.map((color) => {
+                          const isSelected = quickAddSelection.color === color
+                          const isDisabled = !hasAvailableQuickAddVariant({
+                            ...quickAddSelection,
+                            color,
+                          })
+
+                          return (
+                            <Button
+                              key={color}
+                              type="button"
+                              h={14}
+                              justifyContent="flex-start"
+                              borderRadius="xl"
+                              variant={isSelected ? 'solid' : 'outline'}
+                              bg={isSelected ? 'black' : undefined}
+                              color={isSelected ? 'white' : undefined}
+                              borderColor={isSelected ? 'black' : 'neutral.300'}
+                              isDisabled={isDisabled}
+                              aria-label={t('productDetail.selectColorAria', {
+                                color,
+                                suffix: '',
+                              })}
+                              leftIcon={
+                                <Box
+                                  as="span"
+                                  boxSize={5}
+                                  border="1px solid"
+                                  borderColor={
+                                    color.toLowerCase().includes('white')
+                                      ? 'neutral.300'
+                                      : 'transparent'
+                                  }
+                                  borderRadius="full"
+                                  bg={getColorSwatch(color)}
+                                />
+                              }
+                              _hover={{
+                                bg: isSelected ? 'neutral.800' : 'neutral.50',
+                              }}
+                              onClick={() =>
+                                setQuickAddSelection((current) => {
+                                  const nextSelection = { ...current, color }
+
+                                  return hasAvailableQuickAddVariant(nextSelection)
+                                    ? nextSelection
+                                    : { color }
+                                })
+                              }
+                            >
+                              {color}
+                            </Button>
+                          )
+                        })}
+                      </SimpleGrid>
+                    </Box>
+                  ) : null}
+
+                  {quickAddSizes.length === 0 && quickAddColors.length === 0 ? (
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                      {quickAddVariants.map((variant) => {
+                        const isSelected = quickAddSelection.sku === variant.sku
+
+                        return (
+                          <Button
+                            key={variant.sku}
+                            type="button"
+                            h={14}
+                            borderRadius="xl"
+                            variant={isSelected ? 'solid' : 'outline'}
+                            bg={isSelected ? 'black' : undefined}
+                            color={isSelected ? 'white' : undefined}
+                            borderColor={isSelected ? 'black' : 'neutral.300'}
+                            onClick={() => setQuickAddSelection({ sku: variant.sku })}
+                          >
+                            {t('product.oneOption')}
+                          </Button>
+                        )
+                      })}
+                    </SimpleGrid>
+                  ) : null}
+                </Stack>
+
+                <Box
+                  border="1px solid"
+                  borderColor={
+                    quickAddStatusTone === 'success'
+                      ? 'green.200'
+                      : quickAddStatusTone === 'error'
+                        ? 'red.200'
+                        : 'neutral.200'
+                  }
+                  bg={
+                    quickAddStatusTone === 'success'
+                      ? 'green.50'
+                      : quickAddStatusTone === 'error'
+                        ? 'red.50'
+                        : 'neutral.50'
+                  }
+                  borderRadius="xl"
+                  p={4}
+                >
+                  <Text color="neutral.900" fontWeight="black" fontSize="sm">
+                    {quickAddSelectedVariant
+                      ? t('product.quickAddSelected', {
+                          variant: getVariantLabel(quickAddSelectedVariant),
+                        })
+                      : hasCompletedQuickAddSelection
+                        ? t('product.quickAddUnavailable')
+                        : t('product.quickAddPrompt')}
+                  </Text>
+                  {quickAddSelectedVariant ? (
+                    <Text color="neutral.600" fontSize="sm">
+                      {quickAddSelectedVariant.stockQuantity <= 5
+                        ? t('product.quickAddLowStock', {
+                            count: quickAddSelectedVariant.stockQuantity,
+                          })
+                        : t('product.quickAddStock', {
+                            count: quickAddSelectedVariant.stockQuantity,
+                          })}
+                    </Text>
+                  ) : null}
+                </Box>
+              </Stack>
+            ) : null}
+          </ModalBody>
+          <ModalFooter gap={3} px={{ base: 5, md: 6 }} pb={6}>
+            <Button variant="outline" onClick={closeQuickAddModal}>
+              {t('common.back')}
+            </Button>
+            <Button
+              colorScheme="brand"
+              isDisabled={!quickAddSelectedVariant}
+              onClick={handleAddModalSelection}
+            >
+              {t('cart.addToCart')}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </>
   )
 }
 
 const getSelectedVariant = (
   product: Product,
-  selectedVariantSku: string | undefined
+  quickAddSelection: QuickAddSelection | undefined
 ): ProductVariant | undefined => {
   const inStockVariants = product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
+  const variantSizes = getUniqueVariantValues(inStockVariants, 'size')
+  const variantColors = getUniqueVariantValues(inStockVariants, 'color')
 
-  if (selectedVariantSku) {
-    return inStockVariants.find((variant) => variant.sku === selectedVariantSku)
+  if (quickAddSelection?.sku) {
+    return inStockVariants.find((variant) => variant.sku === quickAddSelection.sku)
+  }
+
+  if (variantSizes.length > 0 || variantColors.length > 0) {
+    if (variantSizes.length > 0 && !quickAddSelection?.size) {
+      return undefined
+    }
+
+    if (variantColors.length > 0 && !quickAddSelection?.color) {
+      return undefined
+    }
+
+    return inStockVariants.find((variant) => {
+      const sizeMatches = variantSizes.length === 0 || variant.size === quickAddSelection?.size
+      const colorMatches = variantColors.length === 0 || variant.color === quickAddSelection?.color
+
+      return sizeMatches && colorMatches
+    })
   }
 
   return inStockVariants.length === 1 ? inStockVariants[0] : undefined
 }
+
+const variantMatchesSelection = (
+  variant: ProductVariant,
+  quickAddSelection: QuickAddSelection
+): boolean => {
+  const sizeMatches = !quickAddSelection.size || variant.size === quickAddSelection.size
+  const colorMatches = !quickAddSelection.color || variant.color === quickAddSelection.color
+  const skuMatches = !quickAddSelection.sku || variant.sku === quickAddSelection.sku
+
+  return sizeMatches && colorMatches && skuMatches
+}
+
+const getUniqueVariantValues = (variants: ProductVariant[], key: 'size' | 'color'): string[] => [
+  ...new Set(
+    variants.map((variant) => variant[key]).filter((value): value is string => Boolean(value))
+  ),
+]
 
 const getVariantLabel = (variant: ProductVariant): string =>
   [variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku

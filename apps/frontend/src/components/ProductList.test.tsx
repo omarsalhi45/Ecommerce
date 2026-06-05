@@ -25,6 +25,12 @@ const variantProduct: Product = {
       color: 'Black',
       stockQuantity: 4,
     },
+    {
+      sku: 'hoodie-001-grey-l',
+      size: 'L',
+      color: 'Grey',
+      stockQuantity: 6,
+    },
   ],
 }
 
@@ -36,14 +42,25 @@ describe('ProductList', () => {
     expect(screen.getByText('Low stock')).toBeInTheDocument()
     expect(screen.getByLabelText('Everyday Weight Hoodie available colors')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pick size' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
 
-    expect(screen.getByText('Pick a size first')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Choose the available options to continue.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeDisabled()
     expect(store.getState().cart.items).toEqual([])
     expect(store.getState().cartUi.isMiniCartOpen).toBe(false)
 
-    fireEvent.click(screen.getByRole('button', { name: 'L' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select size L' }))
+
+    expect(store.getState().cart.items).toEqual([])
+    expect(screen.getByRole('button', { name: 'Add to cart' })).toBeDisabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select color Black' }))
+
+    expect(screen.getByText('Selected: L / Black')).toBeInTheDocument()
+    expect(screen.getByText('Only 4 left')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
 
     expect(store.getState().cart.items).toEqual([
       {
@@ -78,8 +95,10 @@ describe('ProductList', () => {
     expect(savedButton).toHaveTextContent('Saved')
     expect(savedButton).toHaveAttribute('aria-pressed', 'true')
 
-    fireEvent.click(screen.getByRole('button', { name: 'L' }))
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select size L' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select color Black' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
 
     expect(store.getState().wishlist.productIds).toEqual([])
     expect(store.getState().cart.items).toEqual([

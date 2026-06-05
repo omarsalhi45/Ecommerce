@@ -55,7 +55,7 @@ import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
 import { selectIsWishlisted, toggleWishlistItem } from '../slices/wishlistSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import type { Product, ProductVariant } from '../types'
+import type { Product, ProductReview, ProductVariant } from '../types'
 
 interface FitProfile {
   readonly modelHeight: string
@@ -74,6 +74,12 @@ interface ProductMediaItem {
   readonly type: 'image' | 'video'
   readonly url: string
   readonly label: string
+}
+
+interface FitFeedback {
+  readonly labelKey: TranslationKey
+  readonly helperKey: TranslationKey
+  readonly count: number
 }
 
 type TranslationKey = Parameters<ReturnType<typeof useTranslation>['t']>[0]
@@ -215,6 +221,57 @@ const getProductQuestions = (product: Product): ProductQuestion[] => {
   ]
 }
 
+const fitFeedbackRules: Array<{
+  readonly labelKey: TranslationKey
+  readonly helperKey: TranslationKey
+  readonly keywords: string[]
+}> = [
+  {
+    labelKey: 'productDetail.fitFeedback.true',
+    helperKey: 'productDetail.fitFeedback.trueHelp',
+    keywords: ['true to size', 'usual size', 'regular size', 'fits well', 'fits perfectly'],
+  },
+  {
+    labelKey: 'productDetail.fitFeedback.roomy',
+    helperKey: 'productDetail.fitFeedback.roomyHelp',
+    keywords: ['roomy', 'relaxed', 'layer', 'layering', 'space', 'loose'],
+  },
+  {
+    labelKey: 'productDetail.fitFeedback.small',
+    helperKey: 'productDetail.fitFeedback.smallHelp',
+    keywords: ['runs small', 'tight', 'snug', 'size up', 'sizing up'],
+  },
+  {
+    labelKey: 'productDetail.fitFeedback.oversized',
+    helperKey: 'productDetail.fitFeedback.oversizedHelp',
+    keywords: ['oversized', 'boxy', 'dropped shoulder', 'big fit'],
+  },
+]
+
+const getFitFeedback = (reviews: ProductReview[]): FitFeedback[] => {
+  const counts = new Map<TranslationKey, number>()
+
+  for (const review of reviews) {
+    const reviewText = `${review.title} ${review.body}`.toLowerCase()
+
+    for (const rule of fitFeedbackRules) {
+      if (rule.keywords.some((keyword) => reviewText.includes(keyword))) {
+        counts.set(rule.labelKey, (counts.get(rule.labelKey) ?? 0) + 1)
+      }
+    }
+  }
+
+  return fitFeedbackRules
+    .map((rule) => ({
+      labelKey: rule.labelKey,
+      helperKey: rule.helperKey,
+      count: counts.get(rule.labelKey) ?? 0,
+    }))
+    .filter((item) => item.count > 0)
+    .sort((first, second) => second.count - first.count)
+    .slice(0, 3)
+}
+
 export default function ProductDetailPage() {
   const { t } = useTranslation()
   const { productId = '' } = useParams()
@@ -256,6 +313,7 @@ export default function ProductDetailPage() {
   const selectedMedia = productMedia[Math.min(selectedMediaIndex, productMedia.length - 1)]
   const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
   const reviews = reviewsData?.reviews ?? []
+  const fitFeedback = getFitFeedback(reviews)
   const isWishlisted = useAppSelector(selectIsWishlisted(productId))
   const variants = product?.variants ?? []
   const soldOutVariants = getSoldOutVariants(variants)
@@ -797,6 +855,45 @@ export default function ProductDetailPage() {
                   : null}
               </SimpleGrid>
             </Stack>
+
+            {fitFeedback.length > 0 ? (
+              <Box
+                border="1px solid"
+                borderColor="neutral.200"
+                borderRadius="lg"
+                bg="neutral.50"
+                p={4}
+              >
+                <Text color="accent.600" fontSize="xs" fontWeight="black" textTransform="uppercase">
+                  {t('productDetail.fitFeedbackEyebrow')}
+                </Text>
+                <Text color="neutral.900" fontWeight="black" mt={1} mb={3}>
+                  {t('productDetail.fitFeedbackTitle')}
+                </Text>
+                <SimpleGrid columns={{ base: 1, sm: fitFeedback.length > 1 ? 2 : 1 }} spacing={3}>
+                  {fitFeedback.map((item) => (
+                    <Box
+                      key={item.labelKey}
+                      border="1px solid"
+                      borderColor="neutral.200"
+                      borderRadius="lg"
+                      bg="white"
+                      p={3}
+                    >
+                      <Text color="neutral.900" fontWeight="black">
+                        {t(item.labelKey)}
+                      </Text>
+                      <Text color="neutral.600" fontSize="sm">
+                        {t('productDetail.fitFeedbackCount', { count: item.count })}
+                      </Text>
+                      <Text color="neutral.600" fontSize="sm" mt={1}>
+                        {t(item.helperKey)}
+                      </Text>
+                    </Box>
+                  ))}
+                </SimpleGrid>
+              </Box>
+            ) : null}
 
             <Flex gap={3} direction={{ base: 'column', sm: 'row' }}>
               <Button colorScheme="brand" size="lg" onClick={handleAddToCart}>

@@ -105,7 +105,7 @@ const createReviewsQueryResult = () =>
           authorName: 'Leo',
           rating: 5,
           title: 'Soft and structured',
-          body: 'Warm enough for late walks but still has a clean streetwear shape.',
+          body: 'Warm enough for late walks, fits true to size, and has a roomy streetwear shape.',
           createdAt: '2026-02-11T18:45:00.000Z',
         },
       ],
@@ -201,6 +201,9 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('Fit & fabric')).toBeInTheDocument()
     expect(screen.getByText('6 ft, wearing M')).toBeInTheDocument()
     expect(screen.getByText('Soft midweight fleece with a brushed inside.')).toBeInTheDocument()
+    expect(screen.getByText('What shoppers say about fit')).toBeInTheDocument()
+    expect(screen.getByText('True to size')).toBeInTheDocument()
+    expect(screen.getByText('Roomy / relaxed')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Why this piece' })).toBeInTheDocument()
     expect(screen.getByText('Strong shopper rating for comfort and shape')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Questions shoppers ask' })).toBeInTheDocument()

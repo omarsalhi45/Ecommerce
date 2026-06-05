@@ -208,7 +208,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 ### Phase 9.5: Storefront Conversion & Trust Upgrade
 
 - [x] Upgrade product detail media with an image gallery, thumbnails, alternate images, and optional short product video support.
-- [x] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
+ - [x] Add first-class variant selection on product detail pages with required size/color choice before adding to cart.
 - [x] Add color swatches and size buttons that update selected variant state and stock messaging.
 - [x] Add a size guide modal for apparel measurements and fit guidance.
 - [x] Add fit confidence details such as model height, model size, garment fit, material, and care instructions.
@@ -224,7 +224,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add honest inventory urgency such as "Only 3 left in M" when stock is genuinely low.
 - [x] Add back-in-stock email capture for sold-out variants.
 - [x] Add waitlist support for sold-out products or variants.
-- [ ] Add fit feedback from reviews such as runs small, true to size, oversized, or roomy.
+- [x] Add fit feedback from reviews such as runs small, true to size, oversized, or roomy.
 - [x] Add product Q&A for common shopper questions.
 - [x] Add a "Why this piece" or product comparison block that explains what makes the item different.
 - [ ] Add sale pricing with original price, discount amount, and sale badge support.
