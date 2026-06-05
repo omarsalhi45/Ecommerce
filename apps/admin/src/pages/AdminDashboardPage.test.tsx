@@ -149,7 +149,7 @@ describe('AdminDashboardPage', () => {
     expect(screen.getByText('$149.98')).toBeInTheDocument()
   })
 
-  it('lets admins edit product merchandising fields', () => {
+  it('loads product values into the main editor before saving changes', () => {
     const updateProduct = vi
       .fn()
       .mockReturnValue({ unwrap: vi.fn().mockResolvedValue(products[0]) })
@@ -162,6 +162,10 @@ describe('AdminDashboardPage', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
+    expect(screen.getByText(/Editing Everyday Weight Hoodie/)).toBeInTheDocument()
+    expect(screen.getByDisplayValue('hoodie-001')).toBeDisabled()
+    expect(screen.queryByLabelText(/SKU/i)).not.toBeInTheDocument()
+
     fireEvent.change(screen.getByDisplayValue('Everyday Weight Hoodie'), {
       target: { value: 'Everyday Weight Hoodie V2' },
     })
@@ -171,11 +175,15 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(screen.getByDisplayValue('79.99'), {
       target: { value: '79.99' },
     })
+    fireEvent.change(screen.getByDisplayValue('hoodies'), {
+      target: { value: 'outerwear' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
     expect(updateProduct).toHaveBeenCalledWith({
       productId: 'hoodie-001',
       updates: expect.objectContaining({
+        category: 'outerwear',
         compareAtPrice: 79.99,
         name: 'Everyday Weight Hoodie V2',
         price: 54.99,
