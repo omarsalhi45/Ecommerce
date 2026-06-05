@@ -49,6 +49,7 @@ import {
   getCompleteTheFitProducts,
   getRelatedProducts,
 } from '../catalog/catalogFilters'
+import { getProductPriceDetails } from '../catalog/productPricing'
 import ProductList from '../components/ProductList'
 import { useTranslation } from '../i18n'
 import { addItem } from '../slices/cartSlice'
@@ -310,6 +311,7 @@ export default function ProductDetailPage() {
   const productReasons = product ? getProductReasons(product) : []
   const productQuestions = product ? getProductQuestions(product) : []
   const productMedia = product ? getProductMedia(product) : []
+  const priceDetails = product ? getProductPriceDetails(product) : undefined
   const selectedMedia = productMedia[Math.min(selectedMediaIndex, productMedia.length - 1)]
   const ratingSummary = reviewsData?.summary ?? product?.ratingSummary
   const reviews = reviewsData?.reviews ?? []
@@ -606,9 +608,24 @@ export default function ProductDetailPage() {
               <Text color="neutral.600" fontSize="lg" lineHeight="tall">
                 {product.description}
               </Text>
-              <Text fontSize="3xl" fontWeight="black" color="neutral.900">
-                ${product.price.toFixed(2)}
-              </Text>
+              <HStack align="baseline" spacing={3} flexWrap="wrap">
+                <Text fontSize="3xl" fontWeight="black" color="neutral.900">
+                  ${priceDetails?.price.toFixed(2)}
+                </Text>
+                {priceDetails?.compareAtPrice ? (
+                  <>
+                    <Text color="neutral.500" fontSize="xl" textDecoration="line-through">
+                      ${priceDetails.compareAtPrice.toFixed(2)}
+                    </Text>
+                    <Badge colorScheme="red" borderRadius="full" px={3} py={1}>
+                      {t('product.salePercent', { percent: priceDetails.salePercent })}
+                    </Badge>
+                    <Text color="accent.700" fontSize="sm" fontWeight="black">
+                      {t('product.saveAmount', { amount: priceDetails.saleAmount.toFixed(2) })}
+                    </Text>
+                  </>
+                ) : null}
+              </HStack>
               {ratingSummary?.reviewCount ? (
                 <HStack spacing={2}>
                   <Badge colorScheme="yellow" borderRadius="full" px={3} py={1}>
@@ -1096,7 +1113,14 @@ export default function ProductDetailPage() {
       >
         <HStack justify="space-between" spacing={3}>
           <Box minW={0}>
-            <Text fontWeight="black">${product.price.toFixed(2)}</Text>
+            <HStack spacing={2}>
+              <Text fontWeight="black">${priceDetails?.price.toFixed(2)}</Text>
+              {priceDetails?.compareAtPrice ? (
+                <Text color="neutral.500" fontSize="sm" textDecoration="line-through">
+                  ${priceDetails.compareAtPrice.toFixed(2)}
+                </Text>
+              ) : null}
+            </HStack>
             <Text color="neutral.500" fontSize="sm" noOfLines={1}>
               {selectedVariantLabel ??
                 (variants.length > 0 ? t('productDetail.chooseSizeColor') : product.name)}

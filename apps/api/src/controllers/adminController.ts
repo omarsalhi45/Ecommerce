@@ -38,6 +38,20 @@ const readNumber = (value: unknown, fieldName: string): number => {
   return value
 }
 
+const readOptionalNumber = (value: unknown, fieldName: string): number | undefined => {
+  if (value === undefined || value === null || value === '') {
+    return undefined
+  }
+
+  return readNumber(value, fieldName)
+}
+
+const validateCompareAtPrice = (price: number | undefined, compareAtPrice: number | undefined) => {
+  if (price !== undefined && compareAtPrice !== undefined && compareAtPrice <= price) {
+    throw new ApiError(400, 'Original price must be higher than the sale price', 'VALIDATION_ERROR')
+  }
+}
+
 export const getAdminOrders = async (_req: Request, res: Response) => {
   res.json(await getOrderList())
 }
@@ -69,11 +83,17 @@ export const postAdminProduct = async (req: Request, res: Response) => {
     throw new ApiError(400, 'Product payload is required', 'VALIDATION_ERROR')
   }
 
+  const price = readNumber(req.body.price, 'Product price')
+  const compareAtPrice = readOptionalNumber(req.body.compareAtPrice, 'Original price')
+
+  validateCompareAtPrice(price, compareAtPrice)
+
   const product = await createProduct({
     id: readString(req.body.id, 'Product id'),
     name: readString(req.body.name, 'Product name'),
     description: readString(req.body.description, 'Product description'),
-    price: readNumber(req.body.price, 'Product price'),
+    price,
+    compareAtPrice,
     imageUrl: readString(req.body.imageUrl, 'Product image URL'),
     category: readString(req.body.category, 'Product category'),
     sku: typeof req.body.sku === 'string' ? req.body.sku : undefined,
@@ -92,10 +112,16 @@ export const patchAdminProduct = async (req: Request, res: Response) => {
     throw new ApiError(400, 'Product payload is required', 'VALIDATION_ERROR')
   }
 
+  const price = typeof req.body.price === 'number' ? req.body.price : undefined
+  const compareAtPrice = readOptionalNumber(req.body.compareAtPrice, 'Original price')
+
+  validateCompareAtPrice(price, compareAtPrice)
+
   const product = await updateProduct(req.params.id, {
     name: typeof req.body.name === 'string' ? req.body.name : undefined,
     description: typeof req.body.description === 'string' ? req.body.description : undefined,
-    price: typeof req.body.price === 'number' ? req.body.price : undefined,
+    price,
+    compareAtPrice,
     imageUrl: typeof req.body.imageUrl === 'string' ? req.body.imageUrl : undefined,
     category: typeof req.body.category === 'string' ? req.body.category : undefined,
   })

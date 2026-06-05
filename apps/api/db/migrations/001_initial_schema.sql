@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS products (
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   price NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
+  compare_at_price NUMERIC(10, 2) CHECK (compare_at_price IS NULL OR compare_at_price > price),
   image_url TEXT NOT NULL,
   category TEXT NOT NULL,
   popularity_score INTEGER NOT NULL DEFAULT 0 CHECK (popularity_score >= 0),

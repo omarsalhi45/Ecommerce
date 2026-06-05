@@ -18,6 +18,7 @@ export interface Product {
   name: string
   description: string
   price: number
+  compareAtPrice?: number
   imageUrl: string
   category: string
   variants?: ProductVariant[]

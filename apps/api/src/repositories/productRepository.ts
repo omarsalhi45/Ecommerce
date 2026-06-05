@@ -13,6 +13,7 @@ interface ProductRow {
   readonly name: string
   readonly description: string
   readonly price: string
+  readonly compare_at_price?: string | null
   readonly image_url: string
   readonly category: string
   readonly popularity_score?: number | null
@@ -44,6 +45,7 @@ const productSelectWithRatings = `
     p.name,
     p.description,
     p.price,
+    p.compare_at_price,
     p.image_url,
     p.category,
     p.popularity_score,
@@ -58,6 +60,7 @@ const mapProduct = (row: ProductRow): Product => ({
   name: row.name,
   description: row.description,
   price: Number(row.price),
+  compareAtPrice: row.compare_at_price ? Number(row.compare_at_price) : undefined,
   imageUrl: row.image_url,
   category: row.category,
   popularityScore: row.popularity_score ?? undefined,
@@ -87,6 +90,7 @@ const getVariantsForProductIds = async (
        p.name,
        p.description,
        p.price,
+       p.compare_at_price,
        p.image_url,
        p.category,
        i.sku,
@@ -182,10 +186,18 @@ export const getProductReviewsFromDb = async (productId: string): Promise<Produc
 
 export const createProductInDb = async (input: CreateProductInput): Promise<Product> => {
   const result = await query<ProductRow>(
-    `INSERT INTO products (id, name, description, price, image_url, category)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING id, name, description, price, image_url, category, popularity_score`,
-    [input.id, input.name, input.description, input.price, input.imageUrl, input.category]
+    `INSERT INTO products (id, name, description, price, compare_at_price, image_url, category)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, name, description, price, compare_at_price, image_url, category, popularity_score`,
+    [
+      input.id,
+      input.name,
+      input.description,
+      input.price,
+      input.compareAtPrice,
+      input.imageUrl,
+      input.category,
+    ]
   )
 
   await query(
@@ -217,14 +229,22 @@ export const updateProductInDb = async (
 
   const result = await query<ProductRow>(
     `UPDATE products
-     SET name = $2, description = $3, price = $4, image_url = $5, category = $6, updated_at = NOW()
+     SET
+       name = $2,
+       description = $3,
+       price = $4,
+       compare_at_price = $5,
+       image_url = $6,
+       category = $7,
+       updated_at = NOW()
      WHERE id = $1
-     RETURNING id, name, description, price, image_url, category`,
+     RETURNING id, name, description, price, compare_at_price, image_url, category`,
     [
       productId,
       input.name ?? existingProduct.name,
       input.description ?? existingProduct.description,
       input.price ?? existingProduct.price,
+      input.compareAtPrice === undefined ? existingProduct.compareAtPrice : input.compareAtPrice,
       input.imageUrl ?? existingProduct.imageUrl,
       input.category ?? existingProduct.category,
     ]
@@ -240,6 +260,7 @@ export const getInventoryFromDb = async (): Promise<InventoryItem[]> => {
        p.name,
        p.description,
        p.price,
+       p.compare_at_price,
        p.image_url,
        p.category,
        i.sku,

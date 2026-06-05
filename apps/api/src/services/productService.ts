@@ -18,6 +18,7 @@ export interface Product {
   name: string
   description: string
   price: number
+  compareAtPrice?: number
   imageUrl: string
   category: string
   variants?: ProductVariant[]
@@ -59,6 +60,7 @@ export interface UpdateProductInput {
   readonly name?: string
   readonly description?: string
   readonly price?: number
+  readonly compareAtPrice?: number | null
   readonly imageUrl?: string
   readonly category?: string
 }
@@ -88,6 +90,7 @@ const products: Product[] = [
     name: 'Washed Logo Tee',
     description: 'Sun-faded cotton tee with a soft hand feel and small chest mark.',
     price: 34.99,
+    compareAtPrice: 44.99,
     imageUrl:
       'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=900&q=80',
     category: 'tees',
@@ -138,6 +141,7 @@ const products: Product[] = [
     name: 'Puffer Vest Layer',
     description: 'Light insulated vest for hoodies, cold mornings, and late train rides.',
     price: 69.99,
+    compareAtPrice: 89.99,
     imageUrl:
       'https://images.unsplash.com/photo-1548883354-94bcfe321cbb?auto=format&fit=crop&w=900&q=80',
     category: 'outerwear',
@@ -178,6 +182,7 @@ const products: Product[] = [
     name: 'Oversized Graphic Hoodie',
     description: 'Heavy fleece hoodie with a large back graphic and stacked cuffs.',
     price: 74.99,
+    compareAtPrice: 94.99,
     imageUrl:
       'https://images.unsplash.com/photo-1565693413579-8ff3fdc1b03b?auto=format&fit=crop&w=900&q=80',
     category: 'hoodies',
@@ -198,6 +203,7 @@ const products: Product[] = [
     name: 'Wide Cargo Trouser',
     description: 'Wide-leg cargo pant with adjustable hems and deep side pockets.',
     price: 69.99,
+    compareAtPrice: 84.99,
     imageUrl:
       'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80',
     category: 'bottoms',
@@ -258,6 +264,7 @@ const products: Product[] = [
     name: 'Rib Knit Beanie',
     description: 'Soft ribbed beanie with a shallow fold and subtle woven label.',
     price: 19.99,
+    compareAtPrice: 29.99,
     imageUrl:
       'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80',
     category: 'accessories',
@@ -668,6 +675,7 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
     name: input.name,
     description: input.description,
     price: input.price,
+    compareAtPrice: input.compareAtPrice,
     imageUrl: input.imageUrl,
     category: input.category,
   }
@@ -707,6 +715,10 @@ export const updateProduct = async (
     name: input.name ?? product.name,
     description: input.description ?? product.description,
     price: input.price ?? product.price,
+    compareAtPrice:
+      input.compareAtPrice === undefined
+        ? product.compareAtPrice
+        : (input.compareAtPrice ?? undefined),
     imageUrl: input.imageUrl ?? product.imageUrl,
     category: input.category ?? product.category,
   })

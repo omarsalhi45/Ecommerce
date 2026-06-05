@@ -130,6 +130,9 @@ const dictionaries = {
     'product.reviews': '{count} reviews',
     'product.bestSeller': 'Best seller',
     'product.lowStock': 'Low stock',
+    'product.sale': 'Sale',
+    'product.salePercent': '{percent}% off',
+    'product.saveAmount': 'Save ${amount}',
     'product.oneOption': 'One',
     'productDetail.notFoundTitle': 'Product not found',
     'productDetail.notFoundCopy':
@@ -518,6 +521,9 @@ const dictionaries = {
     'product.reviews': '{count} avis',
     'product.bestSeller': 'Best seller',
     'product.lowStock': 'Stock bas',
+    'product.sale': 'Promo',
+    'product.salePercent': '-{percent}%',
+    'product.saveAmount': 'Economise ${amount}',
     'product.oneOption': 'Unique',
     'productDetail.notFoundTitle': 'Produit introuvable',
     'productDetail.notFoundCopy':

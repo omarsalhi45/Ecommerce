@@ -227,7 +227,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add fit feedback from reviews such as runs small, true to size, oversized, or roomy.
 - [x] Add product Q&A for common shopper questions.
 - [x] Add a "Why this piece" or product comparison block that explains what makes the item different.
-- [ ] Add sale pricing with original price, discount amount, and sale badge support.
+- [x] Add sale pricing with original price, discount amount, and sale badge support.
 - [ ] Add bundle offers such as hoodie plus tee discounts.
 - [x] Add a filter drawer for category, size, color, price range, in-stock state, and rating.
 - [x] Add applied filter chips and visible product result counts.

@@ -33,6 +33,7 @@ const currentProduct: Product = {
   name: 'Everyday Weight Hoodie',
   description: 'Soft fleece hoodie',
   price: 59.99,
+  compareAtPrice: 79.99,
   imageUrl: 'hoodie.jpg',
   imageUrls: ['hoodie-side.jpg', 'hoodie-detail.jpg'],
   videoUrl: 'hoodie-fit.mp4',
@@ -178,6 +179,9 @@ describe('ProductDetailPage', () => {
     renderProductDetail()
 
     expect(screen.getByRole('heading', { name: 'Everyday Weight Hoodie' })).toBeInTheDocument()
+    expect(screen.getAllByText('$79.99').length).toBeGreaterThan(0)
+    expect(screen.getByText('25% off')).toBeInTheDocument()
+    expect(screen.getByText('Save $20.00')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Everyday Weight Hoodie view 1' })).toHaveAttribute(
       'src',
       'hoodie.jpg'

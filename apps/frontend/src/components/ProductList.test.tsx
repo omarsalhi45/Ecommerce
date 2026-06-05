@@ -9,6 +9,7 @@ const variantProduct: Product = {
   name: 'Everyday Weight Hoodie',
   description: 'Soft fleece hoodie',
   price: 59.99,
+  compareAtPrice: 79.99,
   imageUrl: 'hoodie.jpg',
   category: 'hoodies',
   popularityScore: 95,
@@ -40,6 +41,9 @@ describe('ProductList', () => {
 
     expect(screen.getByText('Best seller')).toBeInTheDocument()
     expect(screen.getByText('Low stock')).toBeInTheDocument()
+    expect(screen.getByText('Sale')).toBeInTheDocument()
+    expect(screen.getByText('$79.99')).toBeInTheDocument()
+    expect(screen.getByText('Save $20.00')).toBeInTheDocument()
     expect(screen.getByLabelText('Everyday Weight Hoodie available colors')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
@@ -59,6 +63,7 @@ describe('ProductList', () => {
 
     expect(screen.getByText('Selected: L / Black')).toBeInTheDocument()
     expect(screen.getByText('Only 4 left')).toBeInTheDocument()
+    expect(screen.getByText('25% off')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
 

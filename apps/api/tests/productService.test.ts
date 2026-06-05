@@ -44,6 +44,16 @@ describe('productService', () => {
     })
   })
 
+  it('returns sale compare-at pricing for marked-down products', async () => {
+    const product = await getProduct('hoodie-003')
+
+    expect(product).toMatchObject({
+      id: 'hoodie-003',
+      price: 74.99,
+      compareAtPrice: 94.99,
+    })
+  })
+
   it('returns undefined for an unknown product id', async () => {
     const product = await getProduct('missing-product')
 

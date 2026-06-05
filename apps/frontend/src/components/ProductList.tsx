@@ -21,6 +21,7 @@ import {
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
+import { getProductPriceDetails } from '../catalog/productPricing'
 import { useTranslation } from '../i18n'
 import { addItem } from '../slices/cartSlice'
 import { openMiniCart } from '../slices/cartUiSlice'
@@ -150,6 +151,7 @@ export default function ProductList({ products }: { products: Product[] }) {
     <>
       {products.map((product) => {
         const isWishlisted = wishlistProductIds.includes(product.id)
+        const priceDetails = getProductPriceDetails(product)
 
         return (
           <Box
@@ -194,7 +196,13 @@ export default function ProductList({ products }: { products: Product[] }) {
                 {getProductBadges(product).map((badgeKey) => (
                   <Badge
                     key={badgeKey}
-                    bg={badgeKey === 'product.lowStock' ? 'orange.700' : 'black'}
+                    bg={
+                      badgeKey === 'product.sale'
+                        ? 'accent.600'
+                        : badgeKey === 'product.lowStock'
+                          ? 'orange.700'
+                          : 'black'
+                    }
                     color="white"
                     borderRadius="full"
                     px={3}
@@ -285,8 +293,18 @@ export default function ProductList({ products }: { products: Product[] }) {
                 gap={3}
               >
                 <Text fontSize="2xl" fontWeight="black" color="neutral.900" letterSpacing="tight">
-                  ${product.price.toFixed(2)}
+                  ${priceDetails.price.toFixed(2)}
                 </Text>
+                {priceDetails.compareAtPrice ? (
+                  <VStack align={{ base: 'start', sm: 'end' }} spacing={0}>
+                    <Text color="neutral.500" fontSize="sm" textDecoration="line-through">
+                      ${priceDetails.compareAtPrice.toFixed(2)}
+                    </Text>
+                    <Text color="accent.700" fontSize="xs" fontWeight="black">
+                      {t('product.saveAmount', { amount: priceDetails.saleAmount.toFixed(2) })}
+                    </Text>
+                  </VStack>
+                ) : null}
                 <HStack spacing={2} justify={{ base: 'stretch', sm: 'flex-end' }}>
                   <Button
                     as={RouterLink}
@@ -356,8 +374,20 @@ export default function ProductList({ products }: { products: Product[] }) {
                         {quickAddProduct.category}
                       </Text>
                       <Text color="neutral.900" fontSize="2xl" fontWeight="black">
-                        ${quickAddProduct.price.toFixed(2)}
+                        ${getProductPriceDetails(quickAddProduct).price.toFixed(2)}
                       </Text>
+                      {getProductPriceDetails(quickAddProduct).compareAtPrice ? (
+                        <VStack align="end" spacing={0}>
+                          <Text color="neutral.500" fontSize="sm" textDecoration="line-through">
+                            ${getProductPriceDetails(quickAddProduct).compareAtPrice?.toFixed(2)}
+                          </Text>
+                          <Badge colorScheme="red" borderRadius="full">
+                            {t('product.salePercent', {
+                              percent: getProductPriceDetails(quickAddProduct).salePercent,
+                            })}
+                          </Badge>
+                        </VStack>
+                      ) : null}
                     </HStack>
                   </Stack>
                 </HStack>
@@ -614,11 +644,17 @@ const getUniqueVariantValues = (variants: ProductVariant[], key: 'size' | 'color
 const getVariantLabel = (variant: ProductVariant): string =>
   [variant.size, variant.color].filter(Boolean).join(' / ') || variant.sku
 
-const getProductBadges = (product: Product): Array<'product.bestSeller' | 'product.lowStock'> => {
-  const badges: Array<'product.bestSeller' | 'product.lowStock'> = []
+const getProductBadges = (
+  product: Product
+): Array<'product.bestSeller' | 'product.lowStock' | 'product.sale'> => {
+  const badges: Array<'product.bestSeller' | 'product.lowStock' | 'product.sale'> = []
   const hasLowStockVariant = product.variants?.some(
     (variant) => variant.stockQuantity > 0 && variant.stockQuantity <= 5
   )
+
+  if (getProductPriceDetails(product).isOnSale) {
+    badges.push('product.sale')
+  }
 
   if ((product.popularityScore ?? 0) >= 90) {
     badges.push('product.bestSeller')

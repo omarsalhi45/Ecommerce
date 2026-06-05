@@ -65,6 +65,7 @@ const emptyProductForm = {
   name: '',
   description: '',
   price: '',
+  compareAtPrice: '',
   imageUrl: '',
   category: 'tees',
   sku: '',
@@ -281,6 +282,9 @@ export default function AdminDashboardPage() {
                     name: productForm.name.trim(),
                     description: productForm.description.trim(),
                     price: Number(productForm.price),
+                    compareAtPrice: productForm.compareAtPrice
+                      ? Number(productForm.compareAtPrice)
+                      : undefined,
                     imageUrl: productForm.imageUrl.trim(),
                     category: productForm.category.trim(),
                     sku: productForm.sku.trim() || undefined,
@@ -332,6 +336,24 @@ export default function AdminDashboardPage() {
                     value={productForm.price}
                     onChange={(event) =>
                       setProductForm((current) => ({ ...current, price: event.target.value }))
+                    }
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Original price
+                  </FormLabel>
+                  <Input
+                    placeholder="59.00"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={productForm.compareAtPrice}
+                    onChange={(event) =>
+                      setProductForm((current) => ({
+                        ...current,
+                        compareAtPrice: event.target.value,
+                      }))
                     }
                   />
                 </FormControl>
@@ -470,6 +492,9 @@ export default function AdminDashboardPage() {
                     <Text fontWeight="bold">{product.name}</Text>
                     <Text color="neutral.600" fontSize="sm">
                       {product.category} · ${product.price.toFixed(2)}
+                      {product.compareAtPrice
+                        ? ` sale from $${product.compareAtPrice.toFixed(2)}`
+                        : ''}
                     </Text>
                   </Box>
                   <HStack>

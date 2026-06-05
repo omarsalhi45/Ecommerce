@@ -1,10 +1,20 @@
-INSERT INTO products (id, name, description, price, image_url, category, popularity_score)
+INSERT INTO products (
+  id,
+  name,
+  description,
+  price,
+  compare_at_price,
+  image_url,
+  category,
+  popularity_score
+)
 VALUES
   (
     'tee-002',
     'Washed Logo Tee',
     'Sun-faded cotton tee with a soft hand feel and small chest mark.',
     34.99,
+    44.99,
     'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=900&q=80',
     'tees',
     91
@@ -14,6 +24,7 @@ VALUES
     'Cropped Rib Tank',
     'Clean ribbed tank built for warm days, gym layers, and open shirts.',
     24.99,
+    NULL,
     'https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=900&q=80',
     'tees',
     76
@@ -23,6 +34,7 @@ VALUES
     'Long Sleeve Skater Tee',
     'Midweight long sleeve with dropped shoulders and sleeve hit graphics.',
     42.99,
+    NULL,
     'https://images.unsplash.com/photo-1506629905607-d405b7a30db9?auto=format&fit=crop&w=900&q=80',
     'tees',
     84
@@ -32,6 +44,7 @@ VALUES
     'Canvas Coach Jacket',
     'Structured cotton canvas jacket with snap front and roomy pockets.',
     89.99,
+    NULL,
     'https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=900&q=80',
     'outerwear',
     83
@@ -41,6 +54,7 @@ VALUES
     'Puffer Vest Layer',
     'Light insulated vest for hoodies, cold mornings, and late train rides.',
     69.99,
+    89.99,
     'https://images.unsplash.com/photo-1548883354-94bcfe321cbb?auto=format&fit=crop&w=900&q=80',
     'outerwear',
     78
@@ -50,6 +64,7 @@ VALUES
     'Cropped Denim Jacket',
     'Boxy denim jacket with a washed finish and sharp cropped proportion.',
     94.99,
+    NULL,
     'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?auto=format&fit=crop&w=900&q=80',
     'outerwear',
     86
@@ -59,6 +74,7 @@ VALUES
     'Zip Layer Hoodie',
     'Full-zip fleece hoodie with a slightly cropped body and double zipper.',
     64.99,
+    NULL,
     'https://images.unsplash.com/photo-1578681994506-b8f463449011?auto=format&fit=crop&w=900&q=80',
     'hoodies',
     90
@@ -68,6 +84,7 @@ VALUES
     'Oversized Graphic Hoodie',
     'Heavy fleece hoodie with a large back graphic and stacked cuffs.',
     74.99,
+    94.99,
     'https://images.unsplash.com/photo-1565693413579-8ff3fdc1b03b?auto=format&fit=crop&w=900&q=80',
     'hoodies',
     97
@@ -77,6 +94,7 @@ VALUES
     'Quarter Zip Sweatshirt',
     'Soft collar sweatshirt for clean layering over tees or tanks.',
     54.99,
+    NULL,
     'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=900&q=80',
     'hoodies',
     81
@@ -86,6 +104,7 @@ VALUES
     'Wide Cargo Trouser',
     'Wide-leg cargo pant with adjustable hems and deep side pockets.',
     69.99,
+    84.99,
     'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=900&q=80',
     'bottoms',
     94
@@ -95,6 +114,7 @@ VALUES
     'Relaxed Utility Jean',
     'Relaxed denim with workwear pocketing and a broken-in wash.',
     74.99,
+    NULL,
     'https://images.unsplash.com/photo-1542272604-787c3835535d?auto=format&fit=crop&w=900&q=80',
     'bottoms',
     87
@@ -104,6 +124,7 @@ VALUES
     'Nylon Trail Short',
     'Light nylon shorts with mesh pockets and an easy elastic waist.',
     44.99,
+    NULL,
     'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?auto=format&fit=crop&w=900&q=80',
     'bottoms',
     75
@@ -113,6 +134,7 @@ VALUES
     'Pleated Court Skirt',
     'Crisp pleated skirt with hidden shorts and a street-sport shape.',
     49.99,
+    NULL,
     'https://images.unsplash.com/photo-1583496661160-fb5886a13d27?auto=format&fit=crop&w=900&q=80',
     'bottoms',
     82
@@ -122,6 +144,7 @@ VALUES
     'Low Profile Cap',
     'Curved-brim cap with tonal embroidery and an adjustable back strap.',
     24.99,
+    NULL,
     'https://images.unsplash.com/photo-1521369909029-2afed882baee?auto=format&fit=crop&w=900&q=80',
     'accessories',
     79
@@ -131,6 +154,7 @@ VALUES
     'City Sling Bag',
     'Compact crossbody sling with enough space for phone, keys, and wallet.',
     39.99,
+    NULL,
     'https://images.unsplash.com/photo-1594223274512-ad4803739b7c?auto=format&fit=crop&w=900&q=80',
     'accessories',
     89
@@ -140,6 +164,7 @@ VALUES
     'Rib Knit Beanie',
     'Soft ribbed beanie with a shallow fold and subtle woven label.',
     19.99,
+    29.99,
     'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=80',
     'accessories',
     73
@@ -149,6 +174,7 @@ VALUES
     'Heavy Crew Sock Pack',
     'Three-pack of cushioned crew socks with ribbed cuffs and logo knit.',
     18.99,
+    NULL,
     'https://images.unsplash.com/photo-1586350977771-b3b0abd50c82?auto=format&fit=crop&w=900&q=80',
     'accessories',
     70
@@ -157,6 +183,7 @@ ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
   price = EXCLUDED.price,
+  compare_at_price = EXCLUDED.compare_at_price,
   image_url = EXCLUDED.image_url,
   category = EXCLUDED.category,
   popularity_score = EXCLUDED.popularity_score,
