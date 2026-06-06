@@ -20,7 +20,10 @@ import {
   Stat,
   StatLabel,
   StatNumber,
+  Tab,
+  TabList,
   Table,
+  Tabs,
   Tbody,
   Td,
   Text,
@@ -75,6 +78,8 @@ const emptyProductForm = {
   stockQuantity: '0',
 }
 const emptyImageSource = ''
+type ProductStatusFilter = 'all' | 'archived' | 'published'
+const productStatusFilters: ProductStatusFilter[] = ['all', 'published', 'archived']
 
 export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
@@ -84,6 +89,7 @@ export default function AdminDashboardPage() {
   const [productForm, setProductForm] = useState(emptyProductForm)
   const [editingProductId, setEditingProductId] = useState<string | undefined>()
   const [externalImageUrl, setExternalImageUrl] = useState(emptyImageSource)
+  const [productStatusFilter, setProductStatusFilter] = useState<ProductStatusFilter>('all')
   const [productFormError, setProductFormError] = useState<string | undefined>()
   const [imageStatus, setImageStatus] = useState<string | undefined>()
   const canLoadAdminData = currentUser?.role === 'admin'
@@ -117,6 +123,31 @@ export default function AdminDashboardPage() {
     isAnalyticsError || isOrdersError || isProductsError || isInventoryError || isUsersError
   const isEditingProduct = Boolean(editingProductId)
   const isSavingProduct = isImageUploading || isCreatingProduct || isUpdatingProduct
+  const products = productsData?.products ?? []
+  const productStatusCounts = products.reduce(
+    (counts, product) => {
+      if (product.isActive === false) {
+        counts.archived += 1
+        return counts
+      }
+
+      counts.published += 1
+      return counts
+    },
+    { archived: 0, published: 0 }
+  )
+  const visibleProducts = products.filter((product) => {
+    if (productStatusFilter === 'archived') {
+      return product.isActive === false
+    }
+
+    if (productStatusFilter === 'published') {
+      return product.isActive !== false
+    }
+
+    return true
+  })
+  const productStatusFilterIndex = productStatusFilters.indexOf(productStatusFilter)
 
   const handleProductImageChange = async (file: File | undefined) => {
     if (!file) {
@@ -602,11 +633,29 @@ export default function AdminDashboardPage() {
                 ) : null}
               </HStack>
             </Box>
-            <VStack align="stretch" spacing={3}>
+            <Tabs
+              index={productStatusFilterIndex}
+              mt={4}
+              onChange={(index) => setProductStatusFilter(productStatusFilters[index] ?? 'all')}
+            >
+              <TabList borderBottomColor="neutral.200" overflowX="auto">
+                <Tab fontWeight="bold">All {products.length}</Tab>
+                <Tab fontWeight="bold">Published {productStatusCounts.published}</Tab>
+                <Tab fontWeight="bold">Archived {productStatusCounts.archived}</Tab>
+              </TabList>
+            </Tabs>
+            <VStack align="stretch" mt={4} spacing={3}>
               {isProductsError ? (
                 <Text color="error.600">Products could not be loaded.</Text>
               ) : null}
-              {productsData?.products.map((product) => {
+              {!isProductsError && visibleProducts.length === 0 ? (
+                <Text color="neutral.600">
+                  {productStatusFilter === 'archived'
+                    ? 'No archived products yet.'
+                    : 'No products in this view.'}
+                </Text>
+              ) : null}
+              {visibleProducts.map((product) => {
                 const isEditing = editingProductId === product.id
                 const isActive = product.isActive !== false
 
@@ -619,25 +668,29 @@ export default function AdminDashboardPage() {
                     }
                     borderRadius="md"
                     opacity={isActive ? 1 : 0.72}
-                    p={3}
+                    p={4}
                   >
-                    <HStack justify="space-between" align="start">
-                      <Box>
-                        <HStack spacing={2}>
+                    <Stack
+                      align={{ base: 'stretch', md: 'start' }}
+                      direction={{ base: 'column', md: 'row' }}
+                      justify="space-between"
+                      spacing={4}
+                    >
+                      <Box minW={0}>
+                        <HStack align="start" spacing={2} wrap="wrap">
                           <Text fontWeight="bold">{product.name}</Text>
                           <Badge colorScheme={isActive ? 'green' : 'orange'}>
                             {isActive ? 'Published' : 'Archived'}
                           </Badge>
                         </HStack>
                         <Text color="neutral.600" fontSize="sm">
-                          {product.category} · ${product.price.toFixed(2)}
+                          {product.category} - ${product.price.toFixed(2)} - {product.id}
                           {product.compareAtPrice
                             ? ` sale from $${product.compareAtPrice.toFixed(2)}`
                             : ''}
                         </Text>
                       </Box>
-                      <HStack>
-                        <Badge>{product.id}</Badge>
+                      <HStack justify={{ base: 'start', md: 'end' }} spacing={2} wrap="wrap">
                         <Button
                           size="xs"
                           variant={isEditing ? 'solid' : 'outline'}
@@ -646,15 +699,15 @@ export default function AdminDashboardPage() {
                         >
                           Edit
                         </Button>
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          isDisabled={!isActive}
-                          onClick={() => archiveProduct(product.id)}
-                        >
-                          Archive
-                        </Button>
-                        {!isActive ? (
+                        {isActive ? (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => archiveProduct(product.id)}
+                          >
+                            Archive
+                          </Button>
+                        ) : (
                           <Button
                             size="xs"
                             variant="outline"
@@ -664,7 +717,7 @@ export default function AdminDashboardPage() {
                           >
                             Publish
                           </Button>
-                        ) : null}
+                        )}
                         <Button
                           size="xs"
                           variant="outline"
@@ -674,7 +727,7 @@ export default function AdminDashboardPage() {
                           Delete forever
                         </Button>
                       </HStack>
-                    </HStack>
+                    </Stack>
                   </Box>
                 )
               })}

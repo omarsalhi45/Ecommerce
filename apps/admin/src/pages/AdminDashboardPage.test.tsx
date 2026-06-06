@@ -229,8 +229,17 @@ describe('AdminDashboardPage', () => {
       preloadedAuth: { token: 'test-token', user: adminUser },
     })
 
+    expect(screen.getByRole('tab', { name: 'All 2' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Published 1' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Archived 1' })).toBeInTheDocument()
     expect(screen.getByText('Published')).toBeInTheDocument()
     expect(screen.getByText('Archived')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Archived 1' }))
+
+    expect(screen.getByText('Archived Hoodie')).toBeInTheDocument()
+    expect(screen.queryByText('Everyday Weight Hoodie')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Archive' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }))
 
