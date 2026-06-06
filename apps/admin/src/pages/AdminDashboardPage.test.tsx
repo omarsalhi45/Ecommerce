@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   useCreateProductMutation,
@@ -16,7 +16,7 @@ import {
   useUploadProductImageMutation,
 } from '../api/adminApi'
 import { renderWithProviders } from '../test/render'
-import type { InventoryItem, Product, User } from '../types'
+import type { InventoryItem, Order, Product, User } from '../types'
 import AdminDashboardPage from './AdminDashboardPage'
 
 vi.mock('../api/adminApi', async () => {
@@ -81,6 +81,74 @@ const inventory: InventoryItem[] = [
     color: 'Grey',
     stockQuantity: 4,
     lowStockThreshold: 5,
+  },
+]
+
+const orders: Order[] = [
+  {
+    id: 'order-100',
+    status: 'pending',
+    paymentStatus: 'paid',
+    customer: {
+      email: 'omar@example.com',
+      firstName: 'Omar',
+      lastName: 'Salhi',
+      phone: '+15555550100',
+    },
+    shippingAddress: {
+      line1: '10 Rue Commerce',
+      city: 'Paris',
+      postalCode: '75001',
+      country: 'FR',
+    },
+    items: [
+      {
+        productId: 'hoodie-001',
+        name: 'Everyday Weight Hoodie',
+        quantity: 2,
+        unitPrice: 59.99,
+        lineTotal: 119.98,
+      },
+    ],
+    totals: {
+      subtotal: 119.98,
+      shipping: 7.5,
+      tax: 9.6,
+      total: 137.08,
+    },
+    createdAt: '2026-06-01T10:00:00.000Z',
+  },
+  {
+    id: 'order-200',
+    status: 'shipped',
+    paymentStatus: 'payment_required',
+    customer: {
+      email: 'maya@example.com',
+      firstName: 'Maya',
+      lastName: 'Stone',
+    },
+    shippingAddress: {
+      line1: '22 Market Street',
+      city: 'London',
+      postalCode: 'SW1A 1AA',
+      country: 'GB',
+    },
+    items: [
+      {
+        productId: 'windbreaker-001',
+        name: 'Night Run Windbreaker',
+        quantity: 1,
+        unitPrice: 79.99,
+        lineTotal: 79.99,
+      },
+    ],
+    totals: {
+      subtotal: 79.99,
+      shipping: 7.5,
+      tax: 6.4,
+      total: 93.89,
+    },
+    createdAt: '2026-06-02T12:00:00.000Z',
   },
 ]
 
@@ -171,6 +239,111 @@ describe('AdminDashboardPage', () => {
     expect(mockUseGetAdminUsersQuery).toHaveBeenCalledWith(undefined, { skip: false })
     expect(screen.getByRole('heading', { name: 'Admin dashboard' })).toBeInTheDocument()
     expect(screen.getByText('$149.98')).toBeInTheDocument()
+  })
+
+  it('filters orders and opens order details without stretching the dashboard', () => {
+    const updateOrderStatus = vi.fn()
+    mockUseGetAdminOrdersQuery.mockReturnValue(
+      createQueryResult({ orders }) as unknown as ReturnType<typeof useGetAdminOrdersQuery>
+    )
+    mockUseUpdateOrderStatusMutation.mockReturnValue([
+      updateOrderStatus,
+      {},
+    ] as unknown as ReturnType<typeof useUpdateOrderStatusMutation>)
+
+    renderWithProviders(<AdminDashboardPage />, {
+      preloadedAuth: { token: 'test-token', user: adminUser },
+    })
+
+    expect(screen.getByText('Showing 2 of 2 matching orders')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByPlaceholderText('Search order, email, customer, city, or item'), {
+      target: { value: 'omar' },
+    })
+    fireEvent.change(screen.getByDisplayValue('All statuses'), {
+      target: { value: 'pending' },
+    })
+
+    expect(screen.getByText('order-100')).toBeInTheDocument()
+    expect(screen.queryByText('order-200')).not.toBeInTheDocument()
+
+    const orderRow = screen.getByText('order-100').closest('tr')
+    expect(orderRow).not.toBeNull()
+    fireEvent.click(
+      within(orderRow as HTMLTableRowElement).getByRole('button', { name: 'Details' })
+    )
+
+    const orderDrawer = screen.getByRole('dialog', { name: 'order-100' })
+    expect(orderDrawer).toBeInTheDocument()
+    expect(within(orderDrawer).getByText('10 Rue Commerce')).toBeInTheDocument()
+    expect(within(orderDrawer).getByText('Everyday Weight Hoodie')).toBeInTheDocument()
+
+    fireEvent.change(within(orderDrawer).getByDisplayValue('pending'), {
+      target: { value: 'shipped' },
+    })
+
+    expect(updateOrderStatus).toHaveBeenCalledWith({
+      orderId: 'order-100',
+      status: 'shipped',
+    })
+  })
+
+  it('filters admin products by search, category, and stock state', () => {
+    mockUseGetAdminProductsQuery.mockReturnValue(
+      createQueryResult({
+        products: [
+          products[0],
+          {
+            id: 'windbreaker-001',
+            name: 'Night Run Windbreaker',
+            description: 'Lightweight shell',
+            price: 79.99,
+            imageUrl: 'windbreaker.jpg',
+            category: 'outerwear',
+          },
+        ],
+      }) as unknown as ReturnType<typeof useGetAdminProductsQuery>
+    )
+    mockUseGetAdminInventoryQuery.mockReturnValue(
+      createQueryResult({
+        inventory: [
+          inventory[0],
+          {
+            product: {
+              id: 'windbreaker-001',
+              name: 'Night Run Windbreaker',
+              description: 'Lightweight shell',
+              price: 79.99,
+              imageUrl: 'windbreaker.jpg',
+              category: 'outerwear',
+            },
+            sku: 'OSAI-WIND-BLK-M',
+            size: 'M',
+            color: 'Black',
+            stockQuantity: 0,
+            lowStockThreshold: 5,
+          },
+        ],
+      }) as unknown as ReturnType<typeof useGetAdminInventoryQuery>
+    )
+
+    renderWithProviders(<AdminDashboardPage />, {
+      preloadedAuth: { token: 'test-token', user: adminUser },
+    })
+
+    fireEvent.change(screen.getByPlaceholderText('Search product, id, category, or copy'), {
+      target: { value: 'wind' },
+    })
+    fireEvent.change(screen.getByDisplayValue('All categories'), {
+      target: { value: 'outerwear' },
+    })
+    fireEvent.change(screen.getByDisplayValue('All stock'), {
+      target: { value: 'sold_out' },
+    })
+
+    expect(screen.getByText('Night Run Windbreaker')).toBeInTheDocument()
+    expect(screen.queryByText('Everyday Weight Hoodie')).not.toBeInTheDocument()
+    expect(screen.getByText('Showing 1 of 2 products')).toBeInTheDocument()
   })
 
   it('shows stock on products and edits inventory from the product detail drawer', () => {

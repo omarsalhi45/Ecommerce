@@ -60,6 +60,12 @@ import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { InventoryItem, Order, Product } from '../types'
 
 const orderStatuses: Order['status'][] = ['pending', 'shipped', 'delivered', 'cancelled']
+const orderStatusColorSchemes: Record<Order['status'], string> = {
+  cancelled: 'red',
+  delivered: 'green',
+  pending: 'yellow',
+  shipped: 'blue',
+}
 const paymentStatusColorSchemes: Record<Order['paymentStatus'], string> = {
   mock_paid: 'green',
   paid: 'green',
@@ -72,6 +78,10 @@ const paymentStatusLabels: Record<Order['paymentStatus'], string> = {
   payment_failed: 'failed',
   payment_required: 'awaiting payment',
 }
+type OrderStatusFilter = 'all' | Order['status']
+type PaymentStatusFilter = 'all' | Order['paymentStatus']
+type ProductStockFilter = 'all' | 'in_stock' | 'low_stock' | 'missing_stock' | 'sold_out'
+const paymentStatuses = Object.keys(paymentStatusLabels) as Order['paymentStatus'][]
 const emptyProductForm = {
   id: '',
   name: '',
@@ -86,6 +96,46 @@ const emptyProductForm = {
 const emptyImageSource = ''
 type ProductStatusFilter = 'all' | 'archived' | 'published'
 const productStatusFilters: ProductStatusFilter[] = ['all', 'published', 'archived']
+const recentOrderLimit = 25
+
+const formatOrderDate = (value: string) =>
+  new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(value))
+
+const getOrderItemCount = (order: Order) =>
+  order.items.reduce((total, item) => total + item.quantity, 0)
+
+const getInventorySummary = (items: InventoryItem[]) => {
+  const totalStock = items.reduce((total, item) => total + item.stockQuantity, 0)
+  const isLowStock = items.some((item) => item.stockQuantity <= item.lowStockThreshold)
+
+  if (items.length === 0) {
+    return {
+      colorScheme: 'gray',
+      label: 'No stock record',
+      state: 'missing_stock' as ProductStockFilter,
+      totalStock,
+    }
+  }
+
+  if (totalStock === 0) {
+    return {
+      colorScheme: 'red',
+      label: 'Sold out',
+      state: 'sold_out' as ProductStockFilter,
+      totalStock,
+    }
+  }
+
+  return {
+    colorScheme: isLowStock ? 'yellow' : 'green',
+    label: `${totalStock} in stock`,
+    state: isLowStock ? ('low_stock' as ProductStockFilter) : ('in_stock' as ProductStockFilter),
+    totalStock,
+  }
+}
 
 export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
@@ -94,6 +144,13 @@ export default function AdminDashboardPage() {
   const [productForm, setProductForm] = useState(emptyProductForm)
   const [editingProductId, setEditingProductId] = useState<string | undefined>()
   const [isProductEditorOpen, setProductEditorOpen] = useState(false)
+  const [orderSearch, setOrderSearch] = useState('')
+  const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatusFilter>('all')
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatusFilter>('all')
+  const [selectedOrderId, setSelectedOrderId] = useState<string | undefined>()
+  const [productSearch, setProductSearch] = useState('')
+  const [productCategoryFilter, setProductCategoryFilter] = useState('all')
+  const [productStockFilter, setProductStockFilter] = useState<ProductStockFilter>('all')
   const [selectedProductId, setSelectedProductId] = useState<string | undefined>()
   const [externalImageUrl, setExternalImageUrl] = useState(emptyImageSource)
   const [productStatusFilter, setProductStatusFilter] = useState<ProductStatusFilter>('all')
@@ -130,6 +187,7 @@ export default function AdminDashboardPage() {
     isAnalyticsError || isOrdersError || isProductsError || isInventoryError || isUsersError
   const isEditingProduct = Boolean(editingProductId)
   const isSavingProduct = isImageUploading || isCreatingProduct || isUpdatingProduct
+  const orders = ordersData?.orders ?? []
   const products = productsData?.products ?? []
   const inventoryItems = inventoryData?.inventory ?? []
   const inventoryByProductId = inventoryItems.reduce((itemsByProductId, item) => {
@@ -147,6 +205,37 @@ export default function AdminDashboardPage() {
   const editingProductInventoryItem = editingProductId
     ? inventoryByProductId.get(editingProductId)?.[0]
     : undefined
+  const selectedOrder = selectedOrderId
+    ? orders.find((order) => order.id === selectedOrderId)
+    : undefined
+  const normalizedOrderSearch = orderSearch.trim().toLowerCase()
+  const filteredOrders = orders.filter((order) => {
+    const matchesStatus = orderStatusFilter === 'all' || order.status === orderStatusFilter
+    const matchesPayment =
+      paymentStatusFilter === 'all' || order.paymentStatus === paymentStatusFilter
+    const searchableText = [
+      order.id,
+      order.customer.email,
+      order.customer.firstName,
+      order.customer.lastName,
+      order.customer.phone,
+      order.shippingAddress.city,
+      order.shippingAddress.country,
+      order.shippingAddress.postalCode,
+      ...order.items.flatMap((item) => [item.name, item.productId]),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    const matchesSearch =
+      normalizedOrderSearch.length === 0 || searchableText.includes(normalizedOrderSearch)
+
+    return matchesStatus && matchesPayment && matchesSearch
+  })
+  const visibleOrders = filteredOrders.slice(0, recentOrderLimit)
+  const hasMoreOrders = filteredOrders.length > visibleOrders.length
+  const productCategories = Array.from(new Set(products.map((product) => product.category))).sort()
+  const normalizedProductSearch = productSearch.trim().toLowerCase()
   const productStatusCounts = products.reduce(
     (counts, product) => {
       if (product.isActive === false) {
@@ -161,14 +250,31 @@ export default function AdminDashboardPage() {
   )
   const visibleProducts = products.filter((product) => {
     if (productStatusFilter === 'archived') {
-      return product.isActive === false
+      if (product.isActive !== false) {
+        return false
+      }
     }
 
     if (productStatusFilter === 'published') {
-      return product.isActive !== false
+      if (product.isActive === false) {
+        return false
+      }
     }
 
-    return true
+    const productInventoryItems = inventoryByProductId.get(product.id) ?? []
+    const inventorySummary = getInventorySummary(productInventoryItems)
+    const matchesCategory =
+      productCategoryFilter === 'all' || product.category === productCategoryFilter
+    const matchesStock =
+      productStockFilter === 'all' || inventorySummary.state === productStockFilter
+    const matchesSearch =
+      normalizedProductSearch.length === 0 ||
+      [product.name, product.id, product.category, product.description]
+        .join(' ')
+        .toLowerCase()
+        .includes(normalizedProductSearch)
+
+    return matchesCategory && matchesStock && matchesSearch
   })
   const productStatusFilterIndex = productStatusFilters.indexOf(productStatusFilter)
 
@@ -320,57 +426,121 @@ export default function AdminDashboardPage() {
         </Grid>
 
         <Box bg="white" border="1px solid" borderColor="neutral.200" borderRadius="lg" p={5}>
-          <Heading as="h2" size="md" mb={4}>
-            Orders
-          </Heading>
+          <HStack align={{ base: 'stretch', md: 'center' }} justify="space-between" mb={4}>
+            <Box>
+              <Heading as="h2" size="md">
+                Orders
+              </Heading>
+              <Text color="neutral.600" fontSize="sm">
+                Showing {visibleOrders.length} of {filteredOrders.length} matching orders
+              </Text>
+            </Box>
+          </HStack>
+          <Grid templateColumns={{ base: '1fr', md: '2fr 1fr 1fr' }} gap={3} mb={4}>
+            <Input
+              placeholder="Search order, email, customer, city, or item"
+              value={orderSearch}
+              onChange={(event) => setOrderSearch(event.target.value)}
+            />
+            <Select
+              value={orderStatusFilter}
+              onChange={(event) => setOrderStatusFilter(event.target.value as OrderStatusFilter)}
+            >
+              <option value="all">All statuses</option>
+              {orderStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={paymentStatusFilter}
+              onChange={(event) =>
+                setPaymentStatusFilter(event.target.value as PaymentStatusFilter)
+              }
+            >
+              <option value="all">All payments</option>
+              {paymentStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {paymentStatusLabels[status]}
+                </option>
+              ))}
+            </Select>
+          </Grid>
           {isOrdersError ? (
             <Text color="error.600">Orders could not be loaded.</Text>
-          ) : ordersData?.orders.length ? (
-            <Table size="sm">
-              <Thead>
-                <Tr>
-                  <Th>Order</Th>
-                  <Th>Customer</Th>
-                  <Th>Total</Th>
-                  <Th>Payment</Th>
-                  <Th>Status</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {ordersData.orders.map((order) => (
-                  <Tr key={order.id}>
-                    <Td fontWeight="bold">{order.id}</Td>
-                    <Td>{order.customer.email}</Td>
-                    <Td>${order.totals.total.toFixed(2)}</Td>
-                    <Td>
-                      <Badge colorScheme={paymentStatusColorSchemes[order.paymentStatus]}>
-                        {paymentStatusLabels[order.paymentStatus]}
-                      </Badge>
-                    </Td>
-                    <Td>
-                      <Select
-                        size="sm"
-                        value={order.status}
-                        onChange={(event) =>
-                          updateOrderStatus({
-                            orderId: order.id,
-                            status: event.target.value as Order['status'],
-                          })
-                        }
-                      >
-                        {orderStatuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </Select>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
+          ) : visibleOrders.length ? (
+            <>
+              <Box
+                border="1px solid"
+                borderColor="neutral.100"
+                borderRadius="md"
+                maxH="420px"
+                overflow="auto"
+              >
+                <Table size="sm">
+                  <Thead bg="white" position="sticky" top={0} zIndex={1}>
+                    <Tr>
+                      <Th>Order</Th>
+                      <Th>Customer</Th>
+                      <Th>Items</Th>
+                      <Th>Total</Th>
+                      <Th>Payment</Th>
+                      <Th>Status</Th>
+                      <Th />
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {visibleOrders.map((order) => (
+                      <Tr key={order.id}>
+                        <Td>
+                          <Text fontWeight="bold">{order.id}</Text>
+                          <Text color="neutral.500" fontSize="xs">
+                            {formatOrderDate(order.createdAt)}
+                          </Text>
+                        </Td>
+                        <Td>
+                          <Text>{order.customer.email}</Text>
+                          <Text color="neutral.500" fontSize="xs">
+                            {order.customer.firstName} {order.customer.lastName}
+                          </Text>
+                        </Td>
+                        <Td>{getOrderItemCount(order)}</Td>
+                        <Td>${order.totals.total.toFixed(2)}</Td>
+                        <Td>
+                          <Badge colorScheme={paymentStatusColorSchemes[order.paymentStatus]}>
+                            {paymentStatusLabels[order.paymentStatus]}
+                          </Badge>
+                        </Td>
+                        <Td>
+                          <Badge colorScheme={orderStatusColorSchemes[order.status]}>
+                            {order.status}
+                          </Badge>
+                        </Td>
+                        <Td textAlign="right">
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => setSelectedOrderId(order.id)}
+                          >
+                            Details
+                          </Button>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </Box>
+              {hasMoreOrders ? (
+                <Text color="neutral.600" fontSize="sm" mt={3}>
+                  Narrow the filters to see more than the first {recentOrderLimit} results.
+                </Text>
+              ) : null}
+            </>
           ) : (
-            <Text color="neutral.600">No orders yet.</Text>
+            <Text color="neutral.600">
+              {orders.length ? 'No orders match these filters.' : 'No orders yet.'}
+            </Text>
           )}
         </Box>
 
@@ -389,9 +559,38 @@ export default function AdminDashboardPage() {
             <Button mb={5} colorScheme="brand" onClick={startCreatingProduct}>
               Add product
             </Button>
+            <Grid templateColumns={{ base: '1fr', md: '2fr 1fr 1fr' }} gap={3} mb={4}>
+              <Input
+                placeholder="Search product, id, category, or copy"
+                value={productSearch}
+                onChange={(event) => setProductSearch(event.target.value)}
+              />
+              <Select
+                value={productCategoryFilter}
+                onChange={(event) => setProductCategoryFilter(event.target.value)}
+              >
+                <option value="all">All categories</option>
+                {productCategories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                value={productStockFilter}
+                onChange={(event) =>
+                  setProductStockFilter(event.target.value as ProductStockFilter)
+                }
+              >
+                <option value="all">All stock</option>
+                <option value="in_stock">In stock</option>
+                <option value="low_stock">Low stock</option>
+                <option value="sold_out">Sold out</option>
+                <option value="missing_stock">No stock record</option>
+              </Select>
+            </Grid>
             <Tabs
               index={productStatusFilterIndex}
-              mt={4}
               onChange={(index) => setProductStatusFilter(productStatusFilters[index] ?? 'all')}
             >
               <TabList borderBottomColor="neutral.200" overflowX="auto">
@@ -401,6 +600,9 @@ export default function AdminDashboardPage() {
               </TabList>
             </Tabs>
             <VStack align="stretch" mt={4} spacing={3}>
+              <Text color="neutral.600" fontSize="sm">
+                Showing {visibleProducts.length} of {products.length} products
+              </Text>
               {isProductsError ? (
                 <Text color="error.600">Products could not be loaded.</Text>
               ) : null}
@@ -415,27 +617,7 @@ export default function AdminDashboardPage() {
                 const isEditing = editingProductId === product.id
                 const isActive = product.isActive !== false
                 const productInventoryItems = inventoryByProductId.get(product.id) ?? []
-                const totalStock = productInventoryItems.reduce(
-                  (total, item) => total + item.stockQuantity,
-                  0
-                )
-                const isLowStock = productInventoryItems.some(
-                  (item) => item.stockQuantity <= item.lowStockThreshold
-                )
-                const stockLabel =
-                  productInventoryItems.length === 0
-                    ? 'No stock record'
-                    : totalStock === 0
-                      ? 'Sold out'
-                      : `${totalStock} in stock`
-                const stockColorScheme =
-                  productInventoryItems.length === 0
-                    ? 'gray'
-                    : totalStock === 0
-                      ? 'red'
-                      : isLowStock
-                        ? 'yellow'
-                        : 'green'
+                const inventorySummary = getInventorySummary(productInventoryItems)
 
                 return (
                   <Box
@@ -460,7 +642,9 @@ export default function AdminDashboardPage() {
                           <Badge colorScheme={isActive ? 'green' : 'orange'}>
                             {isActive ? 'Published' : 'Archived'}
                           </Badge>
-                          <Badge colorScheme={stockColorScheme}>{stockLabel}</Badge>
+                          <Badge colorScheme={inventorySummary.colorScheme}>
+                            {inventorySummary.label}
+                          </Badge>
                         </HStack>
                         <Text color="neutral.600" fontSize="sm">
                           {product.category} - ${product.price.toFixed(2)} - {product.id}
@@ -541,6 +725,161 @@ export default function AdminDashboardPage() {
           </VStack>
         </Box>
       </Stack>
+
+      <Drawer
+        isOpen={Boolean(selectedOrder)}
+        onClose={() => setSelectedOrderId(undefined)}
+        placement="right"
+        size="lg"
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>{selectedOrder?.id ?? 'Order details'}</DrawerHeader>
+          <DrawerBody>
+            {selectedOrder ? (
+              <Stack spacing={5}>
+                <HStack align="start" justify="space-between">
+                  <Box>
+                    <Text
+                      color="neutral.500"
+                      fontSize="xs"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                    >
+                      Placed
+                    </Text>
+                    <Text fontWeight="bold">{formatOrderDate(selectedOrder.createdAt)}</Text>
+                  </Box>
+                  <Stack align="end" spacing={2}>
+                    <Badge colorScheme={paymentStatusColorSchemes[selectedOrder.paymentStatus]}>
+                      {paymentStatusLabels[selectedOrder.paymentStatus]}
+                    </Badge>
+                    <Badge colorScheme={orderStatusColorSchemes[selectedOrder.status]}>
+                      {selectedOrder.status}
+                    </Badge>
+                  </Stack>
+                </HStack>
+
+                <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={4}>
+                  <Box border="1px solid" borderColor="neutral.200" borderRadius="md" p={4}>
+                    <Text fontWeight="bold" mb={2}>
+                      Customer
+                    </Text>
+                    <Text>
+                      {selectedOrder.customer.firstName} {selectedOrder.customer.lastName}
+                    </Text>
+                    <Text color="neutral.600">{selectedOrder.customer.email}</Text>
+                    {selectedOrder.customer.phone ? (
+                      <Text color="neutral.600">{selectedOrder.customer.phone}</Text>
+                    ) : null}
+                  </Box>
+                  <Box border="1px solid" borderColor="neutral.200" borderRadius="md" p={4}>
+                    <Text fontWeight="bold" mb={2}>
+                      Shipping
+                    </Text>
+                    <Text>{selectedOrder.shippingAddress.line1}</Text>
+                    {selectedOrder.shippingAddress.line2 ? (
+                      <Text>{selectedOrder.shippingAddress.line2}</Text>
+                    ) : null}
+                    <Text color="neutral.600">
+                      {selectedOrder.shippingAddress.city}
+                      {selectedOrder.shippingAddress.state
+                        ? `, ${selectedOrder.shippingAddress.state}`
+                        : ''}{' '}
+                      {selectedOrder.shippingAddress.postalCode}
+                    </Text>
+                    <Text color="neutral.600">{selectedOrder.shippingAddress.country}</Text>
+                  </Box>
+                </Grid>
+
+                <Box>
+                  <Text fontWeight="bold" mb={3}>
+                    Items
+                  </Text>
+                  <Stack spacing={3}>
+                    {selectedOrder.items.map((item) => (
+                      <HStack
+                        key={`${selectedOrder.id}-${item.productId}`}
+                        border="1px solid"
+                        borderColor="neutral.200"
+                        borderRadius="md"
+                        justify="space-between"
+                        p={3}
+                      >
+                        <Box>
+                          <Text fontWeight="bold">{item.name}</Text>
+                          <Text color="neutral.600" fontSize="sm">
+                            {item.productId} - Qty {item.quantity} - ${item.unitPrice.toFixed(2)}
+                          </Text>
+                        </Box>
+                        <Text fontWeight="bold">${item.lineTotal.toFixed(2)}</Text>
+                      </HStack>
+                    ))}
+                  </Stack>
+                </Box>
+
+                <Box border="1px solid" borderColor="neutral.200" borderRadius="md" p={4}>
+                  <Text fontWeight="bold" mb={3}>
+                    Totals
+                  </Text>
+                  <Stack spacing={2}>
+                    <HStack justify="space-between">
+                      <Text color="neutral.600">Subtotal</Text>
+                      <Text>${selectedOrder.totals.subtotal.toFixed(2)}</Text>
+                    </HStack>
+                    {selectedOrder.totals.discount ? (
+                      <HStack justify="space-between">
+                        <Text color="neutral.600">
+                          Discount
+                          {selectedOrder.discount ? ` (${selectedOrder.discount.code})` : ''}
+                        </Text>
+                        <Text>-${selectedOrder.totals.discount.toFixed(2)}</Text>
+                      </HStack>
+                    ) : null}
+                    <HStack justify="space-between">
+                      <Text color="neutral.600">Shipping</Text>
+                      <Text>${selectedOrder.totals.shipping.toFixed(2)}</Text>
+                    </HStack>
+                    <HStack justify="space-between">
+                      <Text color="neutral.600">Tax</Text>
+                      <Text>${selectedOrder.totals.tax.toFixed(2)}</Text>
+                    </HStack>
+                    <HStack justify="space-between" fontWeight="bold">
+                      <Text>Total</Text>
+                      <Text>${selectedOrder.totals.total.toFixed(2)}</Text>
+                    </HStack>
+                  </Stack>
+                </Box>
+
+                <FormControl>
+                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                    Order status
+                  </FormLabel>
+                  <Select
+                    value={selectedOrder.status}
+                    onChange={(event) =>
+                      updateOrderStatus({
+                        orderId: selectedOrder.id,
+                        status: event.target.value as Order['status'],
+                      })
+                    }
+                  >
+                    {orderStatuses.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Stack>
+            ) : null}
+          </DrawerBody>
+          <DrawerFooter>
+            <Button onClick={() => setSelectedOrderId(undefined)}>Close</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       <Drawer
         isOpen={isProductEditorOpen}
