@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   useCreateProductMutation,
@@ -121,9 +121,10 @@ const configureSuccessfulAdminQueries = () => {
   mockUseUploadProductImageMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useUploadProductImageMutation
   >)
-  mockUseUpdateInventoryMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
-    typeof useUpdateInventoryMutation
-  >)
+  mockUseUpdateInventoryMutation.mockReturnValue([
+    vi.fn().mockReturnValue({ unwrap: vi.fn().mockResolvedValue(inventory[0]) }),
+    {},
+  ] as unknown as ReturnType<typeof useUpdateInventoryMutation>)
   mockUseUpdateOrderStatusMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useUpdateOrderStatusMutation
   >)
@@ -201,12 +202,18 @@ describe('AdminDashboardPage', () => {
     })
   })
 
-  it('loads product values into the main editor before saving changes', () => {
+  it('loads product values into the main editor before saving changes', async () => {
     const updateProduct = vi
       .fn()
       .mockReturnValue({ unwrap: vi.fn().mockResolvedValue(products[0]) })
+    const updateInventory = vi
+      .fn()
+      .mockReturnValue({ unwrap: vi.fn().mockResolvedValue(inventory[0]) })
     mockUseUpdateProductMutation.mockReturnValue([updateProduct, {}] as unknown as ReturnType<
       typeof useUpdateProductMutation
+    >)
+    mockUseUpdateInventoryMutation.mockReturnValue([updateInventory, {}] as unknown as ReturnType<
+      typeof useUpdateInventoryMutation
     >)
 
     renderWithProviders(<AdminDashboardPage />, {
@@ -214,7 +221,7 @@ describe('AdminDashboardPage', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByText(/Editing Everyday Weight Hoodie/)).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'Edit Everyday Weight Hoodie' })).toBeInTheDocument()
     expect(screen.getByDisplayValue('hoodie-001')).toBeDisabled()
     expect(screen.queryByLabelText(/SKU/i)).not.toBeInTheDocument()
 
@@ -226,6 +233,9 @@ describe('AdminDashboardPage', () => {
     })
     fireEvent.change(screen.getByDisplayValue('79.99'), {
       target: { value: '79.99' },
+    })
+    fireEvent.change(screen.getByDisplayValue('4'), {
+      target: { value: '7' },
     })
     fireEvent.change(screen.getByDisplayValue('hoodies'), {
       target: { value: 'outerwear' },
@@ -240,6 +250,12 @@ describe('AdminDashboardPage', () => {
         name: 'Everyday Weight Hoodie V2',
         price: 54.99,
       }),
+    })
+    await waitFor(() => {
+      expect(updateInventory).toHaveBeenCalledWith({
+        productId: 'hoodie-001',
+        stockQuantity: 7,
+      })
     })
   })
 
