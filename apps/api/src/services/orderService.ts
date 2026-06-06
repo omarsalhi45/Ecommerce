@@ -129,10 +129,13 @@ export const createOrder = async (input: CreateOrderInput): Promise<Order> => {
 
     const lineTotal = roundMoney(product.price * item.quantity)
     items.push({
+      color: item.color,
       productId: product.id,
       name: product.name,
       quantity: item.quantity,
+      size: item.size,
       unitPrice: product.price,
+      variantSku: item.variantSku,
       lineTotal,
     })
   }

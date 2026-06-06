@@ -103,10 +103,13 @@ const orders: Order[] = [
     },
     items: [
       {
+        color: 'Grey',
         productId: 'hoodie-001',
         name: 'Everyday Weight Hoodie',
         quantity: 2,
+        size: 'M',
         unitPrice: 59.99,
+        variantSku: 'OSAI-HOOD-GRY-M',
         lineTotal: 119.98,
       },
     ],
@@ -277,6 +280,8 @@ describe('AdminDashboardPage', () => {
     expect(orderDrawer).toBeInTheDocument()
     expect(within(orderDrawer).getByText('10 Rue Commerce')).toBeInTheDocument()
     expect(within(orderDrawer).getByText('Everyday Weight Hoodie')).toBeInTheDocument()
+    expect(within(orderDrawer).getByText('M / Grey')).toBeInTheDocument()
+    expect(within(orderDrawer).getByText(/OSAI-HOOD-GRY-M/)).toBeInTheDocument()
 
     fireEvent.change(within(orderDrawer).getByDisplayValue('pending'), {
       target: { value: 'shipped' },

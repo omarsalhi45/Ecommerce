@@ -29,16 +29,22 @@ interface OrderRow {
 interface OrderItemRow {
   readonly product_id: string
   readonly product_name: string
+  readonly variant_sku: string | null
+  readonly size: string | null
+  readonly color: string | null
   readonly quantity: number
   readonly unit_price: string
   readonly line_total: string
 }
 
 const mapOrderItem = (row: OrderItemRow): OrderItem => ({
+  color: row.color ?? undefined,
   productId: row.product_id,
   name: row.product_name,
   quantity: row.quantity,
+  size: row.size ?? undefined,
   unitPrice: Number(row.unit_price),
+  variantSku: row.variant_sku ?? undefined,
   lineTotal: Number(row.line_total),
 })
 
@@ -82,7 +88,7 @@ const mapOrder = (row: OrderRow, items: OrderItem[]): Order => ({
 
 const getItemsForOrder = async (orderId: string): Promise<OrderItem[]> => {
   const result = await query<OrderItemRow>(
-    `SELECT product_id, product_name, quantity, unit_price, line_total
+    `SELECT product_id, product_name, variant_sku, size, color, quantity, unit_price, line_total
      FROM order_items
      WHERE order_id = $1
      ORDER BY id ASC`,
@@ -147,15 +153,28 @@ export const insertOrderIntoDb = async (order: Order): Promise<Order> => {
     for (const item of order.items) {
       await client.query(
         `INSERT INTO order_items (
-           order_id,
-           product_id,
-           product_name,
-           quantity,
-           unit_price,
-           line_total
-         )
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [order.id, item.productId, item.name, item.quantity, item.unitPrice, item.lineTotal]
+         order_id,
+         product_id,
+         product_name,
+         variant_sku,
+         size,
+         color,
+         quantity,
+         unit_price,
+         line_total
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          order.id,
+          item.productId,
+          item.name,
+          item.variantSku ?? null,
+          item.size ?? null,
+          item.color ?? null,
+          item.quantity,
+          item.unitPrice,
+          item.lineTotal,
+        ]
       )
     }
   })

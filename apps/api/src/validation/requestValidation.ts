@@ -4,6 +4,9 @@ import { ApiError } from '../middleware/errorMiddleware'
 interface CheckoutLineItemInput {
   readonly productId?: unknown
   readonly quantity?: unknown
+  readonly variantSku?: unknown
+  readonly size?: unknown
+  readonly color?: unknown
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -56,8 +59,11 @@ export const validateCheckoutRequest = (body: unknown): CreateOrderRequest => {
     }
 
     return {
+      color: readOptionalString(lineItem.color),
       productId,
       quantity: Number(lineItem.quantity),
+      size: readOptionalString(lineItem.size),
+      variantSku: readOptionalString(lineItem.variantSku),
     }
   })
 

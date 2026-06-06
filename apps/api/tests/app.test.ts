@@ -159,13 +159,29 @@ describe('api app', () => {
           postalCode: '78701',
           country: 'US',
         },
-        items: [{ productId: 'hoodie-001', quantity: 1 }],
+        items: [
+          {
+            color: 'Grey',
+            productId: 'hoodie-001',
+            quantity: 1,
+            size: 'M',
+            variantSku: 'OSAI-HOOD-GRY-M',
+          },
+        ],
       }),
     })
     const body = await response.json()
 
     expect(response.status).toBe(201)
     expect(body).toMatchObject({
+      items: [
+        {
+          color: 'Grey',
+          productId: 'hoodie-001',
+          size: 'M',
+          variantSku: 'OSAI-HOOD-GRY-M',
+        },
+      ],
       paymentStatus: 'mock_paid',
       totals: {
         subtotal: 59.99,

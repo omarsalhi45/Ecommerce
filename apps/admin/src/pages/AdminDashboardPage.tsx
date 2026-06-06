@@ -593,7 +593,7 @@ export default function AdminDashboardPage() {
               index={productStatusFilterIndex}
               onChange={(index) => setProductStatusFilter(productStatusFilters[index] ?? 'all')}
             >
-              <TabList borderBottomColor="neutral.200" overflowX="auto">
+              <TabList borderBottomColor="neutral.200">
                 <Tab fontWeight="bold">All {products.length}</Tab>
                 <Tab fontWeight="bold">Published {productStatusCounts.published}</Tab>
                 <Tab fontWeight="bold">Archived {productStatusCounts.archived}</Tab>
@@ -809,8 +809,14 @@ export default function AdminDashboardPage() {
                       >
                         <Box>
                           <Text fontWeight="bold">{item.name}</Text>
+                          {[item.size, item.color].filter(Boolean).length > 0 ? (
+                            <Text color="neutral.600" fontSize="sm" fontWeight="semibold">
+                              {[item.size, item.color].filter(Boolean).join(' / ')}
+                            </Text>
+                          ) : null}
                           <Text color="neutral.600" fontSize="sm">
-                            {item.productId} - Qty {item.quantity} - ${item.unitPrice.toFixed(2)}
+                            {[item.productId, item.variantSku].filter(Boolean).join(' - ')}
+                            {' - '}Qty {item.quantity} - ${item.unitPrice.toFixed(2)}
                           </Text>
                         </Box>
                         <Text fontWeight="bold">${item.lineTotal.toFixed(2)}</Text>

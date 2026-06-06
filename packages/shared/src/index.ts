@@ -1,6 +1,9 @@
 export interface CartItem {
   readonly productId: string
   readonly quantity: number
+  readonly variantSku?: string
+  readonly size?: string
+  readonly color?: string
 }
 
 export interface CartSummary {
@@ -40,6 +43,9 @@ export interface OrderItem {
   readonly quantity: number
   readonly unitPrice: number
   readonly lineTotal: number
+  readonly variantSku?: string
+  readonly size?: string
+  readonly color?: string
 }
 
 export type OrderStatus = 'pending' | 'shipped' | 'delivered' | 'cancelled'

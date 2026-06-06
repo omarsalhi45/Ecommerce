@@ -94,7 +94,15 @@ describe('orderService', () => {
         postalCode: '78701',
         country: 'US',
       },
-      items: [{ productId: 'shirt-001', quantity: 2 }],
+      items: [
+        {
+          color: 'White',
+          productId: 'shirt-001',
+          quantity: 2,
+          size: 'S',
+          variantSku: 'OSAI-TEE-WHT-S',
+        },
+      ],
     })
 
     expect(order).toMatchObject({
@@ -109,10 +117,13 @@ describe('orderService', () => {
     })
     expect(order.items).toEqual([
       {
+        color: 'White',
         productId: 'shirt-001',
         name: 'Box Fit Street Tee',
         quantity: 2,
+        size: 'S',
         unitPrice: 29.99,
+        variantSku: 'OSAI-TEE-WHT-S',
         lineTotal: 59.98,
       },
     ])
