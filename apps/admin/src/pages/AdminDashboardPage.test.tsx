@@ -16,7 +16,7 @@ import {
   useUploadProductImageMutation,
 } from '../api/adminApi'
 import { renderWithProviders } from '../test/render'
-import type { Product, User } from '../types'
+import type { InventoryItem, Product, User } from '../types'
 import AdminDashboardPage from './AdminDashboardPage'
 
 vi.mock('../api/adminApi', async () => {
@@ -73,6 +73,17 @@ const products: Product[] = [
   },
 ]
 
+const inventory: InventoryItem[] = [
+  {
+    product: products[0],
+    sku: 'OSAI-HOOD-GRY-M',
+    size: 'M',
+    color: 'Grey',
+    stockQuantity: 4,
+    lowStockThreshold: 5,
+  },
+]
+
 const createQueryResult = <TData,>(data: TData) => ({
   data,
   isError: false,
@@ -93,7 +104,7 @@ const configureSuccessfulAdminQueries = () => {
     createQueryResult({ products }) as unknown as ReturnType<typeof useGetAdminProductsQuery>
   )
   mockUseGetAdminInventoryQuery.mockReturnValue(
-    createQueryResult({ inventory: [] }) as unknown as ReturnType<typeof useGetAdminInventoryQuery>
+    createQueryResult({ inventory }) as unknown as ReturnType<typeof useGetAdminInventoryQuery>
   )
   mockUseGetAdminUsersQuery.mockReturnValue(
     createQueryResult({ users: [] }) as unknown as ReturnType<typeof useGetAdminUsersQuery>
@@ -159,6 +170,35 @@ describe('AdminDashboardPage', () => {
     expect(mockUseGetAdminUsersQuery).toHaveBeenCalledWith(undefined, { skip: false })
     expect(screen.getByRole('heading', { name: 'Admin dashboard' })).toBeInTheDocument()
     expect(screen.getByText('$149.98')).toBeInTheDocument()
+  })
+
+  it('shows stock on products and edits inventory from the product detail drawer', () => {
+    const updateInventory = vi.fn()
+    mockUseUpdateInventoryMutation.mockReturnValue([updateInventory, {}] as unknown as ReturnType<
+      typeof useUpdateInventoryMutation
+    >)
+
+    renderWithProviders(<AdminDashboardPage />, {
+      preloadedAuth: { token: 'test-token', user: adminUser },
+    })
+
+    expect(screen.getByText('4 in stock')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Details' }))
+
+    expect(screen.getByRole('dialog', { name: 'Everyday Weight Hoodie' })).toBeInTheDocument()
+    expect(screen.getByText('OSAI-HOOD-GRY-M')).toBeInTheDocument()
+    expect(screen.getByText('M / Grey')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByDisplayValue('4'), {
+      target: { value: '9' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save stock' }))
+
+    expect(updateInventory).toHaveBeenCalledWith({
+      productId: 'hoodie-001',
+      stockQuantity: 9,
+    })
   })
 
   it('loads product values into the main editor before saving changes', () => {

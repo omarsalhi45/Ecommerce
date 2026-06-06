@@ -5,7 +5,13 @@ import {
   Box,
   Button,
   Container,
-  Divider,
+  Drawer,
+  DrawerBody,
+  DrawerCloseButton,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
   FormControl,
   FormErrorMessage,
   FormLabel,
@@ -51,7 +57,7 @@ import {
 } from '../api/adminApi'
 import { logout, selectCurrentUser } from '../slices/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
-import type { Order, Product } from '../types'
+import type { InventoryItem, Order, Product } from '../types'
 
 const orderStatuses: Order['status'][] = ['pending', 'shipped', 'delivered', 'cancelled']
 const paymentStatusColorSchemes: Record<Order['paymentStatus'], string> = {
@@ -88,6 +94,7 @@ export default function AdminDashboardPage() {
   const [inventoryDrafts, setInventoryDrafts] = useState<Record<string, string>>({})
   const [productForm, setProductForm] = useState(emptyProductForm)
   const [editingProductId, setEditingProductId] = useState<string | undefined>()
+  const [selectedProductId, setSelectedProductId] = useState<string | undefined>()
   const [externalImageUrl, setExternalImageUrl] = useState(emptyImageSource)
   const [productStatusFilter, setProductStatusFilter] = useState<ProductStatusFilter>('all')
   const [productFormError, setProductFormError] = useState<string | undefined>()
@@ -124,6 +131,19 @@ export default function AdminDashboardPage() {
   const isEditingProduct = Boolean(editingProductId)
   const isSavingProduct = isImageUploading || isCreatingProduct || isUpdatingProduct
   const products = productsData?.products ?? []
+  const inventoryItems = inventoryData?.inventory ?? []
+  const inventoryByProductId = inventoryItems.reduce((itemsByProductId, item) => {
+    const productItems = itemsByProductId.get(item.product.id) ?? []
+    productItems.push(item)
+    itemsByProductId.set(item.product.id, productItems)
+    return itemsByProductId
+  }, new Map<string, InventoryItem[]>())
+  const selectedProduct = selectedProductId
+    ? products.find((product) => product.id === selectedProductId)
+    : undefined
+  const selectedProductInventory = selectedProduct
+    ? (inventoryByProductId.get(selectedProduct.id) ?? [])
+    : []
   const productStatusCounts = products.reduce(
     (counts, product) => {
       if (product.isActive === false) {
@@ -352,7 +372,14 @@ export default function AdminDashboardPage() {
         </Box>
 
         <Grid templateColumns={{ base: '1fr', xl: '1fr 1fr' }} gap={6}>
-          <Box bg="white" border="1px solid" borderColor="neutral.200" borderRadius="lg" p={5}>
+          <Box
+            bg="white"
+            border="1px solid"
+            borderColor="neutral.200"
+            borderRadius="lg"
+            gridColumn={{ base: 'auto', xl: '1 / -1' }}
+            p={5}
+          >
             <Heading as="h2" size="md" mb={4}>
               Products
             </Heading>
@@ -658,6 +685,28 @@ export default function AdminDashboardPage() {
               {visibleProducts.map((product) => {
                 const isEditing = editingProductId === product.id
                 const isActive = product.isActive !== false
+                const productInventoryItems = inventoryByProductId.get(product.id) ?? []
+                const totalStock = productInventoryItems.reduce(
+                  (total, item) => total + item.stockQuantity,
+                  0
+                )
+                const isLowStock = productInventoryItems.some(
+                  (item) => item.stockQuantity <= item.lowStockThreshold
+                )
+                const stockLabel =
+                  productInventoryItems.length === 0
+                    ? 'No stock record'
+                    : totalStock === 0
+                      ? 'Sold out'
+                      : `${totalStock} in stock`
+                const stockColorScheme =
+                  productInventoryItems.length === 0
+                    ? 'gray'
+                    : totalStock === 0
+                      ? 'red'
+                      : isLowStock
+                        ? 'yellow'
+                        : 'green'
 
                 return (
                   <Box
@@ -682,6 +731,7 @@ export default function AdminDashboardPage() {
                           <Badge colorScheme={isActive ? 'green' : 'orange'}>
                             {isActive ? 'Published' : 'Archived'}
                           </Badge>
+                          <Badge colorScheme={stockColorScheme}>{stockLabel}</Badge>
                         </HStack>
                         <Text color="neutral.600" fontSize="sm">
                           {product.category} - ${product.price.toFixed(2)} - {product.id}
@@ -698,6 +748,13 @@ export default function AdminDashboardPage() {
                           onClick={() => startEditingProduct(product)}
                         >
                           Edit
+                        </Button>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          onClick={() => setSelectedProductId(product.id)}
+                        >
+                          Details
                         </Button>
                         {isActive ? (
                           <Button
@@ -733,57 +790,6 @@ export default function AdminDashboardPage() {
               })}
             </VStack>
           </Box>
-
-          <Box bg="white" border="1px solid" borderColor="neutral.200" borderRadius="lg" p={5}>
-            <Heading as="h2" size="md" mb={4}>
-              Inventory
-            </Heading>
-            <VStack align="stretch" spacing={4}>
-              {isInventoryError ? (
-                <Text color="error.600">Inventory could not be loaded.</Text>
-              ) : null}
-              {inventoryData?.inventory.map((item) => (
-                <Box key={item.product.id}>
-                  <HStack justify="space-between" align="end">
-                    <Box>
-                      <Text fontWeight="bold">{item.product.name}</Text>
-                      <Text color="neutral.600" fontSize="sm">
-                        {item.sku} · threshold {item.lowStockThreshold}
-                      </Text>
-                    </Box>
-                    <HStack>
-                      <Input
-                        size="sm"
-                        w={24}
-                        type="number"
-                        value={inventoryDrafts[item.product.id] ?? item.stockQuantity}
-                        onChange={(event) =>
-                          setInventoryDrafts((current) => ({
-                            ...current,
-                            [item.product.id]: event.target.value,
-                          }))
-                        }
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          updateInventory({
-                            productId: item.product.id,
-                            stockQuantity: Number(
-                              inventoryDrafts[item.product.id] ?? item.stockQuantity
-                            ),
-                          })
-                        }
-                      >
-                        Save
-                      </Button>
-                    </HStack>
-                  </HStack>
-                  <Divider mt={3} />
-                </Box>
-              ))}
-            </VStack>
-          </Box>
         </Grid>
 
         <Box bg="white" border="1px solid" borderColor="neutral.200" borderRadius="lg" p={5}>
@@ -806,6 +812,148 @@ export default function AdminDashboardPage() {
           </VStack>
         </Box>
       </Stack>
+
+      <Drawer
+        isOpen={Boolean(selectedProduct)}
+        onClose={() => setSelectedProductId(undefined)}
+        placement="right"
+        size="md"
+      >
+        <DrawerOverlay />
+        <DrawerContent>
+          <DrawerCloseButton />
+          <DrawerHeader>{selectedProduct?.name ?? 'Product details'}</DrawerHeader>
+          <DrawerBody>
+            {selectedProduct ? (
+              <Stack spacing={5}>
+                <Image
+                  alt={selectedProduct.name}
+                  aspectRatio={4 / 3}
+                  borderRadius="md"
+                  fit="cover"
+                  src={selectedProduct.imageUrl}
+                />
+                <Box>
+                  <Text
+                    color="neutral.500"
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
+                    Product
+                  </Text>
+                  <Heading as="h3" size="md">
+                    {selectedProduct.name}
+                  </Heading>
+                  <Text color="neutral.600" mt={2}>
+                    {selectedProduct.description}
+                  </Text>
+                </Box>
+                <HStack wrap="wrap">
+                  <Badge colorScheme="gray">{selectedProduct.category}</Badge>
+                  <Badge colorScheme={selectedProduct.isActive === false ? 'orange' : 'green'}>
+                    {selectedProduct.isActive === false ? 'Archived' : 'Published'}
+                  </Badge>
+                  <Badge colorScheme="blue">{selectedProduct.id}</Badge>
+                </HStack>
+                <Box>
+                  <Text fontWeight="bold">Pricing</Text>
+                  <Text color="neutral.700">
+                    ${selectedProduct.price.toFixed(2)}
+                    {selectedProduct.compareAtPrice
+                      ? ` sale from $${selectedProduct.compareAtPrice.toFixed(2)}`
+                      : ''}
+                  </Text>
+                </Box>
+                <Box>
+                  <Text fontWeight="bold" mb={3}>
+                    Inventory
+                  </Text>
+                  {isInventoryError ? (
+                    <Text color="error.600">Inventory could not be loaded.</Text>
+                  ) : null}
+                  {!isInventoryError && selectedProductInventory.length === 0 ? (
+                    <Text color="neutral.600">No inventory record for this product.</Text>
+                  ) : null}
+                  <Stack spacing={3}>
+                    {selectedProductInventory.map((item) => {
+                      const isLowStock = item.stockQuantity <= item.lowStockThreshold
+
+                      return (
+                        <Box
+                          key={item.sku}
+                          border="1px solid"
+                          borderColor="neutral.200"
+                          borderRadius="md"
+                          p={3}
+                        >
+                          <HStack align="start" justify="space-between">
+                            <Box>
+                              <Text fontWeight="bold">{item.sku}</Text>
+                              <Text color="neutral.600" fontSize="sm">
+                                {[item.size, item.color].filter(Boolean).join(' / ') ||
+                                  'Default variant'}
+                              </Text>
+                              <Text color="neutral.600" fontSize="sm">
+                                Low threshold {item.lowStockThreshold}
+                              </Text>
+                            </Box>
+                            <Badge colorScheme={isLowStock ? 'yellow' : 'green'}>
+                              {item.stockQuantity} stock
+                            </Badge>
+                          </HStack>
+                          <HStack mt={3}>
+                            <Input
+                              min={0}
+                              size="sm"
+                              type="number"
+                              value={inventoryDrafts[item.product.id] ?? item.stockQuantity}
+                              onChange={(event) =>
+                                setInventoryDrafts((current) => ({
+                                  ...current,
+                                  [item.product.id]: event.target.value,
+                                }))
+                              }
+                            />
+                            <Button
+                              flexShrink={0}
+                              size="sm"
+                              onClick={() =>
+                                updateInventory({
+                                  productId: item.product.id,
+                                  stockQuantity: Number(
+                                    inventoryDrafts[item.product.id] ?? item.stockQuantity
+                                  ),
+                                })
+                              }
+                            >
+                              Save stock
+                            </Button>
+                          </HStack>
+                        </Box>
+                      )
+                    })}
+                  </Stack>
+                </Box>
+              </Stack>
+            ) : null}
+          </DrawerBody>
+          <DrawerFooter gap={3}>
+            {selectedProduct ? (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  startEditingProduct(selectedProduct)
+                  setSelectedProductId(undefined)
+                }}
+              >
+                Edit product
+              </Button>
+            ) : null}
+            <Button onClick={() => setSelectedProductId(undefined)}>Close</Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </Container>
   )
 }
