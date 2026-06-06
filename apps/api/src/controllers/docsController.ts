@@ -68,10 +68,58 @@ const openApiDocument = {
       },
     },
     '/admin/products': {
+      get: {
+        summary: 'List admin-managed products including archived products',
+        security: [{ bearerAuth: [] }],
+        responses: { '200': { description: 'Admin product list' } },
+      },
       post: {
         summary: 'Create an admin-managed product',
         security: [{ bearerAuth: [] }],
         responses: { '201': { description: 'Product created' } },
+      },
+    },
+    '/admin/products/{id}': {
+      patch: {
+        summary: 'Update an admin-managed product',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Product updated' },
+          '404': { description: 'Product not found' },
+        },
+      },
+      delete: {
+        summary: 'Archive an admin-managed product',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        responses: {
+          '204': { description: 'Product archived' },
+          '404': { description: 'Product not found' },
+        },
+      },
+    },
+    '/admin/products/{id}/status': {
+      patch: {
+        summary: 'Publish or archive an admin-managed product',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        responses: {
+          '200': { description: 'Product status updated' },
+          '400': { description: 'Invalid status payload' },
+          '404': { description: 'Product not found' },
+        },
+      },
+    },
+    '/admin/products/{id}/permanent': {
+      delete: {
+        summary: 'Permanently delete an admin-managed product',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string' } }],
+        responses: {
+          '204': { description: 'Product permanently deleted' },
+          '404': { description: 'Product not found' },
+        },
       },
     },
   },

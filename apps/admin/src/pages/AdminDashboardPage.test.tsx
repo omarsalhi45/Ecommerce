@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   useCreateProductMutation,
   useDeleteProductMutation,
+  useDeleteProductPermanentlyMutation,
   useGetAdminAnalyticsQuery,
   useGetAdminInventoryQuery,
   useGetAdminOrdersQuery,
@@ -11,6 +12,7 @@ import {
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
   useUpdateProductMutation,
+  useUpdateProductStatusMutation,
   useUploadProductImageMutation,
 } from '../api/adminApi'
 import { renderWithProviders } from '../test/render'
@@ -23,6 +25,7 @@ vi.mock('../api/adminApi', async () => {
   return {
     ...actual,
     useCreateProductMutation: vi.fn(),
+    useDeleteProductPermanentlyMutation: vi.fn(),
     useDeleteProductMutation: vi.fn(),
     useGetAdminAnalyticsQuery: vi.fn(),
     useGetAdminInventoryQuery: vi.fn(),
@@ -33,6 +36,7 @@ vi.mock('../api/adminApi', async () => {
     useUpdateInventoryMutation: vi.fn(),
     useUpdateOrderStatusMutation: vi.fn(),
     useUpdateProductMutation: vi.fn(),
+    useUpdateProductStatusMutation: vi.fn(),
   }
 })
 
@@ -43,10 +47,12 @@ const mockUseGetAdminInventoryQuery = vi.mocked(useGetAdminInventoryQuery)
 const mockUseGetAdminUsersQuery = vi.mocked(useGetAdminUsersQuery)
 const mockUseCreateProductMutation = vi.mocked(useCreateProductMutation)
 const mockUseDeleteProductMutation = vi.mocked(useDeleteProductMutation)
+const mockUseDeleteProductPermanentlyMutation = vi.mocked(useDeleteProductPermanentlyMutation)
 const mockUseUploadProductImageMutation = vi.mocked(useUploadProductImageMutation)
 const mockUseUpdateInventoryMutation = vi.mocked(useUpdateInventoryMutation)
 const mockUseUpdateOrderStatusMutation = vi.mocked(useUpdateOrderStatusMutation)
 const mockUseUpdateProductMutation = vi.mocked(useUpdateProductMutation)
+const mockUseUpdateProductStatusMutation = vi.mocked(useUpdateProductStatusMutation)
 
 const adminUser: User = {
   id: 'admin-001',
@@ -98,6 +104,9 @@ const configureSuccessfulAdminQueries = () => {
   mockUseDeleteProductMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useDeleteProductMutation
   >)
+  mockUseDeleteProductPermanentlyMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
+    typeof useDeleteProductPermanentlyMutation
+  >)
   mockUseUploadProductImageMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useUploadProductImageMutation
   >)
@@ -109,6 +118,9 @@ const configureSuccessfulAdminQueries = () => {
   >)
   mockUseUpdateProductMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useUpdateProductMutation
+  >)
+  mockUseUpdateProductStatusMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
+    typeof useUpdateProductStatusMutation
   >)
 }
 
@@ -189,5 +201,63 @@ describe('AdminDashboardPage', () => {
         price: 54.99,
       }),
     })
+  })
+
+  it('shows archived products and lets admins publish them again', () => {
+    const updateProductStatus = vi
+      .fn()
+      .mockReturnValue({ unwrap: vi.fn().mockResolvedValue({ ...products[0], isActive: true }) })
+    mockUseGetAdminProductsQuery.mockReturnValue(
+      createQueryResult({
+        products: [
+          products[0],
+          {
+            ...products[0],
+            id: 'archived-hoodie-001',
+            name: 'Archived Hoodie',
+            isActive: false,
+          },
+        ],
+      }) as unknown as ReturnType<typeof useGetAdminProductsQuery>
+    )
+    mockUseUpdateProductStatusMutation.mockReturnValue([
+      updateProductStatus,
+      {},
+    ] as unknown as ReturnType<typeof useUpdateProductStatusMutation>)
+
+    renderWithProviders(<AdminDashboardPage />, {
+      preloadedAuth: { token: 'test-token', user: adminUser },
+    })
+
+    expect(screen.getByText('Published')).toBeInTheDocument()
+    expect(screen.getByText('Archived')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }))
+
+    expect(updateProductStatus).toHaveBeenCalledWith({
+      productId: 'archived-hoodie-001',
+      isActive: true,
+    })
+  })
+
+  it('keeps permanent deletion separate from archive and confirms first', () => {
+    const deleteProductPermanently = vi.fn()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    mockUseDeleteProductPermanentlyMutation.mockReturnValue([
+      deleteProductPermanently,
+      {},
+    ] as unknown as ReturnType<typeof useDeleteProductPermanentlyMutation>)
+
+    renderWithProviders(<AdminDashboardPage />, {
+      preloadedAuth: { token: 'test-token', user: adminUser },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete forever' }))
+
+    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Everyday Weight Hoodie'))
+    expect(deleteProductPermanently).toHaveBeenCalledWith('hoodie-001')
+
+    confirm.mockRestore()
   })
 })

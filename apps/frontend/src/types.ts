@@ -23,6 +23,7 @@ export interface Product {
   imageUrls?: string[]
   videoUrl?: string
   category: string
+  isActive?: boolean
   variants?: ProductVariant[]
   popularityScore?: number
   ratingSummary?: ProductRatingSummary

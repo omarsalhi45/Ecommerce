@@ -4,10 +4,13 @@ import { ApiError } from '../middleware/errorMiddleware'
 import {
   createProductInDb,
   deactivateProductInDb,
+  deleteProductPermanentlyInDb,
+  getAdminProductsFromDb,
   getInventoryFromDb,
   getProductFromDb,
   getProductReviewsFromDb,
   getProductsFromDb,
+  setProductActiveInDb,
   updateInventoryInDb,
   updateProductInDb,
 } from '../repositories/productRepository'
@@ -21,6 +24,7 @@ export interface Product {
   compareAtPrice?: number
   imageUrl: string
   category: string
+  isActive?: boolean
   variants?: ProductVariant[]
   popularityScore?: number
   ratingSummary?: ProductRatingSummary
@@ -599,9 +603,17 @@ export const getAllProducts = async (): Promise<Product[]> => {
 
   return setCachedValue(
     'products:all',
-    products.map(withInventoryVariant),
+    products.filter((product) => product.isActive !== false).map(withInventoryVariant),
     apiConfig.productCacheTtlSeconds
   )
+}
+
+export const getAdminProducts = async (): Promise<Product[]> => {
+  if (isDatabaseConfigured) {
+    return getAdminProductsFromDb()
+  }
+
+  return products.map(withInventoryVariant)
 }
 
 export const getProduct = async (id: string): Promise<Product | undefined> => {
@@ -616,7 +628,7 @@ export const getProduct = async (id: string): Promise<Product | undefined> => {
     return setCachedValue(cacheKey, await getProductFromDb(id), apiConfig.productCacheTtlSeconds)
   }
 
-  const product = products.find((candidate) => candidate.id === id)
+  const product = products.find((candidate) => candidate.id === id && candidate.isActive !== false)
   return setCachedValue(
     cacheKey,
     product ? withInventoryVariant(product) : undefined,
@@ -678,6 +690,7 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
     compareAtPrice: input.compareAtPrice,
     imageUrl: input.imageUrl,
     category: input.category,
+    isActive: true,
   }
 
   products.push(product)
@@ -728,12 +741,34 @@ export const updateProduct = async (
   return product
 }
 
+export const setProductActive = async (
+  productId: string,
+  isActive: boolean
+): Promise<Product | undefined> => {
+  if (isDatabaseConfigured) {
+    const product = await setProductActiveInDb(productId, isActive)
+    clearCacheByPrefix('products:')
+    return product
+  }
+
+  const product = products.find((candidate) => candidate.id === productId)
+
+  if (!product) {
+    return undefined
+  }
+
+  product.isActive = isActive
+  clearCacheByPrefix('products:')
+
+  return product
+}
+
 export const getInventory = async (): Promise<InventoryItem[]> => {
   if (isDatabaseConfigured) {
     return getInventoryFromDb()
   }
 
-  return inventory
+  return inventory.filter((item) => item.product.isActive !== false)
 }
 
 export const updateInventory = async (
@@ -765,6 +800,16 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
     return deleted
   }
 
+  return Boolean(await setProductActive(productId, false))
+}
+
+export const deleteProductPermanently = async (productId: string): Promise<boolean> => {
+  if (isDatabaseConfigured) {
+    const deleted = await deleteProductPermanentlyInDb(productId)
+    clearCacheByPrefix('products:')
+    return deleted
+  }
+
   const productIndex = products.findIndex((product) => product.id === productId)
 
   if (productIndex === -1) {
@@ -772,6 +817,7 @@ export const deleteProduct = async (productId: string): Promise<boolean> => {
   }
 
   products.splice(productIndex, 1)
+
   const inventoryIndex = inventory.findIndex((item) => item.product.id === productId)
 
   if (inventoryIndex >= 0) {

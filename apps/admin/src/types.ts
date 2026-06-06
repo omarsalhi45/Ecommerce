@@ -21,6 +21,7 @@ export interface Product {
   compareAtPrice?: number
   imageUrl: string
   category: string
+  isActive?: boolean
   variants?: ProductVariant[]
   popularityScore?: number
   ratingSummary?: ProductRatingSummary

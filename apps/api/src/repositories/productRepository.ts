@@ -16,6 +16,7 @@ interface ProductRow {
   readonly compare_at_price?: string | null
   readonly image_url: string
   readonly category: string
+  readonly is_active?: boolean | null
   readonly popularity_score?: number | null
   readonly average_rating?: string | null
   readonly review_count?: number | string | null
@@ -48,6 +49,7 @@ const productSelectWithRatings = `
     p.compare_at_price,
     p.image_url,
     p.category,
+    p.is_active,
     p.popularity_score,
     COALESCE(ROUND(AVG(r.rating)::numeric, 1), 0) AS average_rating,
     COUNT(r.id)::int AS review_count
@@ -63,6 +65,7 @@ const mapProduct = (row: ProductRow): Product => ({
   compareAtPrice: row.compare_at_price ? Number(row.compare_at_price) : undefined,
   imageUrl: row.image_url,
   category: row.category,
+  isActive: row.is_active ?? true,
   popularityScore: row.popularity_score ?? undefined,
   ratingSummary: {
     averageRating: Number(row.average_rating ?? 0),
@@ -93,6 +96,7 @@ const getVariantsForProductIds = async (
        p.compare_at_price,
        p.image_url,
        p.category,
+       p.is_active,
        i.sku,
        i.size,
        i.color,
@@ -154,10 +158,41 @@ export const getProductsFromDb = async (): Promise<Product[]> => {
   return products.map((product) => attachVariants(product, variantsByProductId.get(product.id)))
 }
 
+export const getAdminProductsFromDb = async (): Promise<Product[]> => {
+  const result = await query<ProductRow>(
+    `${productSelectWithRatings}
+     GROUP BY p.id
+     ORDER BY p.created_at ASC`
+  )
+
+  const products = result.rows.map(mapProduct)
+  const variantsByProductId = await getVariantsForProductIds(products.map((product) => product.id))
+
+  return products.map((product) => attachVariants(product, variantsByProductId.get(product.id)))
+}
+
 export const getProductFromDb = async (id: string): Promise<Product | undefined> => {
   const result = await query<ProductRow>(
     `${productSelectWithRatings}
      WHERE p.id = $1 AND p.is_active = TRUE
+     GROUP BY p.id`,
+    [id]
+  )
+
+  if (!result.rows[0]) {
+    return undefined
+  }
+
+  const product = mapProduct(result.rows[0])
+  const variantsByProductId = await getVariantsForProductIds([id])
+
+  return attachVariants(product, variantsByProductId.get(id))
+}
+
+const getAdminProductFromDb = async (id: string): Promise<Product | undefined> => {
+  const result = await query<ProductRow>(
+    `${productSelectWithRatings}
+     WHERE p.id = $1
      GROUP BY p.id`,
     [id]
   )
@@ -188,7 +223,7 @@ export const createProductInDb = async (input: CreateProductInput): Promise<Prod
   const result = await query<ProductRow>(
     `INSERT INTO products (id, name, description, price, compare_at_price, image_url, category)
      VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, name, description, price, compare_at_price, image_url, category, popularity_score`,
+     RETURNING id, name, description, price, compare_at_price, image_url, category, is_active, popularity_score`,
     [
       input.id,
       input.name,
@@ -221,7 +256,7 @@ export const updateProductInDb = async (
   productId: string,
   input: UpdateProductInput
 ): Promise<Product | undefined> => {
-  const existingProduct = await getProductFromDb(productId)
+  const existingProduct = await getAdminProductFromDb(productId)
 
   if (!existingProduct) {
     return undefined
@@ -238,7 +273,7 @@ export const updateProductInDb = async (
        category = $7,
        updated_at = NOW()
      WHERE id = $1
-     RETURNING id, name, description, price, compare_at_price, image_url, category`,
+     RETURNING id, name, description, price, compare_at_price, image_url, category, is_active`,
     [
       productId,
       input.name ?? existingProduct.name,
@@ -263,6 +298,7 @@ export const getInventoryFromDb = async (): Promise<InventoryItem[]> => {
        p.compare_at_price,
        p.image_url,
        p.category,
+       p.is_active,
        i.sku,
        i.size,
        i.color,
@@ -316,10 +352,30 @@ export const updateInventoryInDb = async (
 }
 
 export const deactivateProductInDb = async (productId: string): Promise<boolean> => {
-  const result = await query(
-    'UPDATE products SET is_active = FALSE, updated_at = NOW() WHERE id = $1',
-    [productId]
-  )
+  return Boolean(await setProductActiveInDb(productId, false))
+}
+
+export const deleteProductPermanentlyInDb = async (productId: string): Promise<boolean> => {
+  const result = await query('DELETE FROM products WHERE id = $1', [productId])
 
   return (result.rowCount ?? 0) > 0
+}
+
+export const setProductActiveInDb = async (
+  productId: string,
+  isActive: boolean
+): Promise<Product | undefined> => {
+  const result = await query<ProductRow>(
+    `UPDATE products
+     SET is_active = $2, updated_at = NOW()
+     WHERE id = $1
+     RETURNING id, name, description, price, compare_at_price, image_url, category, is_active, popularity_score`,
+    [productId, isActive]
+  )
+
+  if (!result.rows[0]) {
+    return undefined
+  }
+
+  return mapProduct(result.rows[0])
 }

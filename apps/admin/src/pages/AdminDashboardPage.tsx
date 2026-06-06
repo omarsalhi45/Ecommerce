@@ -34,6 +34,7 @@ import { Navigate } from 'react-router-dom'
 import {
   useCreateProductMutation,
   useDeleteProductMutation,
+  useDeleteProductPermanentlyMutation,
   useGetAdminAnalyticsQuery,
   useGetAdminInventoryQuery,
   useGetAdminOrdersQuery,
@@ -42,6 +43,7 @@ import {
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
   useUpdateProductMutation,
+  useUpdateProductStatusMutation,
   useUploadProductImageMutation,
 } from '../api/adminApi'
 import { logout, selectCurrentUser } from '../slices/authSlice'
@@ -104,8 +106,10 @@ export default function AdminDashboardPage() {
     skip: !canLoadAdminData,
   })
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation()
-  const [deleteProduct] = useDeleteProductMutation()
+  const [archiveProduct] = useDeleteProductMutation()
+  const [deleteProductPermanently] = useDeleteProductPermanentlyMutation()
   const [updateProduct, { isLoading: isUpdatingProduct }] = useUpdateProductMutation()
+  const [updateProductStatus] = useUpdateProductStatusMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
   const [updateInventory] = useUpdateInventoryMutation()
   const [uploadProductImage, { isLoading: isImageUploading }] = useUploadProductImageMutation()
@@ -184,6 +188,22 @@ export default function AdminDashboardPage() {
     setExternalImageUrl(emptyImageSource)
     setProductFormError(undefined)
     setImageStatus(undefined)
+  }
+
+  const handlePermanentProductDelete = (product: Product) => {
+    const confirmed = window.confirm(
+      `Delete ${product.name} forever? This removes the product, inventory, reviews, and cart references.`
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    if (editingProductId === product.id) {
+      cancelEditingProduct()
+    }
+
+    deleteProductPermanently(product.id)
   }
 
   if (!currentUser) {
@@ -588,18 +608,27 @@ export default function AdminDashboardPage() {
               ) : null}
               {productsData?.products.map((product) => {
                 const isEditing = editingProductId === product.id
+                const isActive = product.isActive !== false
 
                 return (
                   <Box
                     key={product.id}
                     border="1px solid"
-                    borderColor={isEditing ? 'neutral.300' : 'neutral.100'}
+                    borderColor={
+                      isEditing ? 'neutral.300' : isActive ? 'neutral.100' : 'orange.200'
+                    }
                     borderRadius="md"
+                    opacity={isActive ? 1 : 0.72}
                     p={3}
                   >
                     <HStack justify="space-between" align="start">
                       <Box>
-                        <Text fontWeight="bold">{product.name}</Text>
+                        <HStack spacing={2}>
+                          <Text fontWeight="bold">{product.name}</Text>
+                          <Badge colorScheme={isActive ? 'green' : 'orange'}>
+                            {isActive ? 'Published' : 'Archived'}
+                          </Badge>
+                        </HStack>
                         <Text color="neutral.600" fontSize="sm">
                           {product.category} · ${product.price.toFixed(2)}
                           {product.compareAtPrice
@@ -620,9 +649,29 @@ export default function AdminDashboardPage() {
                         <Button
                           size="xs"
                           variant="outline"
-                          onClick={() => deleteProduct(product.id)}
+                          isDisabled={!isActive}
+                          onClick={() => archiveProduct(product.id)}
                         >
-                          Delete
+                          Archive
+                        </Button>
+                        {!isActive ? (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() =>
+                              updateProductStatus({ productId: product.id, isActive: true })
+                            }
+                          >
+                            Publish
+                          </Button>
+                        ) : null}
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorScheme="red"
+                          onClick={() => handlePermanentProductDelete(product)}
+                        >
+                          Delete forever
                         </Button>
                       </HStack>
                     </HStack>

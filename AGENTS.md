@@ -285,7 +285,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add admin controls for homepage collections, product badges, featured products, recommendations, and lookbook content.
 - [x] Add admin product editing for name, category, price, original price, image URL, and description.
 - [ ] Add admin variant matrix controls for sizes, colors, SKUs, stock, low-stock thresholds, and sold-out states.
-- [ ] Add admin publish/archive controls so products can be hidden without deletion.
+- [x] Add admin publish/archive controls so products can be hidden without deletion.
 - [ ] Add admin controls for sale labels, merchandising badges, and featured collection placement.
 - [ ] Add admin coupon/discount management.
 - [ ] Add admin fulfillment workflow with tracking number, carrier, shipped email, and delivery status.

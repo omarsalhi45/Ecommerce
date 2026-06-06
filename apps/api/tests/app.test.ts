@@ -467,6 +467,71 @@ describe('api app', () => {
       category: 'sale-tees',
     })
 
+    const archiveResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${admin.token}` },
+    })
+
+    expect(archiveResponse.status).toBe(204)
+
+    const publicDetailResponse = await fetch(`${baseUrl}/api/products/admin-edit-001`)
+    const publicDetailBody = await publicDetailResponse.json()
+
+    expect(publicDetailResponse.status).toBe(404)
+    expect(publicDetailBody.message).toBe('Product not found')
+
+    const adminProductsResponse = await fetch(`${baseUrl}/api/admin/products`, {
+      headers: { authorization: `Bearer ${admin.token}` },
+    })
+    const adminProductsBody = await adminProductsResponse.json()
+
+    expect(adminProductsResponse.status).toBe(200)
+    expect(
+      adminProductsBody.products.find((product: { id: string }) => product.id === 'admin-edit-001')
+    ).toMatchObject({
+      id: 'admin-edit-001',
+      isActive: false,
+    })
+
+    const publishResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001/status`, {
+      method: 'PATCH',
+      headers: {
+        authorization: `Bearer ${admin.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ isActive: true }),
+    })
+    const publishedProduct = await publishResponse.json()
+
+    expect(publishResponse.status).toBe(200)
+    expect(publishedProduct).toMatchObject({
+      id: 'admin-edit-001',
+      isActive: true,
+    })
+
+    const restoredPublicDetailResponse = await fetch(`${baseUrl}/api/products/admin-edit-001`)
+
+    expect(restoredPublicDetailResponse.status).toBe(200)
+
+    const permanentDeleteResponse = await fetch(
+      `${baseUrl}/api/admin/products/admin-edit-001/permanent`,
+      {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${admin.token}` },
+      }
+    )
+
+    expect(permanentDeleteResponse.status).toBe(204)
+
+    const deletedAdminProductsResponse = await fetch(`${baseUrl}/api/admin/products`, {
+      headers: { authorization: `Bearer ${admin.token}` },
+    })
+    const deletedAdminProductsBody = await deletedAdminProductsResponse.json()
+
+    expect(deletedAdminProductsBody.products).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: 'admin-edit-001' })])
+    )
+
     resetProductStoreForTests()
   })
 })

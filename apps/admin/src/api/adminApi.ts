@@ -78,6 +78,20 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['AdminProducts', 'AdminInventory'],
     }),
+    updateProductStatus: builder.mutation<
+      Product,
+      {
+        productId: string
+        isActive: boolean
+      }
+    >({
+      query: ({ productId, isActive }) => ({
+        url: `/admin/products/${productId}/status`,
+        method: 'PATCH',
+        body: { isActive },
+      }),
+      invalidatesTags: ['AdminProducts', 'AdminInventory'],
+    }),
     uploadProductImage: builder.mutation<ProductImageUploadResponse, File>({
       query: (image) => {
         const body = new FormData()
@@ -93,6 +107,13 @@ export const adminApi = createApi({
     deleteProduct: builder.mutation<void, string>({
       query: (productId) => ({
         url: `/admin/products/${productId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['AdminProducts', 'AdminInventory'],
+    }),
+    deleteProductPermanently: builder.mutation<void, string>({
+      query: (productId) => ({
+        url: `/admin/products/${productId}/permanent`,
         method: 'DELETE',
       }),
       invalidatesTags: ['AdminProducts', 'AdminInventory'],
@@ -122,9 +143,11 @@ export const {
   useGetAdminProductsQuery,
   useGetAdminUsersQuery,
   useCreateProductMutation,
+  useDeleteProductPermanentlyMutation,
   useDeleteProductMutation,
   useUploadProductImageMutation,
   useUpdateProductMutation,
+  useUpdateProductStatusMutation,
   useUpdateInventoryMutation,
   useUpdateOrderStatusMutation,
 } = adminApi

@@ -10,8 +10,10 @@ import {
 import {
   createProduct,
   deleteProduct,
-  getAllProducts,
+  deleteProductPermanently,
+  getAdminProducts as getAdminProductsForManagement,
   getInventory,
+  setProductActive,
   updateInventory,
   updateProduct,
 } from '../services/productService'
@@ -46,6 +48,14 @@ const readOptionalNumber = (value: unknown, fieldName: string): number | undefin
   return readNumber(value, fieldName)
 }
 
+const readBoolean = (value: unknown, fieldName: string): boolean => {
+  if (typeof value !== 'boolean') {
+    throw new ApiError(400, `${fieldName} is required`, 'VALIDATION_ERROR')
+  }
+
+  return value
+}
+
 const validateCompareAtPrice = (price: number | undefined, compareAtPrice: number | undefined) => {
   if (price !== undefined && compareAtPrice !== undefined && compareAtPrice <= price) {
     throw new ApiError(400, 'Original price must be higher than the sale price', 'VALIDATION_ERROR')
@@ -75,7 +85,7 @@ export const patchAdminOrderStatus = async (req: Request, res: Response) => {
 }
 
 export const getAdminProducts = async (_req: Request, res: Response) => {
-  res.json({ products: await getAllProducts() })
+  res.json({ products: await getAdminProductsForManagement() })
 }
 
 export const postAdminProduct = async (req: Request, res: Response) => {
@@ -133,8 +143,32 @@ export const patchAdminProduct = async (req: Request, res: Response) => {
   res.json(product)
 }
 
+export const patchAdminProductStatus = async (req: Request, res: Response) => {
+  if (!isRecord(req.body)) {
+    throw new ApiError(400, 'Product status payload is required', 'VALIDATION_ERROR')
+  }
+
+  const product = await setProductActive(req.params.id, readBoolean(req.body.isActive, 'isActive'))
+
+  if (!product) {
+    throw new ApiError(404, 'Product not found', 'PRODUCT_NOT_FOUND')
+  }
+
+  res.json(product)
+}
+
 export const deleteAdminProduct = async (req: Request, res: Response) => {
   const deleted = await deleteProduct(req.params.id)
+
+  if (!deleted) {
+    throw new ApiError(404, 'Product not found', 'PRODUCT_NOT_FOUND')
+  }
+
+  res.status(204).send()
+}
+
+export const deleteAdminProductPermanently = async (req: Request, res: Response) => {
+  const deleted = await deleteProductPermanently(req.params.id)
 
   if (!deleted) {
     throw new ApiError(404, 'Product not found', 'PRODUCT_NOT_FOUND')
