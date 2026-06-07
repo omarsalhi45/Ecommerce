@@ -26,10 +26,7 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  Tab,
-  TabList,
   Table,
-  Tabs,
   Tbody,
   Td,
   Text,
@@ -55,6 +52,13 @@ import {
   useUpdateProductStatusMutation,
   useUploadProductImageMutation,
 } from '../api/adminApi'
+import {
+  ProductManagementPanel,
+  type ProductStatusFilter,
+  type ProductStockFilter,
+  getInventorySummary,
+  productStatusFilters,
+} from '../components/ProductManagementPanel'
 import { logout, selectCurrentUser } from '../slices/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { InventoryItem, Order, Product } from '../types'
@@ -80,7 +84,6 @@ const paymentStatusLabels: Record<Order['paymentStatus'], string> = {
 }
 type OrderStatusFilter = 'all' | Order['status']
 type PaymentStatusFilter = 'all' | Order['paymentStatus']
-type ProductStockFilter = 'all' | 'in_stock' | 'low_stock' | 'missing_stock' | 'sold_out'
 const paymentStatuses = Object.keys(paymentStatusLabels) as Order['paymentStatus'][]
 const emptyProductForm = {
   id: '',
@@ -94,8 +97,6 @@ const emptyProductForm = {
   stockQuantity: '0',
 }
 const emptyImageSource = ''
-type ProductStatusFilter = 'all' | 'archived' | 'published'
-const productStatusFilters: ProductStatusFilter[] = ['all', 'published', 'archived']
 const recentOrderLimit = 25
 
 const formatOrderDate = (value: string) =>
@@ -106,36 +107,6 @@ const formatOrderDate = (value: string) =>
 
 const getOrderItemCount = (order: Order) =>
   order.items.reduce((total, item) => total + item.quantity, 0)
-
-const getInventorySummary = (items: InventoryItem[]) => {
-  const totalStock = items.reduce((total, item) => total + item.stockQuantity, 0)
-  const isLowStock = items.some((item) => item.stockQuantity <= item.lowStockThreshold)
-
-  if (items.length === 0) {
-    return {
-      colorScheme: 'gray',
-      label: 'No stock record',
-      state: 'missing_stock' as ProductStockFilter,
-      totalStock,
-    }
-  }
-
-  if (totalStock === 0) {
-    return {
-      colorScheme: 'red',
-      label: 'Sold out',
-      state: 'sold_out' as ProductStockFilter,
-      totalStock,
-    }
-  }
-
-  return {
-    colorScheme: isLowStock ? 'yellow' : 'green',
-    label: `${totalStock} in stock`,
-    state: isLowStock ? ('low_stock' as ProductStockFilter) : ('in_stock' as ProductStockFilter),
-    totalStock,
-  }
-}
 
 export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
@@ -544,166 +515,35 @@ export default function AdminDashboardPage() {
           )}
         </Box>
 
-        <Grid templateColumns={{ base: '1fr', xl: '1fr 1fr' }} gap={6}>
-          <Box
-            bg="white"
-            border="1px solid"
-            borderColor="neutral.200"
-            borderRadius="lg"
-            gridColumn={{ base: 'auto', xl: '1 / -1' }}
-            p={5}
-          >
-            <Heading as="h2" size="md" mb={4}>
-              Products
-            </Heading>
-            <Button mb={5} colorScheme="brand" onClick={startCreatingProduct}>
-              Add product
-            </Button>
-            <Grid templateColumns={{ base: '1fr', md: '2fr 1fr 1fr' }} gap={3} mb={4}>
-              <Input
-                placeholder="Search product, id, category, or copy"
-                value={productSearch}
-                onChange={(event) => setProductSearch(event.target.value)}
-              />
-              <Select
-                value={productCategoryFilter}
-                onChange={(event) => setProductCategoryFilter(event.target.value)}
-              >
-                <option value="all">All categories</option>
-                {productCategories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </Select>
-              <Select
-                value={productStockFilter}
-                onChange={(event) =>
-                  setProductStockFilter(event.target.value as ProductStockFilter)
-                }
-              >
-                <option value="all">All stock</option>
-                <option value="in_stock">In stock</option>
-                <option value="low_stock">Low stock</option>
-                <option value="sold_out">Sold out</option>
-                <option value="missing_stock">No stock record</option>
-              </Select>
-            </Grid>
-            <Tabs
-              index={productStatusFilterIndex}
-              onChange={(index) => setProductStatusFilter(productStatusFilters[index] ?? 'all')}
-            >
-              <TabList borderBottomColor="neutral.200">
-                <Tab fontWeight="bold">All {products.length}</Tab>
-                <Tab fontWeight="bold">Published {productStatusCounts.published}</Tab>
-                <Tab fontWeight="bold">Archived {productStatusCounts.archived}</Tab>
-              </TabList>
-            </Tabs>
-            <VStack align="stretch" mt={4} spacing={3}>
-              <Text color="neutral.600" fontSize="sm">
-                Showing {visibleProducts.length} of {products.length} products
-              </Text>
-              {isProductsError ? (
-                <Text color="error.600">Products could not be loaded.</Text>
-              ) : null}
-              {!isProductsError && visibleProducts.length === 0 ? (
-                <Text color="neutral.600">
-                  {productStatusFilter === 'archived'
-                    ? 'No archived products yet.'
-                    : 'No products in this view.'}
-                </Text>
-              ) : null}
-              {visibleProducts.map((product) => {
-                const isEditing = editingProductId === product.id
-                const isActive = product.isActive !== false
-                const productInventoryItems = inventoryByProductId.get(product.id) ?? []
-                const inventorySummary = getInventorySummary(productInventoryItems)
-
-                return (
-                  <Box
-                    key={product.id}
-                    border="1px solid"
-                    borderColor={
-                      isEditing ? 'neutral.300' : isActive ? 'neutral.100' : 'orange.200'
-                    }
-                    borderRadius="md"
-                    opacity={isActive ? 1 : 0.72}
-                    p={4}
-                  >
-                    <Stack
-                      align={{ base: 'stretch', md: 'start' }}
-                      direction={{ base: 'column', md: 'row' }}
-                      justify="space-between"
-                      spacing={4}
-                    >
-                      <Box minW={0}>
-                        <HStack align="start" spacing={2} wrap="wrap">
-                          <Text fontWeight="bold">{product.name}</Text>
-                          <Badge colorScheme={isActive ? 'green' : 'orange'}>
-                            {isActive ? 'Published' : 'Archived'}
-                          </Badge>
-                          <Badge colorScheme={inventorySummary.colorScheme}>
-                            {inventorySummary.label}
-                          </Badge>
-                        </HStack>
-                        <Text color="neutral.600" fontSize="sm">
-                          {product.category} - ${product.price.toFixed(2)} - {product.id}
-                          {product.compareAtPrice
-                            ? ` sale from $${product.compareAtPrice.toFixed(2)}`
-                            : ''}
-                        </Text>
-                      </Box>
-                      <HStack justify={{ base: 'start', md: 'end' }} spacing={2} wrap="wrap">
-                        <Button
-                          size="xs"
-                          variant={isEditing ? 'solid' : 'outline'}
-                          colorScheme={isEditing ? 'brand' : undefined}
-                          onClick={() => startEditingProduct(product)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          onClick={() => setSelectedProductId(product.id)}
-                        >
-                          Details
-                        </Button>
-                        {isActive ? (
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            onClick={() => archiveProduct(product.id)}
-                          >
-                            Archive
-                          </Button>
-                        ) : (
-                          <Button
-                            size="xs"
-                            variant="outline"
-                            onClick={() =>
-                              updateProductStatus({ productId: product.id, isActive: true })
-                            }
-                          >
-                            Publish
-                          </Button>
-                        )}
-                        <Button
-                          size="xs"
-                          variant="outline"
-                          colorScheme="red"
-                          onClick={() => handlePermanentProductDelete(product)}
-                        >
-                          Delete forever
-                        </Button>
-                      </HStack>
-                    </Stack>
-                  </Box>
-                )
-              })}
-            </VStack>
-          </Box>
-        </Grid>
+        <ProductManagementPanel
+          editingProductId={editingProductId}
+          inventoryByProductId={inventoryByProductId}
+          isProductsError={isProductsError}
+          productCategories={productCategories}
+          productCategoryFilter={productCategoryFilter}
+          productSearch={productSearch}
+          products={products}
+          productStatusCounts={productStatusCounts}
+          productStatusFilter={productStatusFilter}
+          productStatusFilterIndex={productStatusFilterIndex}
+          productStockFilter={productStockFilter}
+          visibleProducts={visibleProducts}
+          onArchiveProduct={(productId) => archiveProduct(productId)}
+          onCreateProduct={startCreatingProduct}
+          onDeleteProduct={handlePermanentProductDelete}
+          onEditProduct={startEditingProduct}
+          onProductCategoryFilterChange={setProductCategoryFilter}
+          onProductSearchChange={setProductSearch}
+          onProductStatusFilterChange={setProductStatusFilter}
+          onProductStockFilterChange={setProductStockFilter}
+          onPublishProduct={(productId) =>
+            updateProductStatus({
+              productId,
+              isActive: true,
+            })
+          }
+          onSelectProduct={setSelectedProductId}
+        />
 
         <Box bg="white" border="1px solid" borderColor="neutral.200" borderRadius="lg" p={5}>
           <Heading as="h2" size="md" mb={4}>
