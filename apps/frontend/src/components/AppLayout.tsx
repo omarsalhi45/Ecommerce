@@ -103,7 +103,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     key={item.to}
                     as={RouterLink}
                     to={item.to}
-                    color={isNavItemActive(item.to) ? 'accent.600' : 'neutral.700'}
+                    color={isNavItemActive(item.to) ? 'accent.700' : 'neutral.700'}
                     fontSize="sm"
                     fontWeight="black"
                     whiteSpace="nowrap"
@@ -112,7 +112,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     py={2}
                     bg={isNavItemActive(item.to) ? 'accent.50' : 'transparent'}
                     _hover={{
-                      color: 'accent.600',
+                      color: 'accent.700',
                       bg: 'neutral.50',
                       textDecoration: 'none',
                     }}
@@ -211,7 +211,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   key={item.to}
                   as={RouterLink}
                   to={item.to}
-                  color={isNavItemActive(item.to) ? 'accent.600' : 'neutral.700'}
+                  color={isNavItemActive(item.to) ? 'accent.700' : 'neutral.700'}
                   fontSize="sm"
                   fontWeight="black"
                   whiteSpace="nowrap"
@@ -219,7 +219,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                   px={4}
                   py={2}
                   bg={isNavItemActive(item.to) ? 'accent.50' : 'transparent'}
-                  _hover={{ color: 'accent.600', bg: 'neutral.50', textDecoration: 'none' }}
+                  _hover={{ color: 'accent.700', bg: 'neutral.50', textDecoration: 'none' }}
                 >
                   {t(item.labelKey)}
                 </Link>
@@ -234,7 +234,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 borderRadius="full"
                 px={4}
                 py={2}
-                _hover={{ color: 'accent.600', bg: 'neutral.50', textDecoration: 'none' }}
+                _hover={{ color: 'accent.700', bg: 'neutral.50', textDecoration: 'none' }}
               >
                 {savedProductIds.length > 0
                   ? t('header.savedCount', {
