@@ -13,7 +13,6 @@ import {
   DrawerHeader,
   DrawerOverlay,
   FormControl,
-  FormErrorMessage,
   FormLabel,
   Grid,
   HStack,
@@ -57,6 +56,7 @@ import {
   paymentStatusLabels,
   recentOrderLimit,
 } from '../components/OrdersPanel'
+import { ProductEditorDrawer, type ProductFormValues } from '../components/ProductEditorDrawer'
 import {
   ProductManagementPanel,
   type ProductStatusFilter,
@@ -68,7 +68,7 @@ import { logout, selectCurrentUser } from '../slices/authSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 import type { InventoryItem, Order, Product } from '../types'
 
-const emptyProductForm = {
+const emptyProductForm: ProductFormValues = {
   id: '',
   name: '',
   description: '',
@@ -253,6 +253,92 @@ export default function AdminDashboardPage() {
     setExternalImageUrl(value)
     setProductForm((current) => ({ ...current, imageUrl: value.trim() }))
     setImageStatus(value.trim() ? 'External image ready.' : undefined)
+  }
+
+  const updateProductFormField = (field: keyof ProductFormValues, value: string) => {
+    setProductForm((current) => ({ ...current, [field]: value }))
+  }
+
+  const handleProductFormSubmit = async (event: FormEvent<HTMLDivElement>) => {
+    event.preventDefault()
+
+    if (isImageUploading) {
+      setProductFormError('Wait for the image upload to finish before saving.')
+      return
+    }
+
+    if (!productForm.imageUrl.trim()) {
+      setProductFormError('Add a product image before saving.')
+      return
+    }
+
+    if (!productForm.name.trim() || !productForm.description.trim()) {
+      setProductFormError('Name and description are required.')
+      return
+    }
+
+    const price = Number(productForm.price)
+    const compareAtPrice = productForm.compareAtPrice
+      ? Number(productForm.compareAtPrice)
+      : undefined
+    const stockQuantity = Number(productForm.stockQuantity)
+
+    if (Number.isNaN(price) || price < 0) {
+      setProductFormError('Price must be a positive number.')
+      return
+    }
+
+    if (Number.isNaN(stockQuantity) || stockQuantity < 0) {
+      setProductFormError('Stock must be zero or higher.')
+      return
+    }
+
+    if (compareAtPrice !== undefined && (Number.isNaN(compareAtPrice) || compareAtPrice <= price)) {
+      setProductFormError('Original price must be higher than the current price.')
+      return
+    }
+
+    try {
+      if (editingProductId) {
+        await updateProduct({
+          productId: editingProductId,
+          updates: {
+            category: productForm.category.trim(),
+            compareAtPrice,
+            description: productForm.description.trim(),
+            imageUrl: productForm.imageUrl.trim(),
+            name: productForm.name.trim(),
+            price,
+          },
+        }).unwrap()
+        if (editingProductInventoryItem) {
+          await updateInventory({
+            productId: editingProductId,
+            stockQuantity,
+          }).unwrap()
+        }
+      } else {
+        await createProduct({
+          id: productForm.id.trim(),
+          name: productForm.name.trim(),
+          description: productForm.description.trim(),
+          price,
+          compareAtPrice,
+          imageUrl: productForm.imageUrl.trim(),
+          category: productForm.category.trim(),
+          sku: productForm.sku.trim() || undefined,
+          stockQuantity,
+        }).unwrap()
+      }
+      setProductForm(emptyProductForm)
+      setEditingProductId(undefined)
+      setExternalImageUrl(emptyImageSource)
+      setProductFormError(undefined)
+      setImageStatus(undefined)
+      setProductEditorOpen(false)
+    } catch {
+      setProductFormError('Product could not be saved. Check the fields and try again.')
+    }
   }
 
   const startEditingProduct = (product: Product) => {
@@ -596,311 +682,23 @@ export default function AdminDashboardPage() {
         </DrawerContent>
       </Drawer>
 
-      <Drawer
+      <ProductEditorDrawer
+        editingProductId={editingProductId}
+        externalImageUrl={externalImageUrl}
+        hasEditingInventoryItem={Boolean(editingProductInventoryItem)}
+        imageStatus={imageStatus}
+        isEditingProduct={isEditingProduct}
+        isImageUploading={isImageUploading}
         isOpen={isProductEditorOpen}
-        onClose={cancelEditingProduct}
-        placement="right"
-        size="lg"
-      >
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>
-            {isEditingProduct ? `Edit ${productForm.name || editingProductId}` : 'Add product'}
-          </DrawerHeader>
-          <DrawerBody>
-            {isEditingProduct ? (
-              <Alert status="info" borderRadius="md" mb={4}>
-                <AlertIcon />
-                Save product details and stock from one place.
-              </Alert>
-            ) : null}
-            <Box
-              as="form"
-              id="product-editor-form"
-              onSubmit={async (event: FormEvent<HTMLDivElement>) => {
-                event.preventDefault()
-
-                if (isImageUploading) {
-                  setProductFormError('Wait for the image upload to finish before saving.')
-                  return
-                }
-
-                if (!productForm.imageUrl.trim()) {
-                  setProductFormError('Add a product image before saving.')
-                  return
-                }
-
-                if (!productForm.name.trim() || !productForm.description.trim()) {
-                  setProductFormError('Name and description are required.')
-                  return
-                }
-
-                const price = Number(productForm.price)
-                const compareAtPrice = productForm.compareAtPrice
-                  ? Number(productForm.compareAtPrice)
-                  : undefined
-                const stockQuantity = Number(productForm.stockQuantity)
-
-                if (Number.isNaN(price) || price < 0) {
-                  setProductFormError('Price must be a positive number.')
-                  return
-                }
-
-                if (Number.isNaN(stockQuantity) || stockQuantity < 0) {
-                  setProductFormError('Stock must be zero or higher.')
-                  return
-                }
-
-                if (
-                  compareAtPrice !== undefined &&
-                  (Number.isNaN(compareAtPrice) || compareAtPrice <= price)
-                ) {
-                  setProductFormError('Original price must be higher than the current price.')
-                  return
-                }
-
-                try {
-                  if (editingProductId) {
-                    await updateProduct({
-                      productId: editingProductId,
-                      updates: {
-                        category: productForm.category.trim(),
-                        compareAtPrice,
-                        description: productForm.description.trim(),
-                        imageUrl: productForm.imageUrl.trim(),
-                        name: productForm.name.trim(),
-                        price,
-                      },
-                    }).unwrap()
-                    if (editingProductInventoryItem) {
-                      await updateInventory({
-                        productId: editingProductId,
-                        stockQuantity,
-                      }).unwrap()
-                    }
-                  } else {
-                    await createProduct({
-                      id: productForm.id.trim(),
-                      name: productForm.name.trim(),
-                      description: productForm.description.trim(),
-                      price,
-                      compareAtPrice,
-                      imageUrl: productForm.imageUrl.trim(),
-                      category: productForm.category.trim(),
-                      sku: productForm.sku.trim() || undefined,
-                      stockQuantity,
-                    }).unwrap()
-                  }
-                  setProductForm(emptyProductForm)
-                  setEditingProductId(undefined)
-                  setExternalImageUrl(emptyImageSource)
-                  setProductFormError(undefined)
-                  setImageStatus(undefined)
-                  setProductEditorOpen(false)
-                } catch {
-                  setProductFormError('Product could not be saved. Check the fields and try again.')
-                }
-              }}
-            >
-              <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3}>
-                <FormControl isRequired>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Product id
-                  </FormLabel>
-                  <Input
-                    placeholder="black-tee"
-                    isDisabled={isEditingProduct}
-                    value={productForm.id}
-                    onChange={(event) =>
-                      setProductForm((current) => ({ ...current, id: event.target.value }))
-                    }
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Name
-                  </FormLabel>
-                  <Input
-                    placeholder="Oversized tee"
-                    value={productForm.name}
-                    onChange={(event) =>
-                      setProductForm((current) => ({ ...current, name: event.target.value }))
-                    }
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Price
-                  </FormLabel>
-                  <Input
-                    min={0}
-                    placeholder="39.00"
-                    step="0.01"
-                    type="number"
-                    value={productForm.price}
-                    onChange={(event) =>
-                      setProductForm((current) => ({ ...current, price: event.target.value }))
-                    }
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Original price
-                  </FormLabel>
-                  <Input
-                    min={0}
-                    placeholder="59.00"
-                    step="0.01"
-                    type="number"
-                    value={productForm.compareAtPrice}
-                    onChange={(event) =>
-                      setProductForm((current) => ({
-                        ...current,
-                        compareAtPrice: event.target.value,
-                      }))
-                    }
-                  />
-                </FormControl>
-                <FormControl isRequired>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Category
-                  </FormLabel>
-                  <Input
-                    placeholder="tees"
-                    value={productForm.category}
-                    onChange={(event) =>
-                      setProductForm((current) => ({ ...current, category: event.target.value }))
-                    }
-                  />
-                </FormControl>
-                <FormControl>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    {isEditingProduct ? 'Stock' : 'Initial stock'}
-                  </FormLabel>
-                  <Input
-                    min={0}
-                    placeholder="0"
-                    type="number"
-                    value={productForm.stockQuantity}
-                    onChange={(event) =>
-                      setProductForm((current) => ({
-                        ...current,
-                        stockQuantity: event.target.value,
-                      }))
-                    }
-                  />
-                  {isEditingProduct && !editingProductInventoryItem ? (
-                    <Text color="neutral.500" fontSize="xs" mt={1}>
-                      This product has no inventory record yet.
-                    </Text>
-                  ) : null}
-                </FormControl>
-                <FormControl
-                  gridColumn={{ base: 'auto', md: '1 / -1' }}
-                  isInvalid={Boolean(productFormError)}
-                >
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Product image
-                  </FormLabel>
-                  <Stack spacing={3}>
-                    {productForm.imageUrl ? (
-                      <HStack
-                        align="center"
-                        border="1px solid"
-                        borderColor="neutral.200"
-                        borderRadius="md"
-                        p={3}
-                        spacing={3}
-                      >
-                        <Image
-                          alt="Product image preview"
-                          borderRadius="md"
-                          boxSize="64px"
-                          fallbackSrc=""
-                          fit="cover"
-                          src={productForm.imageUrl}
-                        />
-                        <Box minW={0}>
-                          <Text fontSize="sm" fontWeight="bold">
-                            {imageStatus ?? 'Image ready.'}
-                          </Text>
-                          <Text color="neutral.500" fontSize="xs">
-                            This is the image that will be saved with the product.
-                          </Text>
-                        </Box>
-                      </HStack>
-                    ) : (
-                      <Text color="neutral.500" fontSize="sm">
-                        Upload one image, or paste one normal image link.
-                      </Text>
-                    )}
-                    <Input
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      pt={1}
-                      type="file"
-                      onChange={(event) => {
-                        handleProductImageChange(event.target.files?.[0])
-                        event.target.value = ''
-                      }}
-                    />
-                    <Input
-                      placeholder="https://example.com/product.jpg"
-                      value={externalImageUrl}
-                      onChange={(event) => handleExternalImageUrlChange(event.target.value)}
-                    />
-                    <FormErrorMessage>{productFormError}</FormErrorMessage>
-                  </Stack>
-                </FormControl>
-                <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }} isRequired>
-                  <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                    Description
-                  </FormLabel>
-                  <Input
-                    placeholder="Short product description"
-                    value={productForm.description}
-                    onChange={(event) =>
-                      setProductForm((current) => ({
-                        ...current,
-                        description: event.target.value,
-                      }))
-                    }
-                  />
-                </FormControl>
-                {!isEditingProduct ? (
-                  <FormControl>
-                    <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                      SKU
-                    </FormLabel>
-                    <Input
-                      placeholder="OSAI-TEE-BLK"
-                      value={productForm.sku}
-                      onChange={(event) =>
-                        setProductForm((current) => ({ ...current, sku: event.target.value }))
-                      }
-                    />
-                  </FormControl>
-                ) : null}
-              </Grid>
-            </Box>
-          </DrawerBody>
-          <DrawerFooter gap={3}>
-            <Button variant="outline" onClick={cancelEditingProduct}>
-              Cancel
-            </Button>
-            <Button
-              colorScheme="brand"
-              form="product-editor-form"
-              isDisabled={isSavingProduct}
-              isLoading={isSavingProduct}
-              loadingText={isImageUploading ? 'Uploading image' : 'Saving product'}
-              type="submit"
-            >
-              {isEditingProduct ? 'Save changes' : 'Add product'}
-            </Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+        isSavingProduct={isSavingProduct}
+        productForm={productForm}
+        productFormError={productFormError}
+        onCancel={cancelEditingProduct}
+        onExternalImageUrlChange={handleExternalImageUrlChange}
+        onFieldChange={updateProductFormField}
+        onImageChange={handleProductImageChange}
+        onSubmit={handleProductFormSubmit}
+      />
 
       <Drawer
         isOpen={Boolean(selectedProduct)}
