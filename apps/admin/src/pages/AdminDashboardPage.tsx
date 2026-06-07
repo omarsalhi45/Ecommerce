@@ -17,8 +17,6 @@ import {
   Grid,
   HStack,
   Heading,
-  Image,
-  Input,
   Select,
   Skeleton,
   Stack,
@@ -56,6 +54,7 @@ import {
   paymentStatusLabels,
   recentOrderLimit,
 } from '../components/OrdersPanel'
+import { ProductDetailsDrawer } from '../components/ProductDetailsDrawer'
 import { ProductEditorDrawer, type ProductFormValues } from '../components/ProductEditorDrawer'
 import {
   ProductManagementPanel,
@@ -700,141 +699,26 @@ export default function AdminDashboardPage() {
         onSubmit={handleProductFormSubmit}
       />
 
-      <Drawer
-        isOpen={Boolean(selectedProduct)}
+      <ProductDetailsDrawer
+        inventoryDrafts={inventoryDrafts}
+        inventoryItems={selectedProductInventory}
+        isInventoryError={isInventoryError}
+        product={selectedProduct}
         onClose={() => setSelectedProductId(undefined)}
-        placement="right"
-        size="md"
-      >
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerCloseButton />
-          <DrawerHeader>{selectedProduct?.name ?? 'Product details'}</DrawerHeader>
-          <DrawerBody>
-            {selectedProduct ? (
-              <Stack spacing={5}>
-                <Image
-                  alt={selectedProduct.name}
-                  aspectRatio={4 / 3}
-                  borderRadius="md"
-                  fit="cover"
-                  src={selectedProduct.imageUrl}
-                />
-                <Box>
-                  <Text
-                    color="neutral.500"
-                    fontSize="xs"
-                    fontWeight="bold"
-                    textTransform="uppercase"
-                  >
-                    Product
-                  </Text>
-                  <Heading as="h3" size="md">
-                    {selectedProduct.name}
-                  </Heading>
-                  <Text color="neutral.600" mt={2}>
-                    {selectedProduct.description}
-                  </Text>
-                </Box>
-                <HStack wrap="wrap">
-                  <Badge colorScheme="gray">{selectedProduct.category}</Badge>
-                  <Badge colorScheme={selectedProduct.isActive === false ? 'orange' : 'green'}>
-                    {selectedProduct.isActive === false ? 'Archived' : 'Published'}
-                  </Badge>
-                  <Badge colorScheme="blue">{selectedProduct.id}</Badge>
-                </HStack>
-                <Box>
-                  <Text fontWeight="bold">Pricing</Text>
-                  <Text color="neutral.700">
-                    ${selectedProduct.price.toFixed(2)}
-                    {selectedProduct.compareAtPrice
-                      ? ` sale from $${selectedProduct.compareAtPrice.toFixed(2)}`
-                      : ''}
-                  </Text>
-                </Box>
-                <Box>
-                  <Text fontWeight="bold" mb={3}>
-                    Inventory
-                  </Text>
-                  {isInventoryError ? (
-                    <Text color="error.600">Inventory could not be loaded.</Text>
-                  ) : null}
-                  {!isInventoryError && selectedProductInventory.length === 0 ? (
-                    <Text color="neutral.600">No inventory record for this product.</Text>
-                  ) : null}
-                  <Stack spacing={3}>
-                    {selectedProductInventory.map((item) => {
-                      const isLowStock = item.stockQuantity <= item.lowStockThreshold
-
-                      return (
-                        <Box
-                          key={item.sku}
-                          border="1px solid"
-                          borderColor="neutral.200"
-                          borderRadius="md"
-                          p={3}
-                        >
-                          <HStack align="start" justify="space-between">
-                            <Box>
-                              <Text fontWeight="bold">{item.sku}</Text>
-                              <Text color="neutral.600" fontSize="sm">
-                                {[item.size, item.color].filter(Boolean).join(' / ') ||
-                                  'Default variant'}
-                              </Text>
-                              <Text color="neutral.600" fontSize="sm">
-                                Low threshold {item.lowStockThreshold}
-                              </Text>
-                            </Box>
-                            <Badge colorScheme={isLowStock ? 'yellow' : 'green'}>
-                              {item.stockQuantity} stock
-                            </Badge>
-                          </HStack>
-                          <HStack mt={3}>
-                            <Input
-                              min={0}
-                              size="sm"
-                              type="number"
-                              value={inventoryDrafts[item.product.id] ?? item.stockQuantity}
-                              onChange={(event) =>
-                                setInventoryDrafts((current) => ({
-                                  ...current,
-                                  [item.product.id]: event.target.value,
-                                }))
-                              }
-                            />
-                            <Button
-                              flexShrink={0}
-                              size="sm"
-                              onClick={() =>
-                                updateInventory({
-                                  productId: item.product.id,
-                                  stockQuantity: Number(
-                                    inventoryDrafts[item.product.id] ?? item.stockQuantity
-                                  ),
-                                })
-                              }
-                            >
-                              Save stock
-                            </Button>
-                          </HStack>
-                        </Box>
-                      )
-                    })}
-                  </Stack>
-                </Box>
-              </Stack>
-            ) : null}
-          </DrawerBody>
-          <DrawerFooter gap={3}>
-            {selectedProduct ? (
-              <Button variant="outline" onClick={() => startEditingProduct(selectedProduct)}>
-                Edit product
-              </Button>
-            ) : null}
-            <Button onClick={() => setSelectedProductId(undefined)}>Close</Button>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+        onEditProduct={startEditingProduct}
+        onInventoryDraftChange={(productId, value) =>
+          setInventoryDrafts((current) => ({
+            ...current,
+            [productId]: value,
+          }))
+        }
+        onSaveStock={(productId, stockQuantity) =>
+          updateInventory({
+            productId,
+            stockQuantity,
+          })
+        }
+      />
     </Container>
   )
 }

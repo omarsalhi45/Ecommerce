@@ -295,6 +295,25 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [ ] Add basic fraud or risk signals for suspicious orders.
 - [ ] Add Redis-backed cache provider behind the existing cache abstraction when traffic requires it.
 
+### Phase 11.5: Admin Operations Upgrade
+
+- [x] Extract admin order list into a dedicated component.
+- [x] Extract admin product list into a dedicated component.
+- [x] Extract admin product editor drawer into a dedicated component.
+- [x] Extract admin product details and inventory drawer into a dedicated component.
+- [x] Add bounded scrolling for large order and product lists.
+- [x] Add admin product search, category filtering, stock filtering, and published/archived tabs.
+- [x] Keep archive and permanent delete as separate product actions.
+- [ ] Add variant-level inventory editing for size, color, SKU, stock, low-stock threshold, and sold-out states.
+- [ ] Add admin-managed product detail content fields such as fit, material, care, model info, Q&A, and "why this piece".
+- [ ] Add admin product gallery management for multiple images and optional product video.
+- [ ] Add order fulfillment workflow with carrier, tracking number, shipped email, and delivery status.
+- [ ] Add order timeline/history for status, payment, fulfillment, email, and refund events.
+- [ ] Add admin activity log and audit history for product, order, inventory, discount, and user changes.
+- [ ] Add server-side pagination and search for large product and order lists.
+- [ ] Add bulk product actions such as archive, publish, delete review, and low-stock review.
+- [ ] Split the admin dashboard into clear sections or tabs: Overview, Orders, Products, Customers, and Analytics.
+
 ### Phase 12: Data, Personalization & Retention
 
 - [ ] Upgrade analytics dashboard with conversion funnel metrics from product view to purchase.
