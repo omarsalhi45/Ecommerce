@@ -315,20 +315,26 @@ export const getInventoryFromDb = async (): Promise<InventoryItem[]> => {
 
 export const updateInventoryInDb = async (
   productId: string,
-  stockQuantity: number
+  input: {
+    readonly stockQuantity?: number
+    readonly lowStockThreshold?: number
+  }
 ): Promise<InventoryItem | undefined> => {
   const result = await query<InventoryRow>(
     `UPDATE inventory
-     SET stock_quantity = $2, updated_at = NOW()
+     SET
+       stock_quantity = COALESCE($2, stock_quantity),
+       low_stock_threshold = COALESCE($3, low_stock_threshold),
+       updated_at = NOW()
      WHERE product_id = $1
      RETURNING
-       product_id,
+       product_id AS id,
        sku,
        size,
        color,
        stock_quantity,
        low_stock_threshold`,
-    [productId, stockQuantity]
+    [productId, input.stockQuantity ?? null, input.lowStockThreshold ?? null]
   )
 
   if (!result.rows[0]) {
@@ -336,6 +342,50 @@ export const updateInventoryInDb = async (
   }
 
   const product = await getProductFromDb(productId)
+
+  if (!product) {
+    return undefined
+  }
+
+  return {
+    product,
+    sku: result.rows[0].sku,
+    size: result.rows[0].size ?? undefined,
+    color: result.rows[0].color ?? undefined,
+    stockQuantity: result.rows[0].stock_quantity,
+    lowStockThreshold: result.rows[0].low_stock_threshold,
+  }
+}
+
+export const updateInventoryBySkuInDb = async (
+  sku: string,
+  input: {
+    readonly stockQuantity?: number
+    readonly lowStockThreshold?: number
+  }
+): Promise<InventoryItem | undefined> => {
+  const result = await query<InventoryRow>(
+    `UPDATE inventory
+     SET
+       stock_quantity = COALESCE($2, stock_quantity),
+       low_stock_threshold = COALESCE($3, low_stock_threshold),
+       updated_at = NOW()
+     WHERE sku = $1
+     RETURNING
+       product_id AS id,
+       sku,
+       size,
+       color,
+       stock_quantity,
+       low_stock_threshold`,
+    [sku, input.stockQuantity ?? null, input.lowStockThreshold ?? null]
+  )
+
+  if (!result.rows[0]) {
+    return undefined
+  }
+
+  const product = await getProductFromDb(result.rows[0].id)
 
   if (!product) {
     return undefined

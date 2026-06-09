@@ -84,6 +84,7 @@ export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
   const currentUser = useAppSelector(selectCurrentUser)
   const [inventoryDrafts, setInventoryDrafts] = useState<Record<string, string>>({})
+  const [lowStockThresholdDrafts, setLowStockThresholdDrafts] = useState<Record<string, string>>({})
   const [productForm, setProductForm] = useState(emptyProductForm)
   const [editingProductId, setEditingProductId] = useState<string | undefined>()
   const [isProductEditorOpen, setProductEditorOpen] = useState(false)
@@ -703,18 +704,26 @@ export default function AdminDashboardPage() {
         inventoryDrafts={inventoryDrafts}
         inventoryItems={selectedProductInventory}
         isInventoryError={isInventoryError}
+        lowStockThresholdDrafts={lowStockThresholdDrafts}
         product={selectedProduct}
         onClose={() => setSelectedProductId(undefined)}
         onEditProduct={startEditingProduct}
-        onInventoryDraftChange={(productId, value) =>
+        onInventoryDraftChange={(sku, value) =>
           setInventoryDrafts((current) => ({
             ...current,
-            [productId]: value,
+            [sku]: value,
           }))
         }
-        onSaveStock={(productId, stockQuantity) =>
+        onLowStockThresholdDraftChange={(sku, value) =>
+          setLowStockThresholdDrafts((current) => ({
+            ...current,
+            [sku]: value,
+          }))
+        }
+        onSaveInventory={(sku, stockQuantity, lowStockThreshold) =>
           updateInventory({
-            productId,
+            lowStockThreshold,
+            sku,
             stockQuantity,
           })
         }

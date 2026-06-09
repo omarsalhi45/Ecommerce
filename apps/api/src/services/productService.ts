@@ -11,6 +11,7 @@ import {
   getProductReviewsFromDb,
   getProductsFromDb,
   setProductActiveInDb,
+  updateInventoryBySkuInDb,
   updateInventoryInDb,
   updateProductInDb,
 } from '../repositories/productRepository'
@@ -773,10 +774,13 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
 
 export const updateInventory = async (
   productId: string,
-  stockQuantity: number
+  input: {
+    readonly stockQuantity?: number
+    readonly lowStockThreshold?: number
+  }
 ): Promise<InventoryItem | undefined> => {
   if (isDatabaseConfigured) {
-    const item = await updateInventoryInDb(productId, stockQuantity)
+    const item = await updateInventoryInDb(productId, input)
     clearCacheByPrefix('products:')
     return item
   }
@@ -787,7 +791,32 @@ export const updateInventory = async (
     return undefined
   }
 
-  Object.assign(inventoryItem, { stockQuantity })
+  Object.assign(inventoryItem, input)
+  clearCacheByPrefix('products:')
+
+  return inventoryItem
+}
+
+export const updateInventoryBySku = async (
+  sku: string,
+  input: {
+    readonly stockQuantity?: number
+    readonly lowStockThreshold?: number
+  }
+): Promise<InventoryItem | undefined> => {
+  if (isDatabaseConfigured) {
+    const item = await updateInventoryBySkuInDb(sku, input)
+    clearCacheByPrefix('products:')
+    return item
+  }
+
+  const inventoryItem = inventory.find((item) => item.sku === sku)
+
+  if (!inventoryItem) {
+    return undefined
+  }
+
+  Object.assign(inventoryItem, input)
   clearCacheByPrefix('products:')
 
   return inventoryItem

@@ -15,6 +15,7 @@ import {
   getInventory,
   setProductActive,
   updateInventory,
+  updateInventoryBySku,
   updateProduct,
 } from '../services/productService'
 
@@ -186,8 +187,37 @@ export const patchAdminInventory = async (req: Request, res: Response) => {
     throw new ApiError(400, 'Inventory payload is required', 'VALIDATION_ERROR')
   }
 
-  const stockQuantity = readNumber(req.body.stockQuantity, 'Stock quantity')
-  const inventoryItem = await updateInventory(req.params.productId, stockQuantity)
+  const stockQuantity = readOptionalNumber(req.body.stockQuantity, 'Stock quantity')
+  const lowStockThreshold = readOptionalNumber(req.body.lowStockThreshold, 'Low stock threshold')
+  if (stockQuantity === undefined && lowStockThreshold === undefined) {
+    throw new ApiError(400, 'Inventory update is required', 'VALIDATION_ERROR')
+  }
+  const inventoryItem = await updateInventory(req.params.productId, {
+    lowStockThreshold,
+    stockQuantity,
+  })
+
+  if (!inventoryItem) {
+    throw new ApiError(404, 'Inventory item not found', 'INVENTORY_NOT_FOUND')
+  }
+
+  res.json(inventoryItem)
+}
+
+export const patchAdminInventoryBySku = async (req: Request, res: Response) => {
+  if (!isRecord(req.body)) {
+    throw new ApiError(400, 'Inventory payload is required', 'VALIDATION_ERROR')
+  }
+
+  const stockQuantity = readOptionalNumber(req.body.stockQuantity, 'Stock quantity')
+  const lowStockThreshold = readOptionalNumber(req.body.lowStockThreshold, 'Low stock threshold')
+  if (stockQuantity === undefined && lowStockThreshold === undefined) {
+    throw new ApiError(400, 'Inventory update is required', 'VALIDATION_ERROR')
+  }
+  const inventoryItem = await updateInventoryBySku(req.params.sku, {
+    lowStockThreshold,
+    stockQuantity,
+  })
 
   if (!inventoryItem) {
     throw new ApiError(404, 'Inventory item not found', 'INVENTORY_NOT_FOUND')

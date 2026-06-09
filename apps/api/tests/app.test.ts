@@ -457,6 +457,26 @@ describe('api app', () => {
 
     expect(createResponse.status).toBe(201)
 
+    const inventoryResponse = await fetch(`${baseUrl}/api/admin/inventory/sku/OSAI-ADMIN-TEE-M`, {
+      method: 'PATCH',
+      headers: {
+        authorization: `Bearer ${admin.token}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        stockQuantity: 12,
+        lowStockThreshold: 3,
+      }),
+    })
+    const inventoryBody = await inventoryResponse.json()
+
+    expect(inventoryResponse.status).toBe(200)
+    expect(inventoryBody).toMatchObject({
+      sku: 'OSAI-ADMIN-TEE-M',
+      stockQuantity: 12,
+      lowStockThreshold: 3,
+    })
+
     const updateResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {
       method: 'PATCH',
       headers: {

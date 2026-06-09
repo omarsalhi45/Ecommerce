@@ -372,10 +372,14 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(screen.getByDisplayValue('4'), {
       target: { value: '9' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Save stock' }))
+    fireEvent.change(screen.getByDisplayValue('5'), {
+      target: { value: '2' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(updateInventory).toHaveBeenCalledWith({
-      productId: 'hoodie-001',
+      lowStockThreshold: 2,
+      sku: 'OSAI-HOOD-GRY-M',
       stockQuantity: 9,
     })
   })

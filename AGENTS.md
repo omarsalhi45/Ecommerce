@@ -304,6 +304,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add bounded scrolling for large order and product lists.
 - [x] Add admin product search, category filtering, stock filtering, and published/archived tabs.
 - [x] Keep archive and permanent delete as separate product actions.
+- [x] Add SKU-based inventory updates for stock and low-stock threshold from the admin product details drawer.
 - [ ] Add variant-level inventory editing for size, color, SKU, stock, low-stock threshold, and sold-out states.
 - [ ] Add admin-managed product detail content fields such as fit, material, care, model info, Q&A, and "why this piece".
 - [ ] Add admin product gallery management for multiple images and optional product video.

@@ -122,11 +122,21 @@ export const adminApi = createApi({
       query: () => '/admin/inventory',
       providesTags: ['AdminInventory'],
     }),
-    updateInventory: builder.mutation<InventoryItem, { productId: string; stockQuantity: number }>({
-      query: ({ productId, stockQuantity }) => ({
-        url: `/admin/inventory/${productId}`,
+    updateInventory: builder.mutation<
+      InventoryItem,
+      {
+        productId?: string
+        sku?: string
+        stockQuantity?: number
+        lowStockThreshold?: number
+      }
+    >({
+      query: ({ productId, sku, stockQuantity, lowStockThreshold }) => ({
+        url: sku
+          ? `/admin/inventory/sku/${encodeURIComponent(sku)}`
+          : `/admin/inventory/${productId}`,
         method: 'PATCH',
-        body: { stockQuantity },
+        body: { lowStockThreshold, stockQuantity },
       }),
       invalidatesTags: ['AdminInventory'],
     }),

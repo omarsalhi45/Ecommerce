@@ -8,6 +8,7 @@ import {
   getAdminProducts,
   getAdminUsers,
   patchAdminInventory,
+  patchAdminInventoryBySku,
   patchAdminOrderStatus,
   patchAdminProduct,
   patchAdminProductStatus,
@@ -38,6 +39,7 @@ router.post(
   asyncHandler(postAdminProductImageUpload)
 )
 router.get('/inventory', asyncHandler(getAdminInventory))
+router.patch('/inventory/sku/:sku', asyncHandler(patchAdminInventoryBySku))
 router.patch('/inventory/:productId', asyncHandler(patchAdminInventory))
 router.get('/users', asyncHandler(getAdminUsers))
 

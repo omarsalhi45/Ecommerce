@@ -22,22 +22,26 @@ interface ProductDetailsDrawerProps {
   inventoryDrafts: Record<string, string>
   inventoryItems: InventoryItem[]
   isInventoryError: boolean
+  lowStockThresholdDrafts: Record<string, string>
   product?: Product
   onClose: () => void
   onEditProduct: (product: Product) => void
   onInventoryDraftChange: (productId: string, value: string) => void
-  onSaveStock: (productId: string, stockQuantity: number) => void
+  onLowStockThresholdDraftChange: (sku: string, value: string) => void
+  onSaveInventory: (sku: string, stockQuantity: number, lowStockThreshold: number) => void
 }
 
 export function ProductDetailsDrawer({
   inventoryDrafts,
   inventoryItems,
   isInventoryError,
+  lowStockThresholdDrafts,
   product,
   onClose,
   onEditProduct,
   onInventoryDraftChange,
-  onSaveStock,
+  onLowStockThresholdDraftChange,
+  onSaveInventory,
 }: ProductDetailsDrawerProps) {
   return (
     <Drawer isOpen={Boolean(product)} onClose={onClose} placement="right" size="md">
@@ -93,7 +97,9 @@ export function ProductDetailsDrawer({
                 <Stack spacing={3}>
                   {inventoryItems.map((item) => {
                     const isLowStock = item.stockQuantity <= item.lowStockThreshold
-                    const draftValue = inventoryDrafts[item.product.id] ?? item.stockQuantity
+                    const stockDraftValue = inventoryDrafts[item.sku] ?? item.stockQuantity
+                    const lowStockDraftValue =
+                      lowStockThresholdDrafts[item.sku] ?? item.lowStockThreshold
 
                     return (
                       <Box
@@ -118,22 +124,47 @@ export function ProductDetailsDrawer({
                             {item.stockQuantity} stock
                           </Badge>
                         </HStack>
-                        <HStack mt={3}>
-                          <Input
-                            min={0}
-                            size="sm"
-                            type="number"
-                            value={draftValue}
-                            onChange={(event) =>
-                              onInventoryDraftChange(item.product.id, event.target.value)
-                            }
-                          />
+                        <HStack align="end" mt={3}>
+                          <Box flex="1">
+                            <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                              Stock
+                            </Text>
+                            <Input
+                              min={0}
+                              size="sm"
+                              type="number"
+                              value={stockDraftValue}
+                              onChange={(event) =>
+                                onInventoryDraftChange(item.sku, event.target.value)
+                              }
+                            />
+                          </Box>
+                          <Box flex="1">
+                            <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                              Low alert
+                            </Text>
+                            <Input
+                              min={0}
+                              size="sm"
+                              type="number"
+                              value={lowStockDraftValue}
+                              onChange={(event) =>
+                                onLowStockThresholdDraftChange(item.sku, event.target.value)
+                              }
+                            />
+                          </Box>
                           <Button
                             flexShrink={0}
                             size="sm"
-                            onClick={() => onSaveStock(item.product.id, Number(draftValue))}
+                            onClick={() =>
+                              onSaveInventory(
+                                item.sku,
+                                Number(stockDraftValue),
+                                Number(lowStockDraftValue)
+                              )
+                            }
                           >
-                            Save stock
+                            Save
                           </Button>
                         </HStack>
                       </Box>
