@@ -8,7 +8,9 @@ import {
   updateOrderStatus,
 } from '../services/orderService'
 import {
+  createInventoryVariant,
   createProduct,
+  deleteInventoryVariantBySku,
   deleteProduct,
   deleteProductPermanently,
   getAdminProducts as getAdminProductsForManagement,
@@ -182,6 +184,27 @@ export const getAdminInventory = async (_req: Request, res: Response) => {
   res.json({ inventory: await getInventory() })
 }
 
+export const postAdminInventoryVariant = async (req: Request, res: Response) => {
+  if (!isRecord(req.body)) {
+    throw new ApiError(400, 'Inventory variant payload is required', 'VALIDATION_ERROR')
+  }
+
+  const inventoryItem = await createInventoryVariant({
+    productId: req.params.productId,
+    sku: readString(req.body.sku, 'Variant SKU'),
+    size: typeof req.body.size === 'string' ? req.body.size.trim() || undefined : undefined,
+    color: typeof req.body.color === 'string' ? req.body.color.trim() || undefined : undefined,
+    stockQuantity: readOptionalNumber(req.body.stockQuantity, 'Stock quantity'),
+    lowStockThreshold: readOptionalNumber(req.body.lowStockThreshold, 'Low stock threshold'),
+  })
+
+  if (!inventoryItem) {
+    throw new ApiError(404, 'Product not found', 'PRODUCT_NOT_FOUND')
+  }
+
+  res.status(201).json(inventoryItem)
+}
+
 export const patchAdminInventory = async (req: Request, res: Response) => {
   if (!isRecord(req.body)) {
     throw new ApiError(400, 'Inventory payload is required', 'VALIDATION_ERROR')
@@ -224,6 +247,16 @@ export const patchAdminInventoryBySku = async (req: Request, res: Response) => {
   }
 
   res.json(inventoryItem)
+}
+
+export const deleteAdminInventoryBySku = async (req: Request, res: Response) => {
+  const deleted = await deleteInventoryVariantBySku(req.params.sku)
+
+  if (!deleted) {
+    throw new ApiError(404, 'Inventory item not found', 'INVENTORY_NOT_FOUND')
+  }
+
+  res.status(204).send()
 }
 
 export const getAdminUsers = async (_req: Request, res: Response) => {

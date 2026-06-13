@@ -122,6 +122,24 @@ export const adminApi = createApi({
       query: () => '/admin/inventory',
       providesTags: ['AdminInventory'],
     }),
+    createInventoryVariant: builder.mutation<
+      InventoryItem,
+      {
+        productId: string
+        sku: string
+        size?: string
+        color?: string
+        stockQuantity?: number
+        lowStockThreshold?: number
+      }
+    >({
+      query: ({ productId, ...body }) => ({
+        url: `/admin/products/${productId}/inventory`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['AdminProducts', 'AdminInventory'],
+    }),
     updateInventory: builder.mutation<
       InventoryItem,
       {
@@ -140,6 +158,13 @@ export const adminApi = createApi({
       }),
       invalidatesTags: ['AdminInventory'],
     }),
+    deleteInventoryVariant: builder.mutation<void, string>({
+      query: (sku) => ({
+        url: `/admin/inventory/sku/${encodeURIComponent(sku)}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['AdminProducts', 'AdminInventory'],
+    }),
     getAdminUsers: builder.query<{ users: User[] }, void>({
       query: () => '/admin/users',
     }),
@@ -153,8 +178,10 @@ export const {
   useGetAdminProductsQuery,
   useGetAdminUsersQuery,
   useCreateProductMutation,
+  useCreateInventoryVariantMutation,
   useDeleteProductPermanentlyMutation,
   useDeleteProductMutation,
+  useDeleteInventoryVariantMutation,
   useUploadProductImageMutation,
   useUpdateProductMutation,
   useUpdateProductStatusMutation,

@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import {
+  deleteAdminInventoryBySku,
   deleteAdminProduct,
   deleteAdminProductPermanently,
   getAdminAnalytics,
@@ -12,6 +13,7 @@ import {
   patchAdminOrderStatus,
   patchAdminProduct,
   patchAdminProductStatus,
+  postAdminInventoryVariant,
   postAdminProduct,
   postAdminProductImageUpload,
 } from '../controllers/adminController'
@@ -40,7 +42,9 @@ router.post(
 )
 router.get('/inventory', asyncHandler(getAdminInventory))
 router.patch('/inventory/sku/:sku', asyncHandler(patchAdminInventoryBySku))
+router.delete('/inventory/sku/:sku', asyncHandler(deleteAdminInventoryBySku))
 router.patch('/inventory/:productId', asyncHandler(patchAdminInventory))
+router.post('/products/:productId/inventory', asyncHandler(postAdminInventoryVariant))
 router.get('/users', asyncHandler(getAdminUsers))
 
 export default router

@@ -457,6 +457,34 @@ describe('api app', () => {
 
     expect(createResponse.status).toBe(201)
 
+    const createVariantResponse = await fetch(
+      `${baseUrl}/api/admin/products/admin-edit-001/inventory`,
+      {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${admin.token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          sku: 'OSAI-ADMIN-TEE-L',
+          size: 'L',
+          color: 'Black',
+          stockQuantity: 6,
+          lowStockThreshold: 2,
+        }),
+      }
+    )
+    const createdVariant = await createVariantResponse.json()
+
+    expect(createVariantResponse.status).toBe(201)
+    expect(createdVariant).toMatchObject({
+      sku: 'OSAI-ADMIN-TEE-L',
+      size: 'L',
+      color: 'Black',
+      stockQuantity: 6,
+      lowStockThreshold: 2,
+    })
+
     const inventoryResponse = await fetch(`${baseUrl}/api/admin/inventory/sku/OSAI-ADMIN-TEE-M`, {
       method: 'PATCH',
       headers: {
@@ -476,6 +504,16 @@ describe('api app', () => {
       stockQuantity: 12,
       lowStockThreshold: 3,
     })
+
+    const deleteVariantResponse = await fetch(
+      `${baseUrl}/api/admin/inventory/sku/OSAI-ADMIN-TEE-L`,
+      {
+        method: 'DELETE',
+        headers: { authorization: `Bearer ${admin.token}` },
+      }
+    )
+
+    expect(deleteVariantResponse.status).toBe(204)
 
     const updateResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {
       method: 'PATCH',

@@ -2,6 +2,7 @@ import {
   Badge,
   Box,
   Button,
+  Divider,
   Drawer,
   DrawerBody,
   DrawerCloseButton,
@@ -13,10 +14,28 @@ import {
   Heading,
   Image,
   Input,
+  SimpleGrid,
   Stack,
   Text,
 } from '@chakra-ui/react'
+import { useState } from 'react'
 import type { InventoryItem, Product } from '../types'
+
+export interface InventoryVariantFormValues {
+  sku: string
+  size: string
+  color: string
+  stockQuantity: string
+  lowStockThreshold: string
+}
+
+const emptyVariantForm: InventoryVariantFormValues = {
+  color: '',
+  lowStockThreshold: '5',
+  size: '',
+  sku: '',
+  stockQuantity: '0',
+}
 
 interface ProductDetailsDrawerProps {
   inventoryDrafts: Record<string, string>
@@ -27,6 +46,8 @@ interface ProductDetailsDrawerProps {
   onClose: () => void
   onEditProduct: (product: Product) => void
   onInventoryDraftChange: (productId: string, value: string) => void
+  onCreateVariant: (input: InventoryVariantFormValues) => void
+  onDeleteVariant: (sku: string) => void
   onLowStockThresholdDraftChange: (sku: string, value: string) => void
   onSaveInventory: (sku: string, stockQuantity: number, lowStockThreshold: number) => void
 }
@@ -39,10 +60,18 @@ export function ProductDetailsDrawer({
   product,
   onClose,
   onEditProduct,
+  onCreateVariant,
+  onDeleteVariant,
   onInventoryDraftChange,
   onLowStockThresholdDraftChange,
   onSaveInventory,
 }: ProductDetailsDrawerProps) {
+  const [variantForm, setVariantForm] = useState(emptyVariantForm)
+
+  const updateVariantForm = (field: keyof InventoryVariantFormValues, value: string) => {
+    setVariantForm((current) => ({ ...current, [field]: value }))
+  }
+
   return (
     <Drawer isOpen={Boolean(product)} onClose={onClose} placement="right" size="md">
       <DrawerOverlay />
@@ -107,6 +136,7 @@ export function ProductDetailsDrawer({
                         border="1px solid"
                         borderColor="neutral.200"
                         borderRadius="md"
+                        data-testid={`inventory-variant-${item.sku}`}
                         p={3}
                       >
                         <HStack align="start" justify="space-between">
@@ -166,11 +196,93 @@ export function ProductDetailsDrawer({
                           >
                             Save
                           </Button>
+                          <Button
+                            colorScheme="red"
+                            flexShrink={0}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => onDeleteVariant(item.sku)}
+                          >
+                            Remove
+                          </Button>
                         </HStack>
                       </Box>
                     )
                   })}
                 </Stack>
+              </Box>
+              <Divider />
+              <Box>
+                <Text fontWeight="bold" mb={3}>
+                  Add variant
+                </Text>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                  <Box>
+                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                      SKU
+                    </Text>
+                    <Input
+                      placeholder="OSAI-HOOD-BLK-L"
+                      value={variantForm.sku}
+                      onChange={(event) => updateVariantForm('sku', event.target.value)}
+                    />
+                  </Box>
+                  <Box>
+                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                      Size
+                    </Text>
+                    <Input
+                      placeholder="L"
+                      value={variantForm.size}
+                      onChange={(event) => updateVariantForm('size', event.target.value)}
+                    />
+                  </Box>
+                  <Box>
+                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                      Color
+                    </Text>
+                    <Input
+                      placeholder="Black"
+                      value={variantForm.color}
+                      onChange={(event) => updateVariantForm('color', event.target.value)}
+                    />
+                  </Box>
+                  <Box>
+                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                      Stock
+                    </Text>
+                    <Input
+                      min={0}
+                      type="number"
+                      value={variantForm.stockQuantity}
+                      onChange={(event) => updateVariantForm('stockQuantity', event.target.value)}
+                    />
+                  </Box>
+                  <Box>
+                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
+                      Low alert
+                    </Text>
+                    <Input
+                      min={0}
+                      type="number"
+                      value={variantForm.lowStockThreshold}
+                      onChange={(event) =>
+                        updateVariantForm('lowStockThreshold', event.target.value)
+                      }
+                    />
+                  </Box>
+                </SimpleGrid>
+                <Button
+                  colorScheme="brand"
+                  isDisabled={!variantForm.sku.trim()}
+                  mt={3}
+                  onClick={() => {
+                    onCreateVariant(variantForm)
+                    setVariantForm(emptyVariantForm)
+                  }}
+                >
+                  Add variant
+                </Button>
               </Box>
             </Stack>
           ) : null}

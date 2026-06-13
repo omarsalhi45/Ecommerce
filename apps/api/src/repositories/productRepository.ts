@@ -238,7 +238,7 @@ export const createProductInDb = async (input: CreateProductInput): Promise<Prod
   await query(
     `INSERT INTO inventory (product_id, sku, size, color, stock_quantity, low_stock_threshold)
      VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (product_id) DO NOTHING`,
+     ON CONFLICT (sku) DO NOTHING`,
     [
       input.id,
       input.sku ?? input.id.toUpperCase(),
@@ -311,6 +311,50 @@ export const getInventoryFromDb = async (): Promise<InventoryItem[]> => {
   )
 
   return result.rows.map(mapInventory)
+}
+
+export const createInventoryVariantInDb = async (input: {
+  readonly productId: string
+  readonly sku: string
+  readonly size?: string
+  readonly color?: string
+  readonly stockQuantity?: number
+  readonly lowStockThreshold?: number
+}): Promise<InventoryItem | undefined> => {
+  const product = await getProductFromDb(input.productId)
+
+  if (!product) {
+    return undefined
+  }
+
+  const result = await query<InventoryRow>(
+    `INSERT INTO inventory (product_id, sku, size, color, stock_quantity, low_stock_threshold)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING
+       product_id AS id,
+       sku,
+       size,
+       color,
+       stock_quantity,
+       low_stock_threshold`,
+    [
+      input.productId,
+      input.sku,
+      input.size,
+      input.color,
+      input.stockQuantity ?? 0,
+      input.lowStockThreshold ?? 5,
+    ]
+  )
+
+  return {
+    product,
+    sku: result.rows[0].sku,
+    size: result.rows[0].size ?? undefined,
+    color: result.rows[0].color ?? undefined,
+    stockQuantity: result.rows[0].stock_quantity,
+    lowStockThreshold: result.rows[0].low_stock_threshold,
+  }
 }
 
 export const updateInventoryInDb = async (
@@ -399,6 +443,12 @@ export const updateInventoryBySkuInDb = async (
     stockQuantity: result.rows[0].stock_quantity,
     lowStockThreshold: result.rows[0].low_stock_threshold,
   }
+}
+
+export const deleteInventoryBySkuInDb = async (sku: string): Promise<boolean> => {
+  const result = await query('DELETE FROM inventory WHERE sku = $1', [sku])
+
+  return (result.rowCount ?? 0) > 0
 }
 
 export const deactivateProductInDb = async (productId: string): Promise<boolean> => {

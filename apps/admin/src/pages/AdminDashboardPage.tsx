@@ -29,7 +29,9 @@ import {
 import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
+  useCreateInventoryVariantMutation,
   useCreateProductMutation,
+  useDeleteInventoryVariantMutation,
   useDeleteProductMutation,
   useDeleteProductPermanentlyMutation,
   useGetAdminAnalyticsQuery,
@@ -122,6 +124,8 @@ export default function AdminDashboardPage() {
   const [createProduct, { isLoading: isCreatingProduct }] = useCreateProductMutation()
   const [archiveProduct] = useDeleteProductMutation()
   const [deleteProductPermanently] = useDeleteProductPermanentlyMutation()
+  const [createInventoryVariant] = useCreateInventoryVariantMutation()
+  const [deleteInventoryVariant] = useDeleteInventoryVariantMutation()
   const [updateProduct, { isLoading: isUpdatingProduct }] = useUpdateProductMutation()
   const [updateProductStatus] = useUpdateProductStatusMutation()
   const [updateOrderStatus] = useUpdateOrderStatusMutation()
@@ -708,6 +712,29 @@ export default function AdminDashboardPage() {
         product={selectedProduct}
         onClose={() => setSelectedProductId(undefined)}
         onEditProduct={startEditingProduct}
+        onCreateVariant={(input) => {
+          if (!selectedProduct) {
+            return
+          }
+
+          createInventoryVariant({
+            productId: selectedProduct.id,
+            sku: input.sku.trim(),
+            size: input.size.trim() || undefined,
+            color: input.color.trim() || undefined,
+            stockQuantity: Number(input.stockQuantity),
+            lowStockThreshold: Number(input.lowStockThreshold),
+          })
+        }}
+        onDeleteVariant={(sku) => {
+          const confirmed = window.confirm(`Remove inventory variant ${sku}?`)
+
+          if (!confirmed) {
+            return
+          }
+
+          deleteInventoryVariant(sku)
+        }}
         onInventoryDraftChange={(sku, value) =>
           setInventoryDrafts((current) => ({
             ...current,

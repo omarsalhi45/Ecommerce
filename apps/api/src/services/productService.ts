@@ -2,8 +2,10 @@ import { apiConfig } from '../config'
 import { isDatabaseConfigured } from '../db'
 import { ApiError } from '../middleware/errorMiddleware'
 import {
+  createInventoryVariantInDb,
   createProductInDb,
   deactivateProductInDb,
+  deleteInventoryBySkuInDb,
   deleteProductPermanentlyInDb,
   getAdminProductsFromDb,
   getInventoryFromDb,
@@ -55,6 +57,15 @@ export interface ProductReview {
 
 export interface CreateProductInput extends Product {
   readonly sku?: string
+  readonly size?: string
+  readonly color?: string
+  readonly stockQuantity?: number
+  readonly lowStockThreshold?: number
+}
+
+export interface CreateInventoryVariantInput {
+  readonly productId: string
+  readonly sku: string
   readonly size?: string
   readonly color?: string
   readonly stockQuantity?: number
@@ -772,6 +783,40 @@ export const getInventory = async (): Promise<InventoryItem[]> => {
   return inventory.filter((item) => item.product.isActive !== false)
 }
 
+export const createInventoryVariant = async (
+  input: CreateInventoryVariantInput
+): Promise<InventoryItem | undefined> => {
+  if (isDatabaseConfigured) {
+    const item = await createInventoryVariantInDb(input)
+    clearCacheByPrefix('products:')
+    return item
+  }
+
+  const product = products.find((candidate) => candidate.id === input.productId)
+
+  if (!product) {
+    return undefined
+  }
+
+  if (inventory.some((item) => item.sku === input.sku)) {
+    throw new ApiError(409, 'Inventory variant already exists', 'INVENTORY_EXISTS')
+  }
+
+  const inventoryItem: InventoryItem = {
+    product,
+    sku: input.sku,
+    size: input.size,
+    color: input.color,
+    stockQuantity: input.stockQuantity ?? 0,
+    lowStockThreshold: input.lowStockThreshold ?? 5,
+  }
+
+  inventory.push(inventoryItem)
+  clearCacheByPrefix('products:')
+
+  return inventoryItem
+}
+
 export const updateInventory = async (
   productId: string,
   input: {
@@ -820,6 +865,25 @@ export const updateInventoryBySku = async (
   clearCacheByPrefix('products:')
 
   return inventoryItem
+}
+
+export const deleteInventoryVariantBySku = async (sku: string): Promise<boolean> => {
+  if (isDatabaseConfigured) {
+    const deleted = await deleteInventoryBySkuInDb(sku)
+    clearCacheByPrefix('products:')
+    return deleted
+  }
+
+  const inventoryIndex = inventory.findIndex((item) => item.sku === sku)
+
+  if (inventoryIndex === -1) {
+    return false
+  }
+
+  inventory.splice(inventoryIndex, 1)
+  clearCacheByPrefix('products:')
+
+  return true
 }
 
 export const deleteProduct = async (productId: string): Promise<boolean> => {

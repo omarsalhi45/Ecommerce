@@ -1,7 +1,9 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  useCreateInventoryVariantMutation,
   useCreateProductMutation,
+  useDeleteInventoryVariantMutation,
   useDeleteProductMutation,
   useDeleteProductPermanentlyMutation,
   useGetAdminAnalyticsQuery,
@@ -24,7 +26,9 @@ vi.mock('../api/adminApi', async () => {
 
   return {
     ...actual,
+    useCreateInventoryVariantMutation: vi.fn(),
     useCreateProductMutation: vi.fn(),
+    useDeleteInventoryVariantMutation: vi.fn(),
     useDeleteProductPermanentlyMutation: vi.fn(),
     useDeleteProductMutation: vi.fn(),
     useGetAdminAnalyticsQuery: vi.fn(),
@@ -45,7 +49,9 @@ const mockUseGetAdminOrdersQuery = vi.mocked(useGetAdminOrdersQuery)
 const mockUseGetAdminProductsQuery = vi.mocked(useGetAdminProductsQuery)
 const mockUseGetAdminInventoryQuery = vi.mocked(useGetAdminInventoryQuery)
 const mockUseGetAdminUsersQuery = vi.mocked(useGetAdminUsersQuery)
+const mockUseCreateInventoryVariantMutation = vi.mocked(useCreateInventoryVariantMutation)
 const mockUseCreateProductMutation = vi.mocked(useCreateProductMutation)
+const mockUseDeleteInventoryVariantMutation = vi.mocked(useDeleteInventoryVariantMutation)
 const mockUseDeleteProductMutation = vi.mocked(useDeleteProductMutation)
 const mockUseDeleteProductPermanentlyMutation = vi.mocked(useDeleteProductPermanentlyMutation)
 const mockUseUploadProductImageMutation = vi.mocked(useUploadProductImageMutation)
@@ -180,8 +186,14 @@ const configureSuccessfulAdminQueries = () => {
   mockUseGetAdminUsersQuery.mockReturnValue(
     createQueryResult({ users: [] }) as unknown as ReturnType<typeof useGetAdminUsersQuery>
   )
+  mockUseCreateInventoryVariantMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
+    typeof useCreateInventoryVariantMutation
+  >)
   mockUseCreateProductMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useCreateProductMutation
+  >)
+  mockUseDeleteInventoryVariantMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
+    typeof useDeleteInventoryVariantMutation
   >)
   mockUseDeleteProductMutation.mockReturnValue([vi.fn(), {}] as unknown as ReturnType<
     typeof useDeleteProductMutation
@@ -353,6 +365,17 @@ describe('AdminDashboardPage', () => {
 
   it('shows stock on products and edits inventory from the product detail drawer', () => {
     const updateInventory = vi.fn()
+    const createInventoryVariant = vi.fn()
+    const deleteInventoryVariant = vi.fn()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    mockUseCreateInventoryVariantMutation.mockReturnValue([
+      createInventoryVariant,
+      {},
+    ] as unknown as ReturnType<typeof useCreateInventoryVariantMutation>)
+    mockUseDeleteInventoryVariantMutation.mockReturnValue([
+      deleteInventoryVariant,
+      {},
+    ] as unknown as ReturnType<typeof useDeleteInventoryVariantMutation>)
     mockUseUpdateInventoryMutation.mockReturnValue([updateInventory, {}] as unknown as ReturnType<
       typeof useUpdateInventoryMutation
     >)
@@ -369,19 +392,53 @@ describe('AdminDashboardPage', () => {
     expect(screen.getByText('OSAI-HOOD-GRY-M')).toBeInTheDocument()
     expect(screen.getByText('M / Grey')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByDisplayValue('4'), {
+    const variantCard = screen.getByTestId('inventory-variant-OSAI-HOOD-GRY-M')
+    fireEvent.change(within(variantCard).getByDisplayValue('4'), {
       target: { value: '9' },
     })
-    fireEvent.change(screen.getByDisplayValue('5'), {
+    fireEvent.change(within(variantCard).getByDisplayValue('5'), {
       target: { value: '2' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(within(variantCard).getByRole('button', { name: 'Save' }))
 
     expect(updateInventory).toHaveBeenCalledWith({
       lowStockThreshold: 2,
       sku: 'OSAI-HOOD-GRY-M',
       stockQuantity: 9,
     })
+
+    fireEvent.change(screen.getByPlaceholderText('OSAI-HOOD-BLK-L'), {
+      target: { value: 'OSAI-HOOD-BLK-L' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('L'), {
+      target: { value: 'L' },
+    })
+    fireEvent.change(screen.getByPlaceholderText('Black'), {
+      target: { value: 'Black' },
+    })
+    fireEvent.change(screen.getByDisplayValue('0'), {
+      target: { value: '6' },
+    })
+    fireEvent.change(screen.getAllByDisplayValue('5').at(-1) as HTMLElement, {
+      target: { value: '3' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add variant' }))
+
+    expect(createInventoryVariant).toHaveBeenCalledWith({
+      color: 'Black',
+      lowStockThreshold: 3,
+      productId: 'hoodie-001',
+      size: 'L',
+      sku: 'OSAI-HOOD-BLK-L',
+      stockQuantity: 6,
+    })
+
+    fireEvent.click(within(variantCard).getByRole('button', { name: 'Remove' }))
+
+    expect(confirm).toHaveBeenCalledWith('Remove inventory variant OSAI-HOOD-GRY-M?')
+    expect(deleteInventoryVariant).toHaveBeenCalledWith('OSAI-HOOD-GRY-M')
+
+    confirm.mockRestore()
   })
 
   it('loads product values into the main editor before saving changes', async () => {
