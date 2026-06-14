@@ -23,10 +23,22 @@ export interface Product {
   imageUrls?: string[]
   videoUrl?: string
   category: string
+  modelHeight?: string
+  modelSize?: string
+  fitDescription?: string
+  materialDescription?: string
+  careInstructions?: string
+  productStory?: string
+  productQuestions?: ProductQuestion[]
   isActive?: boolean
   variants?: ProductVariant[]
   popularityScore?: number
   ratingSummary?: ProductRatingSummary
+}
+
+export interface ProductQuestion {
+  question: string
+  answer: string
 }
 
 export interface ProductVariant {

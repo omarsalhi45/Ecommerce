@@ -27,10 +27,22 @@ export interface Product {
   compareAtPrice?: number
   imageUrl: string
   category: string
+  modelHeight?: string
+  modelSize?: string
+  fitDescription?: string
+  materialDescription?: string
+  careInstructions?: string
+  productStory?: string
+  productQuestions?: ProductQuestion[]
   isActive?: boolean
   variants?: ProductVariant[]
   popularityScore?: number
   ratingSummary?: ProductRatingSummary
+}
+
+export interface ProductQuestion {
+  readonly question: string
+  readonly answer: string
 }
 
 export interface ProductVariant {
@@ -79,6 +91,13 @@ export interface UpdateProductInput {
   readonly compareAtPrice?: number | null
   readonly imageUrl?: string
   readonly category?: string
+  readonly modelHeight?: string | null
+  readonly modelSize?: string | null
+  readonly fitDescription?: string | null
+  readonly materialDescription?: string | null
+  readonly careInstructions?: string | null
+  readonly productStory?: string | null
+  readonly productQuestions?: ProductQuestion[] | null
 }
 
 export interface InventoryItem {
@@ -702,6 +721,12 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
     compareAtPrice: input.compareAtPrice,
     imageUrl: input.imageUrl,
     category: input.category,
+    modelHeight: input.modelHeight,
+    modelSize: input.modelSize,
+    fitDescription: input.fitDescription,
+    materialDescription: input.materialDescription,
+    careInstructions: input.careInstructions,
+    productStory: input.productStory,
     isActive: true,
   }
 
@@ -746,6 +771,27 @@ export const updateProduct = async (
         : (input.compareAtPrice ?? undefined),
     imageUrl: input.imageUrl ?? product.imageUrl,
     category: input.category ?? product.category,
+    modelHeight:
+      input.modelHeight === undefined ? product.modelHeight : (input.modelHeight ?? undefined),
+    modelSize: input.modelSize === undefined ? product.modelSize : (input.modelSize ?? undefined),
+    fitDescription:
+      input.fitDescription === undefined
+        ? product.fitDescription
+        : (input.fitDescription ?? undefined),
+    materialDescription:
+      input.materialDescription === undefined
+        ? product.materialDescription
+        : (input.materialDescription ?? undefined),
+    careInstructions:
+      input.careInstructions === undefined
+        ? product.careInstructions
+        : (input.careInstructions ?? undefined),
+    productStory:
+      input.productStory === undefined ? product.productStory : (input.productStory ?? undefined),
+    productQuestions:
+      input.productQuestions === undefined
+        ? product.productQuestions
+        : (input.productQuestions ?? undefined),
   })
 
   clearCacheByPrefix('products:')

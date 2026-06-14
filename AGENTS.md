@@ -306,7 +306,7 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Keep archive and permanent delete as separate product actions.
 - [x] Add SKU-based inventory updates for stock and low-stock threshold from the admin product details drawer.
 - [x] Add variant-level inventory editing for size, color, SKU, stock, low-stock threshold, and sold-out states.
-- [ ] Add admin-managed product detail content fields such as fit, material, care, model info, Q&A, and "why this piece".
+- [x] Add admin-managed product detail content fields such as fit, material, care, model info, Q&A, and "why this piece".
 - [ ] Add admin product gallery management for multiple images and optional product video.
 - [ ] Add order fulfillment workflow with carrier, tracking number, shipped email, and delivery status.
 - [ ] Add order timeline/history for status, payment, fulfillment, email, and refund events.

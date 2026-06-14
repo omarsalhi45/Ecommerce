@@ -3,6 +3,7 @@ import type {
   CreateProductInput,
   InventoryItem,
   Product,
+  ProductQuestion,
   ProductReview,
   ProductVariant,
   UpdateProductInput,
@@ -16,6 +17,13 @@ interface ProductRow {
   readonly compare_at_price?: string | null
   readonly image_url: string
   readonly category: string
+  readonly model_height?: string | null
+  readonly model_size?: string | null
+  readonly fit_description?: string | null
+  readonly material_description?: string | null
+  readonly care_instructions?: string | null
+  readonly product_story?: string | null
+  readonly product_questions?: unknown
   readonly is_active?: boolean | null
   readonly popularity_score?: number | null
   readonly average_rating?: string | null
@@ -49,6 +57,13 @@ const productSelectWithRatings = `
     p.compare_at_price,
     p.image_url,
     p.category,
+    p.model_height,
+    p.model_size,
+    p.fit_description,
+    p.material_description,
+    p.care_instructions,
+    p.product_story,
+    p.product_questions,
     p.is_active,
     p.popularity_score,
     COALESCE(ROUND(AVG(r.rating)::numeric, 1), 0) AS average_rating,
@@ -65,6 +80,13 @@ const mapProduct = (row: ProductRow): Product => ({
   compareAtPrice: row.compare_at_price ? Number(row.compare_at_price) : undefined,
   imageUrl: row.image_url,
   category: row.category,
+  modelHeight: row.model_height ?? undefined,
+  modelSize: row.model_size ?? undefined,
+  fitDescription: row.fit_description ?? undefined,
+  materialDescription: row.material_description ?? undefined,
+  careInstructions: row.care_instructions ?? undefined,
+  productStory: row.product_story ?? undefined,
+  productQuestions: parseProductQuestions(row.product_questions),
   isActive: row.is_active ?? true,
   popularityScore: row.popularity_score ?? undefined,
   ratingSummary: {
@@ -72,6 +94,32 @@ const mapProduct = (row: ProductRow): Product => ({
     reviewCount: Number(row.review_count ?? 0),
   },
 })
+
+const parseProductQuestions = (value: unknown): ProductQuestion[] | undefined => {
+  if (typeof value === 'string') {
+    try {
+      return parseProductQuestions(JSON.parse(value))
+    } catch {
+      return undefined
+    }
+  }
+
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const questions = value
+    .filter((item): item is Record<string, unknown> => {
+      return typeof item === 'object' && item !== null && !Array.isArray(item)
+    })
+    .map((item) => ({
+      question: typeof item.question === 'string' ? item.question.trim() : '',
+      answer: typeof item.answer === 'string' ? item.answer.trim() : '',
+    }))
+    .filter((item) => item.question && item.answer)
+
+  return questions.length > 0 ? questions : undefined
+}
 
 const mapProductVariant = (row: InventoryRow): ProductVariant => ({
   sku: row.sku,
@@ -96,6 +144,13 @@ const getVariantsForProductIds = async (
        p.compare_at_price,
        p.image_url,
        p.category,
+       p.model_height,
+       p.model_size,
+       p.fit_description,
+       p.material_description,
+       p.care_instructions,
+       p.product_story,
+       p.product_questions,
        p.is_active,
        i.sku,
        i.size,
@@ -221,9 +276,40 @@ export const getProductReviewsFromDb = async (productId: string): Promise<Produc
 
 export const createProductInDb = async (input: CreateProductInput): Promise<Product> => {
   const result = await query<ProductRow>(
-    `INSERT INTO products (id, name, description, price, compare_at_price, image_url, category)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
-     RETURNING id, name, description, price, compare_at_price, image_url, category, is_active, popularity_score`,
+    `INSERT INTO products (
+       id,
+       name,
+       description,
+       price,
+       compare_at_price,
+       image_url,
+       category,
+       model_height,
+       model_size,
+       fit_description,
+       material_description,
+       care_instructions,
+       product_story,
+       product_questions
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+     RETURNING
+       id,
+       name,
+       description,
+       price,
+       compare_at_price,
+       image_url,
+       category,
+       model_height,
+       model_size,
+       fit_description,
+       material_description,
+       care_instructions,
+       product_story,
+       product_questions,
+       is_active,
+       popularity_score`,
     [
       input.id,
       input.name,
@@ -232,6 +318,13 @@ export const createProductInDb = async (input: CreateProductInput): Promise<Prod
       input.compareAtPrice,
       input.imageUrl,
       input.category,
+      input.modelHeight,
+      input.modelSize,
+      input.fitDescription,
+      input.materialDescription,
+      input.careInstructions,
+      input.productStory,
+      input.productQuestions ? JSON.stringify(input.productQuestions) : null,
     ]
   )
 
@@ -271,9 +364,32 @@ export const updateProductInDb = async (
        compare_at_price = $5,
        image_url = $6,
        category = $7,
+       model_height = $8,
+       model_size = $9,
+       fit_description = $10,
+       material_description = $11,
+       care_instructions = $12,
+       product_story = $13,
+       product_questions = $14,
        updated_at = NOW()
      WHERE id = $1
-     RETURNING id, name, description, price, compare_at_price, image_url, category, is_active`,
+     RETURNING
+       id,
+       name,
+       description,
+       price,
+       compare_at_price,
+       image_url,
+       category,
+       model_height,
+       model_size,
+       fit_description,
+       material_description,
+       care_instructions,
+       product_story,
+       product_questions,
+       is_active,
+       popularity_score`,
     [
       productId,
       input.name ?? existingProduct.name,
@@ -282,6 +398,23 @@ export const updateProductInDb = async (
       input.compareAtPrice === undefined ? existingProduct.compareAtPrice : input.compareAtPrice,
       input.imageUrl ?? existingProduct.imageUrl,
       input.category ?? existingProduct.category,
+      input.modelHeight === undefined ? existingProduct.modelHeight : input.modelHeight,
+      input.modelSize === undefined ? existingProduct.modelSize : input.modelSize,
+      input.fitDescription === undefined ? existingProduct.fitDescription : input.fitDescription,
+      input.materialDescription === undefined
+        ? existingProduct.materialDescription
+        : input.materialDescription,
+      input.careInstructions === undefined
+        ? existingProduct.careInstructions
+        : input.careInstructions,
+      input.productStory === undefined ? existingProduct.productStory : input.productStory,
+      input.productQuestions === undefined
+        ? existingProduct.productQuestions
+          ? JSON.stringify(existingProduct.productQuestions)
+          : null
+        : input.productQuestions
+          ? JSON.stringify(input.productQuestions)
+          : null,
     ]
   )
 
@@ -298,6 +431,13 @@ export const getInventoryFromDb = async (): Promise<InventoryItem[]> => {
        p.compare_at_price,
        p.image_url,
        p.category,
+       p.model_height,
+       p.model_size,
+       p.fit_description,
+       p.material_description,
+       p.care_instructions,
+       p.product_story,
+       p.product_questions,
        p.is_active,
        i.sku,
        i.size,

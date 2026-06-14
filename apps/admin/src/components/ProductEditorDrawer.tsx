@@ -30,6 +30,18 @@ export interface ProductFormValues {
   compareAtPrice: string
   imageUrl: string
   category: string
+  modelHeight: string
+  modelSize: string
+  fitDescription: string
+  materialDescription: string
+  careInstructions: string
+  productStory: string
+  questionOne: string
+  answerOne: string
+  questionTwo: string
+  answerTwo: string
+  questionThree: string
+  answerThree: string
   sku: string
   stockQuantity: string
 }
@@ -224,6 +236,126 @@ export function ProductEditorDrawer({
                   placeholder="Short product description"
                   value={productForm.description}
                   onChange={(event) => onFieldChange('description', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Model height
+                </FormLabel>
+                <Input
+                  placeholder="6 ft"
+                  value={productForm.modelHeight}
+                  onChange={(event) => onFieldChange('modelHeight', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Model size
+                </FormLabel>
+                <Input
+                  placeholder="M"
+                  value={productForm.modelSize}
+                  onChange={(event) => onFieldChange('modelSize', event.target.value)}
+                />
+              </FormControl>
+              <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }}>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Fit description
+                </FormLabel>
+                <Input
+                  placeholder="Relaxed everyday fit, designed for layering."
+                  value={productForm.fitDescription}
+                  onChange={(event) => onFieldChange('fitDescription', event.target.value)}
+                />
+              </FormControl>
+              <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }}>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Material description
+                </FormLabel>
+                <Input
+                  placeholder="Soft midweight fleece with a brushed inside."
+                  value={productForm.materialDescription}
+                  onChange={(event) => onFieldChange('materialDescription', event.target.value)}
+                />
+              </FormControl>
+              <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }}>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Care instructions
+                </FormLabel>
+                <Input
+                  placeholder="Machine wash cold, tumble dry low."
+                  value={productForm.careInstructions}
+                  onChange={(event) => onFieldChange('careInstructions', event.target.value)}
+                />
+              </FormControl>
+              <FormControl gridColumn={{ base: 'auto', md: '1 / -1' }}>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Why this piece
+                </FormLabel>
+                <Input
+                  placeholder="A core OSAI layer built for daily rotation."
+                  value={productForm.productStory}
+                  onChange={(event) => onFieldChange('productStory', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Question 1
+                </FormLabel>
+                <Input
+                  placeholder="How does it fit?"
+                  value={productForm.questionOne}
+                  onChange={(event) => onFieldChange('questionOne', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Answer 1
+                </FormLabel>
+                <Input
+                  placeholder="Relaxed, with room to layer."
+                  value={productForm.answerOne}
+                  onChange={(event) => onFieldChange('answerOne', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Question 2
+                </FormLabel>
+                <Input
+                  placeholder="When will it arrive?"
+                  value={productForm.questionTwo}
+                  onChange={(event) => onFieldChange('questionTwo', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Answer 2
+                </FormLabel>
+                <Input
+                  placeholder="Usually in 3-6 business days."
+                  value={productForm.answerTwo}
+                  onChange={(event) => onFieldChange('answerTwo', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Question 3
+                </FormLabel>
+                <Input
+                  placeholder="Can I return it?"
+                  value={productForm.questionThree}
+                  onChange={(event) => onFieldChange('questionThree', event.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                  Answer 3
+                </FormLabel>
+                <Input
+                  placeholder="Yes, exchanges are free."
+                  value={productForm.answerThree}
+                  onChange={(event) => onFieldChange('answerThree', event.target.value)}
                 />
               </FormControl>
               {!isEditingProduct ? (

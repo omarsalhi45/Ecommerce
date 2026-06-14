@@ -450,6 +450,15 @@ describe('api app', () => {
         price: 39.99,
         imageUrl: 'https://example.com/admin-test-tee.jpg',
         category: 'tees',
+        modelHeight: '6 ft 2 in',
+        modelSize: 'L',
+        fitDescription: 'Relaxed admin fit.',
+        materialDescription: 'Heavy cotton admin material.',
+        careInstructions: 'Wash cold from admin.',
+        productStory: 'Admin-created story.',
+        productQuestions: [
+          { question: 'How does this admin tee fit?', answer: 'Relaxed and easy.' },
+        ],
         sku: 'OSAI-ADMIN-TEE-M',
         stockQuantity: 8,
       }),
@@ -528,6 +537,15 @@ describe('api app', () => {
         compareAtPrice: 49.99,
         imageUrl: 'https://example.com/admin-test-tee-updated.jpg',
         category: 'sale-tees',
+        modelHeight: '5 ft 10 in',
+        modelSize: 'M',
+        fitDescription: 'Updated admin fit.',
+        materialDescription: 'Updated admin material.',
+        careInstructions: 'Updated admin care.',
+        productStory: 'Updated admin story.',
+        productQuestions: [
+          { question: 'Updated admin question?', answer: 'Updated admin answer.' },
+        ],
       }),
     })
     const updatedProduct = await updateResponse.json()
@@ -539,6 +557,13 @@ describe('api app', () => {
       price: 34.99,
       compareAtPrice: 49.99,
       category: 'sale-tees',
+      modelHeight: '5 ft 10 in',
+      modelSize: 'M',
+      fitDescription: 'Updated admin fit.',
+      materialDescription: 'Updated admin material.',
+      careInstructions: 'Updated admin care.',
+      productStory: 'Updated admin story.',
+      productQuestions: [{ question: 'Updated admin question?', answer: 'Updated admin answer.' }],
     })
 
     const archiveResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {

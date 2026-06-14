@@ -68,7 +68,15 @@ export const adminApi = createApi({
             Product,
             'category' | 'compareAtPrice' | 'description' | 'imageUrl' | 'name' | 'price'
           >
-        >
+        > & {
+          careInstructions?: string | null
+          fitDescription?: string | null
+          materialDescription?: string | null
+          modelHeight?: string | null
+          modelSize?: string | null
+          productQuestions?: Product['productQuestions'] | null
+          productStory?: string | null
+        }
       }
     >({
       query: ({ productId, updates }) => ({

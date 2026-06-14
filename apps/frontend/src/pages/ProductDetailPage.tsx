@@ -66,9 +66,9 @@ interface FitProfile {
   readonly careKey: TranslationKey
 }
 
-interface ProductQuestion {
-  readonly questionKey: TranslationKey
-  readonly answerKey: TranslationKey
+interface ProductQuestionDisplay {
+  readonly question: string
+  readonly answer: string
 }
 
 interface ProductMediaItem {
@@ -200,24 +200,33 @@ const getProductReasons = (product: Product): TranslationKey[] => {
   return reasons.slice(0, 3)
 }
 
-const getProductQuestions = (product: Product): ProductQuestion[] => {
+const getProductQuestions = (
+  product: Product,
+  t: ReturnType<typeof useTranslation>['t']
+): ProductQuestionDisplay[] => {
+  if (product.productQuestions?.length) {
+    return product.productQuestions
+  }
+
   const category = product.category.toLowerCase()
   const isOuterwear = category.includes('jacket')
 
   return [
     {
-      questionKey: 'productDetail.question.fit',
-      answerKey: isOuterwear
-        ? 'productDetail.question.outerwearAnswer'
-        : 'productDetail.question.defaultFitAnswer',
+      question: t('productDetail.question.fit'),
+      answer: t(
+        isOuterwear
+          ? 'productDetail.question.outerwearAnswer'
+          : 'productDetail.question.defaultFitAnswer'
+      ),
     },
     {
-      questionKey: 'productDetail.question.arrival',
-      answerKey: 'productDetail.question.arrivalAnswer',
+      question: t('productDetail.question.arrival'),
+      answer: t('productDetail.question.arrivalAnswer'),
     },
     {
-      questionKey: 'productDetail.question.return',
-      answerKey: 'productDetail.question.returnAnswer',
+      question: t('productDetail.question.return'),
+      answer: t('productDetail.question.returnAnswer'),
     },
   ]
 }
@@ -309,7 +318,7 @@ export default function ProductDetailPage() {
   ).filter((item) => !completeTheFitProductIds.has(item.id))
   const fitProfile = product ? getFitProfile(product) : undefined
   const productReasons = product ? getProductReasons(product) : []
-  const productQuestions = product ? getProductQuestions(product) : []
+  const productQuestions = product ? getProductQuestions(product, t) : []
   const productMedia = product ? getProductMedia(product) : []
   const priceDetails = product ? getProductPriceDetails(product) : undefined
   const selectedMedia = productMedia[Math.min(selectedMediaIndex, productMedia.length - 1)]
@@ -844,13 +853,16 @@ export default function ProductDetailPage() {
                       [
                         t('productDetail.model'),
                         t('productDetail.modelWearing', {
-                          height: fitProfile.modelHeight,
-                          size: fitProfile.modelSize,
+                          height: product.modelHeight ?? fitProfile.modelHeight,
+                          size: product.modelSize ?? fitProfile.modelSize,
                         }),
                       ],
-                      [t('productDetail.fit'), t(fitProfile.fitKey)],
-                      [t('productDetail.material'), t(fitProfile.materialKey)],
-                      [t('productDetail.care'), t(fitProfile.careKey)],
+                      [t('productDetail.fit'), product.fitDescription ?? t(fitProfile.fitKey)],
+                      [
+                        t('productDetail.material'),
+                        product.materialDescription ?? t(fitProfile.materialKey),
+                      ],
+                      [t('productDetail.care'), product.careInstructions ?? t(fitProfile.careKey)],
                     ].map(([title, body]) => (
                       <Box
                         key={title}
@@ -973,6 +985,21 @@ export default function ProductDetailPage() {
               {t('productDetail.whyThisPiece')}
             </Heading>
             <Stack spacing={3}>
+              {product.productStory ? (
+                <HStack align="start" spacing={3}>
+                  <Box
+                    w={2}
+                    h={2}
+                    borderRadius="full"
+                    bg="accent.600"
+                    flexShrink={0}
+                    mt="0.55rem"
+                  />
+                  <Text color="neutral.700" fontWeight="semibold">
+                    {product.productStory}
+                  </Text>
+                </HStack>
+              ) : null}
               {productReasons.map((reason) => (
                 <HStack key={reason} align="start" spacing={3}>
                   <Box
@@ -1006,12 +1033,12 @@ export default function ProductDetailPage() {
             </Heading>
             <Stack spacing={4} divider={<Divider />}>
               {productQuestions.map((item) => (
-                <Box key={item.questionKey}>
+                <Box key={item.question}>
                   <Text color="neutral.900" fontWeight="black">
-                    {t(item.questionKey)}
+                    {item.question}
                   </Text>
                   <Text color="neutral.600" fontSize="sm" mt={1}>
-                    {t(item.answerKey)}
+                    {item.answer}
                   </Text>
                 </Box>
               ))}

@@ -35,6 +35,49 @@ const readString = (value: unknown, fieldName: string): string => {
   return value.trim()
 }
 
+const readOptionalString = (value: unknown): string | undefined => {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  return value.trim() || undefined
+}
+
+const readOptionalNullableString = (value: unknown): string | null | undefined => {
+  if (value === null) {
+    return null
+  }
+
+  return readOptionalString(value)
+}
+
+const readOptionalProductQuestions = (value: unknown) => {
+  if (value === undefined) {
+    return undefined
+  }
+
+  if (value === null) {
+    return null
+  }
+
+  if (!Array.isArray(value)) {
+    throw new ApiError(400, 'Product questions must be a list', 'VALIDATION_ERROR')
+  }
+
+  const questions = value.map((item) => {
+    if (!isRecord(item)) {
+      throw new ApiError(400, 'Product question entries must be objects', 'VALIDATION_ERROR')
+    }
+
+    return {
+      question: readString(item.question, 'Product question'),
+      answer: readString(item.answer, 'Product answer'),
+    }
+  })
+
+  return questions.length > 0 ? questions : null
+}
+
 const readNumber = (value: unknown, fieldName: string): number => {
   if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
     throw new ApiError(400, `${fieldName} must be a positive number`, 'VALIDATION_ERROR')
@@ -109,6 +152,13 @@ export const postAdminProduct = async (req: Request, res: Response) => {
     compareAtPrice,
     imageUrl: readString(req.body.imageUrl, 'Product image URL'),
     category: readString(req.body.category, 'Product category'),
+    modelHeight: readOptionalString(req.body.modelHeight),
+    modelSize: readOptionalString(req.body.modelSize),
+    fitDescription: readOptionalString(req.body.fitDescription),
+    materialDescription: readOptionalString(req.body.materialDescription),
+    careInstructions: readOptionalString(req.body.careInstructions),
+    productStory: readOptionalString(req.body.productStory),
+    productQuestions: readOptionalProductQuestions(req.body.productQuestions) ?? undefined,
     sku: typeof req.body.sku === 'string' ? req.body.sku : undefined,
     size: typeof req.body.size === 'string' ? req.body.size : undefined,
     color: typeof req.body.color === 'string' ? req.body.color : undefined,
@@ -137,6 +187,13 @@ export const patchAdminProduct = async (req: Request, res: Response) => {
     compareAtPrice,
     imageUrl: typeof req.body.imageUrl === 'string' ? req.body.imageUrl : undefined,
     category: typeof req.body.category === 'string' ? req.body.category : undefined,
+    modelHeight: readOptionalNullableString(req.body.modelHeight),
+    modelSize: readOptionalNullableString(req.body.modelSize),
+    fitDescription: readOptionalNullableString(req.body.fitDescription),
+    materialDescription: readOptionalNullableString(req.body.materialDescription),
+    careInstructions: readOptionalNullableString(req.body.careInstructions),
+    productStory: readOptionalNullableString(req.body.productStory),
+    productQuestions: readOptionalProductQuestions(req.body.productQuestions),
   })
 
   if (!product) {

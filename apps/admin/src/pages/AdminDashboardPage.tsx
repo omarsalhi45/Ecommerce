@@ -77,10 +77,32 @@ const emptyProductForm: ProductFormValues = {
   compareAtPrice: '',
   imageUrl: '',
   category: 'tees',
+  modelHeight: '',
+  modelSize: '',
+  fitDescription: '',
+  materialDescription: '',
+  careInstructions: '',
+  productStory: '',
+  questionOne: '',
+  answerOne: '',
+  questionTwo: '',
+  answerTwo: '',
+  questionThree: '',
+  answerThree: '',
   sku: '',
   stockQuantity: '0',
 }
 const emptyImageSource = ''
+
+const buildProductQuestions = (productForm: ProductFormValues) => {
+  const questions = [
+    { question: productForm.questionOne.trim(), answer: productForm.answerOne.trim() },
+    { question: productForm.questionTwo.trim(), answer: productForm.answerTwo.trim() },
+    { question: productForm.questionThree.trim(), answer: productForm.answerThree.trim() },
+  ].filter((item) => item.question && item.answer)
+
+  return questions.length > 0 ? questions : undefined
+}
 
 export default function AdminDashboardPage() {
   const dispatch = useAppDispatch()
@@ -302,6 +324,8 @@ export default function AdminDashboardPage() {
       return
     }
 
+    const productQuestions = buildProductQuestions(productForm)
+
     try {
       if (editingProductId) {
         await updateProduct({
@@ -310,9 +334,16 @@ export default function AdminDashboardPage() {
             category: productForm.category.trim(),
             compareAtPrice,
             description: productForm.description.trim(),
+            careInstructions: productForm.careInstructions.trim() || null,
+            fitDescription: productForm.fitDescription.trim() || null,
             imageUrl: productForm.imageUrl.trim(),
+            materialDescription: productForm.materialDescription.trim() || null,
+            modelHeight: productForm.modelHeight.trim() || null,
+            modelSize: productForm.modelSize.trim() || null,
             name: productForm.name.trim(),
             price,
+            productQuestions: productQuestions ?? null,
+            productStory: productForm.productStory.trim() || null,
           },
         }).unwrap()
         if (editingProductInventoryItem) {
@@ -330,6 +361,13 @@ export default function AdminDashboardPage() {
           compareAtPrice,
           imageUrl: productForm.imageUrl.trim(),
           category: productForm.category.trim(),
+          modelHeight: productForm.modelHeight.trim() || undefined,
+          modelSize: productForm.modelSize.trim() || undefined,
+          fitDescription: productForm.fitDescription.trim() || undefined,
+          materialDescription: productForm.materialDescription.trim() || undefined,
+          careInstructions: productForm.careInstructions.trim() || undefined,
+          productQuestions,
+          productStory: productForm.productStory.trim() || undefined,
           sku: productForm.sku.trim() || undefined,
           stockQuantity,
         }).unwrap()
@@ -356,6 +394,18 @@ export default function AdminDashboardPage() {
       compareAtPrice: product.compareAtPrice?.toString() ?? '',
       imageUrl: product.imageUrl,
       category: product.category,
+      modelHeight: product.modelHeight ?? '',
+      modelSize: product.modelSize ?? '',
+      fitDescription: product.fitDescription ?? '',
+      materialDescription: product.materialDescription ?? '',
+      careInstructions: product.careInstructions ?? '',
+      productStory: product.productStory ?? '',
+      questionOne: product.productQuestions?.[0]?.question ?? '',
+      answerOne: product.productQuestions?.[0]?.answer ?? '',
+      questionTwo: product.productQuestions?.[1]?.question ?? '',
+      answerTwo: product.productQuestions?.[1]?.answer ?? '',
+      questionThree: product.productQuestions?.[2]?.question ?? '',
+      answerThree: product.productQuestions?.[2]?.answer ?? '',
       sku: '',
       stockQuantity: productInventoryItem?.stockQuantity.toString() ?? '0',
     })

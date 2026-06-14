@@ -38,6 +38,18 @@ const currentProduct: Product = {
   imageUrls: ['hoodie-side.jpg', 'hoodie-detail.jpg'],
   videoUrl: 'hoodie-fit.mp4',
   category: 'hoodies',
+  modelHeight: '6 ft 2 in',
+  modelSize: 'XL',
+  fitDescription: 'Admin relaxed fit copy.',
+  materialDescription: 'Admin heavyweight fleece copy.',
+  careInstructions: 'Admin wash cold copy.',
+  productStory: 'Admin story copy for why this hoodie exists.',
+  productQuestions: [
+    {
+      question: 'Admin question about hoodie fit?',
+      answer: 'Admin answer about the relaxed hoodie fit.',
+    },
+  ],
   variants: [
     {
       sku: 'hoodie-001-black-m',
@@ -203,15 +215,19 @@ describe('ProductDetailPage', () => {
     expect(screen.getByText('Choose a size and color to check availability.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sticky add to cart' })).toBeInTheDocument()
     expect(screen.getByText('Fit & fabric')).toBeInTheDocument()
-    expect(screen.getByText('6 ft, wearing M')).toBeInTheDocument()
-    expect(screen.getByText('Soft midweight fleece with a brushed inside.')).toBeInTheDocument()
+    expect(screen.getByText('6 ft 2 in, wearing XL')).toBeInTheDocument()
+    expect(screen.getByText('Admin relaxed fit copy.')).toBeInTheDocument()
+    expect(screen.getByText('Admin heavyweight fleece copy.')).toBeInTheDocument()
+    expect(screen.getByText('Admin wash cold copy.')).toBeInTheDocument()
     expect(screen.getByText('What shoppers say about fit')).toBeInTheDocument()
     expect(screen.getByText('True to size')).toBeInTheDocument()
     expect(screen.getByText('Roomy / relaxed')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Why this piece' })).toBeInTheDocument()
+    expect(screen.getByText('Admin story copy for why this hoodie exists.')).toBeInTheDocument()
     expect(screen.getByText('Strong shopper rating for comfort and shape')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Questions shoppers ask' })).toBeInTheDocument()
-    expect(screen.getByText('How does it fit?')).toBeInTheDocument()
+    expect(screen.getByText('Admin question about hoodie fit?')).toBeInTheDocument()
+    expect(screen.getByText('Admin answer about the relaxed hoodie fit.')).toBeInTheDocument()
     expect(screen.getByText('5.0 / 5')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Reviews' })).toBeInTheDocument()
     expect(screen.getByText('Soft and structured')).toBeInTheDocument()

@@ -76,6 +76,16 @@ const products: Product[] = [
     compareAtPrice: 79.99,
     imageUrl: 'hoodie.jpg',
     category: 'hoodies',
+    modelHeight: '6 ft',
+    modelSize: 'M',
+    fitDescription: 'Original fit copy',
+    materialDescription: 'Original material copy',
+    careInstructions: 'Original care copy',
+    productStory: 'Original story copy',
+    productQuestions: [
+      { question: 'Original question one?', answer: 'Original answer one.' },
+      { question: 'Original question two?', answer: 'Original answer two.' },
+    ],
   },
 ]
 
@@ -479,15 +489,49 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(screen.getByDisplayValue('hoodies'), {
       target: { value: 'outerwear' },
     })
+    fireEvent.change(screen.getByDisplayValue('6 ft'), {
+      target: { value: '5 ft 10 in' },
+    })
+    fireEvent.change(screen.getByDisplayValue('M'), {
+      target: { value: 'L' },
+    })
+    fireEvent.change(screen.getByDisplayValue('Original fit copy'), {
+      target: { value: 'Updated fit copy' },
+    })
+    fireEvent.change(screen.getByDisplayValue('Original material copy'), {
+      target: { value: 'Updated material copy' },
+    })
+    fireEvent.change(screen.getByDisplayValue('Original care copy'), {
+      target: { value: 'Updated care copy' },
+    })
+    fireEvent.change(screen.getByDisplayValue('Original story copy'), {
+      target: { value: 'Updated story copy' },
+    })
+    fireEvent.change(screen.getByDisplayValue('Original question one?'), {
+      target: { value: 'Updated question one?' },
+    })
+    fireEvent.change(screen.getByDisplayValue('Original answer one.'), {
+      target: { value: 'Updated answer one.' },
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
     expect(updateProduct).toHaveBeenCalledWith({
       productId: 'hoodie-001',
       updates: expect.objectContaining({
+        careInstructions: 'Updated care copy',
         category: 'outerwear',
         compareAtPrice: 79.99,
+        fitDescription: 'Updated fit copy',
+        materialDescription: 'Updated material copy',
+        modelHeight: '5 ft 10 in',
+        modelSize: 'L',
         name: 'Everyday Weight Hoodie V2',
         price: 54.99,
+        productQuestions: [
+          { question: 'Updated question one?', answer: 'Updated answer one.' },
+          { question: 'Original question two?', answer: 'Original answer two.' },
+        ],
+        productStory: 'Updated story copy',
       }),
     })
     await waitFor(() => {
