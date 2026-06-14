@@ -40,6 +40,37 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 
 ## Priorities / TODO
 
+### Current Priority Order
+
+#### Priority 0: Make The Store Operable
+
+- Finish admin product operations before adding more shopper-facing features: product editor sections, gallery/video management, merchandising controls, sale/badge controls, coupon management, and safe validation.
+- Finish order operations: fulfillment carrier/tracking, shipped email, delivery status, order timeline, internal notes, and searchable/paginated order lists.
+- Remove remaining operational shortcuts: hardcoded homepage merchandising, code-owned discounts, default-variant cart actions, and product media that cannot be managed from admin.
+
+#### Priority 1: Remove Conversion Friction
+
+- Fix variant-safe cart actions everywhere, including saved-for-later, cart recommendations, and cart item editing.
+- Rework the storefront header and mobile navigation so shopping actions feel cleaner and less crowded.
+- Add stock-aware cart quantity limits, checkout recovery, and URL-synced filters before scaling the catalog further.
+- Add bundle offers after cart/discount logic is admin-owned, because bundles should be operationally editable.
+
+#### Priority 2: Measurement And Retention
+
+- Add analytics events before personalization, abandoned cart, or retention automations.
+- Track search, filters, product views, add-to-cart, checkout start, payment success, wishlist, purchase, and returns.
+- Use analytics to decide which personalization and retention features are worth building.
+
+#### Priority 3: Brand, Content, SEO, And Trust
+
+- Keep brand/content/SEO/trust work as a later priority until the OSAI brand direction, content assets, and trust-page copy are ready.
+- Replace stock imagery with real OSAI assets or generated editorial assets only after the desired brand direction is clearer.
+- Add lookbook/drop sections, trust pages, SEO metadata, product schema, sitemap, robots, newsletter capture, and post-purchase review requests after operations and conversion polish are stronger.
+
+#### Deferred Until The Core Store Is Stronger
+
+- OAuth/social login, referrals, social sharing, loyalty, advanced personalization, and Redis provider work are useful later, but they are not current bottlenecks.
+
 ### Phase 1: Core Frontend And API Scaffold - Complete
 
 - [x] Implement monorepo scaffold with `apps/frontend` and `apps/api`.
@@ -254,7 +285,22 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add tests for search suggestions, typo-tolerant matching, and no-results recommendations.
 - [x] Add or improve tests for sticky add-to-cart, cart drawer, discounts, and checkout steps.
 
-### Phase 10: OAuth & Social Features (Future)
+### Phase 9.6: Storefront Polish, Scale & Conversion Gaps
+
+- [ ] Replace default-variant cart adds from saved-for-later and cart recommendations with the same size/color chooser used by product cards.
+- [ ] Add URL-synced storefront filters and search so shoppers can share filtered collection views and browser back/forward behaves naturally.
+- [ ] Add collection pagination or incremental loading for larger catalogs instead of rendering every matching product at once.
+- [ ] Rework the storefront header into clearer shopper actions across desktop and mobile: Shop, Saved, Cart, Profile, Track, and language.
+- [ ] Add a richer mobile navigation pattern that keeps core actions reachable without crowding the header.
+- [ ] Add homepage sections that feel like a real clothing store: new arrivals, best sellers, sale, complete-the-fit, and editorial drop blocks.
+- [ ] Add product card image hover/secondary image support once admin gallery data exists.
+- [ ] Add stronger cart item editing so shoppers can change size/color from cart without removing and re-adding.
+- [ ] Add stock-aware quantity limits so shoppers cannot increase cart quantity above available variant inventory.
+- [ ] Add checkout address autocomplete or country-aware address rules after core checkout is stable.
+- [ ] Add a checkout recovery path when Stripe PaymentIntent creation succeeds but confirmation fails or the shopper refreshes.
+- [ ] Add lightweight UI performance work: route-level code splitting, image lazy loading, and manual chunks for large Vite bundles.
+
+### Phase 10: OAuth & Social Features (Deferred)
 
 - [ ] Add OAuth providers such as Google and GitHub.
 - [ ] Implement social login.
@@ -307,13 +353,21 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add SKU-based inventory updates for stock and low-stock threshold from the admin product details drawer.
 - [x] Add variant-level inventory editing for size, color, SKU, stock, low-stock threshold, and sold-out states.
 - [x] Add admin-managed product detail content fields such as fit, material, care, model info, Q&A, and "why this piece".
+- [x] Generate product IDs automatically from product names so admins do not invent slugs manually.
 - [ ] Add admin product gallery management for multiple images and optional product video.
+- [x] Split product editing into clearer drawer sections: Basics, Pricing, Media, Content, Q&A, and Inventory.
+- [ ] Add field-level validation and unsaved-change protection to admin product editing.
+- [ ] Add admin controls for homepage merchandising: featured products, collection rows, hero/drop content, and ordering.
+- [ ] Add admin sale and badge management instead of deriving every badge from price, popularity, or stock.
+- [ ] Add admin coupon/discount management with validation rules, usage limits, and active/inactive state.
 - [ ] Add order fulfillment workflow with carrier, tracking number, shipped email, and delivery status.
 - [ ] Add order timeline/history for status, payment, fulfillment, email, and refund events.
+- [ ] Add order notes and internal tags for support follow-up.
 - [ ] Add admin activity log and audit history for product, order, inventory, discount, and user changes.
 - [ ] Add server-side pagination and search for large product and order lists.
 - [ ] Add bulk product actions such as archive, publish, delete review, and low-stock review.
-- [ ] Split the admin dashboard into clear sections or tabs: Overview, Orders, Products, Customers, and Analytics.
+- [ ] Split the admin dashboard into clear route-backed sections: Overview, Orders, Products, Customers, Analytics, and Settings.
+- [ ] Add admin export actions for orders, products, customers, and low-stock inventory.
 
 ### Phase 12: Data, Personalization & Retention
 
@@ -431,11 +485,11 @@ Project-local Codex skills live in `.agents/skills/` so they travel with this re
 
 ## Next Steps
 
-- Start Phase 9.5 before Phase 10 because product confidence, filtering, cart trust, and checkout clarity should improve conversion before adding OAuth or social features.
-- Prioritize the first Phase 9.5 sprint around product detail variant selection, size guide, shipping/returns confidence, sticky mobile add-to-cart, and cart free-shipping threshold.
-- Add customer order history and order tracking soon after the first Phase 9.5 sprint because they make post-purchase trust feel real.
-- Phase 10 can follow once the core buying journey feels stronger.
-- Phase 11 should follow OAuth for deeper brand, content, SEO, growth, and admin operations maturity.
-- Phase 12 should come after stronger analytics instrumentation exists, because personalization and retention depend on trustworthy event data.
+- Treat Phase 11.5 as the active workstream until admin product, media, merchandising, discount, and order fulfillment controls are usable without code edits.
+- Pull selected Phase 9.6 tasks into the active workstream when they remove real shopper friction: variant-safe cart actions, stock-aware cart quantities, URL-synced filters, header/mobile navigation, and checkout recovery.
+- Keep Phase 11 brand/content tasks last for now; only build the admin hooks that operations need, not the public brand/content surfaces.
+- Do not start Phase 10 OAuth until operations, conversion polish, and brand/content foundations are stronger.
+- Do not start Phase 12 personalization until analytics events exist and can be trusted.
+- Highest-value next slices: admin product editor sections, admin gallery/video management, admin homepage merchandising, order fulfillment with tracking email, variant-safe cart editing, and analytics events.
 - Redis remains the next provider-specific cache integration if traffic or Render performance requires it.
 - Keep `.agents/skills/` updated as OSAI conventions evolve.
