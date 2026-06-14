@@ -444,7 +444,6 @@ describe('api app', () => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        id: 'admin-edit-001',
         name: 'Admin Test Tee',
         description: 'Editable test product',
         price: 39.99,
@@ -465,9 +464,16 @@ describe('api app', () => {
     })
 
     expect(createResponse.status).toBe(201)
+    const createdProduct = await createResponse.json()
+    const createdProductId = createdProduct.id
+
+    expect(createdProduct).toMatchObject({
+      id: 'admin-test-tee',
+      name: 'Admin Test Tee',
+    })
 
     const createVariantResponse = await fetch(
-      `${baseUrl}/api/admin/products/admin-edit-001/inventory`,
+      `${baseUrl}/api/admin/products/${createdProductId}/inventory`,
       {
         method: 'POST',
         headers: {
@@ -524,7 +530,7 @@ describe('api app', () => {
 
     expect(deleteVariantResponse.status).toBe(204)
 
-    const updateResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {
+    const updateResponse = await fetch(`${baseUrl}/api/admin/products/${createdProductId}`, {
       method: 'PATCH',
       headers: {
         authorization: `Bearer ${admin.token}`,
@@ -552,7 +558,7 @@ describe('api app', () => {
 
     expect(updateResponse.status).toBe(200)
     expect(updatedProduct).toMatchObject({
-      id: 'admin-edit-001',
+      id: createdProductId,
       name: 'Admin Test Tee Updated',
       price: 34.99,
       compareAtPrice: 49.99,
@@ -566,14 +572,14 @@ describe('api app', () => {
       productQuestions: [{ question: 'Updated admin question?', answer: 'Updated admin answer.' }],
     })
 
-    const archiveResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001`, {
+    const archiveResponse = await fetch(`${baseUrl}/api/admin/products/${createdProductId}`, {
       method: 'DELETE',
       headers: { authorization: `Bearer ${admin.token}` },
     })
 
     expect(archiveResponse.status).toBe(204)
 
-    const publicDetailResponse = await fetch(`${baseUrl}/api/products/admin-edit-001`)
+    const publicDetailResponse = await fetch(`${baseUrl}/api/products/${createdProductId}`)
     const publicDetailBody = await publicDetailResponse.json()
 
     expect(publicDetailResponse.status).toBe(404)
@@ -586,34 +592,37 @@ describe('api app', () => {
 
     expect(adminProductsResponse.status).toBe(200)
     expect(
-      adminProductsBody.products.find((product: { id: string }) => product.id === 'admin-edit-001')
+      adminProductsBody.products.find((product: { id: string }) => product.id === createdProductId)
     ).toMatchObject({
-      id: 'admin-edit-001',
+      id: createdProductId,
       isActive: false,
     })
 
-    const publishResponse = await fetch(`${baseUrl}/api/admin/products/admin-edit-001/status`, {
-      method: 'PATCH',
-      headers: {
-        authorization: `Bearer ${admin.token}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ isActive: true }),
-    })
+    const publishResponse = await fetch(
+      `${baseUrl}/api/admin/products/${createdProductId}/status`,
+      {
+        method: 'PATCH',
+        headers: {
+          authorization: `Bearer ${admin.token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ isActive: true }),
+      }
+    )
     const publishedProduct = await publishResponse.json()
 
     expect(publishResponse.status).toBe(200)
     expect(publishedProduct).toMatchObject({
-      id: 'admin-edit-001',
+      id: createdProductId,
       isActive: true,
     })
 
-    const restoredPublicDetailResponse = await fetch(`${baseUrl}/api/products/admin-edit-001`)
+    const restoredPublicDetailResponse = await fetch(`${baseUrl}/api/products/${createdProductId}`)
 
     expect(restoredPublicDetailResponse.status).toBe(200)
 
     const permanentDeleteResponse = await fetch(
-      `${baseUrl}/api/admin/products/admin-edit-001/permanent`,
+      `${baseUrl}/api/admin/products/${createdProductId}/permanent`,
       {
         method: 'DELETE',
         headers: { authorization: `Bearer ${admin.token}` },
@@ -628,7 +637,7 @@ describe('api app', () => {
     const deletedAdminProductsBody = await deletedAdminProductsResponse.json()
 
     expect(deletedAdminProductsBody.products).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ id: 'admin-edit-001' })])
+      expect.arrayContaining([expect.objectContaining({ id: createdProductId })])
     )
 
     resetProductStoreForTests()

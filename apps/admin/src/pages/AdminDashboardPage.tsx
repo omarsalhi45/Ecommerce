@@ -354,7 +354,6 @@ export default function AdminDashboardPage() {
         }
       } else {
         await createProduct({
-          id: productForm.id.trim(),
           name: productForm.name.trim(),
           description: productForm.description.trim(),
           price,

@@ -67,7 +67,8 @@ export interface ProductReview {
   readonly createdAt: string
 }
 
-export interface CreateProductInput extends Product {
+export interface CreateProductInput extends Omit<Product, 'id'> {
+  readonly id?: string
   readonly sku?: string
   readonly size?: string
   readonly color?: string
@@ -316,6 +317,29 @@ const products: Product[] = [
     popularityScore: 70,
   },
 ]
+
+const createProductSlug = (name: string): string => {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return slug || `product-${Date.now()}`
+}
+
+const createUniqueProductId = (name: string): string => {
+  const baseId = createProductSlug(name)
+  let candidateId = baseId
+  let suffix = 2
+
+  while (products.some((product) => product.id === candidateId)) {
+    candidateId = `${baseId}-${suffix}`
+    suffix += 1
+  }
+
+  return candidateId
+}
 
 const inventory: InventoryItem[] = [
   {
@@ -703,18 +727,20 @@ export const getRecommendedProducts = async (productId?: string, limit = 4): Pro
 }
 
 export const createProduct = async (input: CreateProductInput): Promise<Product> => {
+  const productId = input.id ?? createUniqueProductId(input.name)
+
   if (isDatabaseConfigured) {
-    const product = await createProductInDb(input)
+    const product = await createProductInDb({ ...input, id: productId })
     clearCacheByPrefix('products:')
     return product
   }
 
-  if (products.some((product) => product.id === input.id)) {
+  if (products.some((product) => product.id === productId)) {
     throw new ApiError(409, 'Product already exists', 'PRODUCT_EXISTS')
   }
 
   const product: Product = {
-    id: input.id,
+    id: productId,
     name: input.name,
     description: input.description,
     price: input.price,
@@ -733,7 +759,7 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
   products.push(product)
   inventory.push({
     product,
-    sku: input.sku ?? input.id.toUpperCase(),
+    sku: input.sku ?? productId.toUpperCase(),
     size: input.size,
     color: input.color,
     stockQuantity: input.stockQuantity ?? 0,

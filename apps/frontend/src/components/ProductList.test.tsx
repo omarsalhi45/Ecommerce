@@ -79,6 +79,34 @@ describe('ProductList', () => {
     expect(store.getState().cartUi.isMiniCartOpen).toBe(true)
   })
 
+  it('requires the quick-add chooser even when only one variant is available', () => {
+    const singleVariantProduct: Product = {
+      ...variantProduct,
+      variants: [variantProduct.variants?.[0] ?? variantProduct.variants![0]],
+    }
+    const { store } = renderWithProviders(<ProductList products={[singleVariantProduct]} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('Choose the available options to continue.')).toBeInTheDocument()
+    expect(store.getState().cart.items).toEqual([])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select size M' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Select color Black' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add to cart' }))
+
+    expect(store.getState().cart.items).toEqual([
+      {
+        productId: 'hoodie-001',
+        variantSku: 'hoodie-001-black-m',
+        size: 'M',
+        color: 'Black',
+        quantity: 1,
+      },
+    ])
+  })
+
   it('makes wishlist saved state clear on product cards', () => {
     const { store } = renderWithProviders(<ProductList products={[variantProduct]} />)
     const saveButton = screen.getByRole('button', {

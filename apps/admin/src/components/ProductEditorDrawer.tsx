@@ -98,17 +98,27 @@ export function ProductEditorDrawer({
           ) : null}
           <Box as="form" id="product-editor-form" onSubmit={onSubmit}>
             <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3}>
-              <FormControl isRequired>
-                <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                  Product id
-                </FormLabel>
-                <Input
-                  placeholder="black-tee"
-                  isDisabled={isEditingProduct}
-                  value={productForm.id}
-                  onChange={(event) => onFieldChange('id', event.target.value)}
-                />
-              </FormControl>
+              {isEditingProduct ? (
+                <Box
+                  border="1px solid"
+                  borderColor="neutral.200"
+                  borderRadius="md"
+                  gridColumn={{ base: 'auto', md: '1 / -1' }}
+                  p={3}
+                >
+                  <Text
+                    color="neutral.600"
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
+                    Product ID
+                  </Text>
+                  <Text color="neutral.900" fontFamily="mono" fontSize="sm" mt={1}>
+                    {productForm.id}
+                  </Text>
+                </Box>
+              ) : null}
               <FormControl isRequired>
                 <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
                   Name

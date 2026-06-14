@@ -199,6 +199,25 @@ const mapProductReview = (row: ProductReviewRow): ProductReview => ({
       : new Date(row.created_at).toISOString(),
 })
 
+const createUniqueProductIdInDb = async (baseId: string): Promise<string> => {
+  let candidateId = baseId
+  let suffix = 2
+
+  while (true) {
+    const result = await query<{ exists: boolean }>(
+      'SELECT EXISTS (SELECT 1 FROM products WHERE id = $1) AS exists',
+      [candidateId]
+    )
+
+    if (!result.rows[0]?.exists) {
+      return candidateId
+    }
+
+    candidateId = `${baseId}-${suffix}`
+    suffix += 1
+  }
+}
+
 export const getProductsFromDb = async (): Promise<Product[]> => {
   const result = await query<ProductRow>(
     `${productSelectWithRatings}
@@ -275,6 +294,7 @@ export const getProductReviewsFromDb = async (productId: string): Promise<Produc
 }
 
 export const createProductInDb = async (input: CreateProductInput): Promise<Product> => {
+  const productId = await createUniqueProductIdInDb(input.id ?? input.name)
   const result = await query<ProductRow>(
     `INSERT INTO products (
        id,
@@ -311,7 +331,7 @@ export const createProductInDb = async (input: CreateProductInput): Promise<Prod
        is_active,
        popularity_score`,
     [
-      input.id,
+      productId,
       input.name,
       input.description,
       input.price,
@@ -333,8 +353,8 @@ export const createProductInDb = async (input: CreateProductInput): Promise<Prod
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (sku) DO NOTHING`,
     [
-      input.id,
-      input.sku ?? input.id.toUpperCase(),
+      productId,
+      input.sku ?? productId.toUpperCase(),
       input.size,
       input.color,
       input.stockQuantity ?? 0,

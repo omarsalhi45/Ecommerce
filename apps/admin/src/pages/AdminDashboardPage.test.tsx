@@ -471,7 +471,8 @@ describe('AdminDashboardPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
     expect(screen.getByRole('dialog', { name: 'Edit Everyday Weight Hoodie' })).toBeInTheDocument()
-    expect(screen.getByDisplayValue('hoodie-001')).toBeDisabled()
+    expect(screen.getByText('Product ID')).toBeInTheDocument()
+    expect(screen.getByText('hoodie-001')).toBeInTheDocument()
     expect(screen.queryByLabelText(/SKU/i)).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByDisplayValue('Everyday Weight Hoodie'), {

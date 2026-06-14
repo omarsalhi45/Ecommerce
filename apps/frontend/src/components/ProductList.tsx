@@ -92,7 +92,7 @@ export default function ProductList({ products }: { products: Product[] }) {
 
   const handleAddButtonClick = (product: Product) => {
     const inStockVariants = product.variants?.filter((variant) => variant.stockQuantity > 0) ?? []
-    const needsQuickAddModal = inStockVariants.length > 1
+    const needsQuickAddModal = inStockVariants.length > 0
 
     if (needsQuickAddModal) {
       setQuickAddProductId(product.id)

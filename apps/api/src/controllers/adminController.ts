@@ -145,7 +145,7 @@ export const postAdminProduct = async (req: Request, res: Response) => {
   validateCompareAtPrice(price, compareAtPrice)
 
   const product = await createProduct({
-    id: readString(req.body.id, 'Product id'),
+    id: readOptionalString(req.body.id),
     name: readString(req.body.name, 'Product name'),
     description: readString(req.body.description, 'Product description'),
     price,
