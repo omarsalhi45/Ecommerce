@@ -22,6 +22,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import type { FormEventHandler, ReactNode } from 'react'
+import { buildVariantMatrix } from '../catalog/variantMatrix'
 
 export interface ProductFormValues {
   id: string
@@ -44,7 +45,12 @@ export interface ProductFormValues {
   questionThree: string
   answerThree: string
   sku: string
+  size: string
+  color: string
   stockQuantity: string
+  lowStockThreshold: string
+  variantStockQuantity: string
+  variantLowStockThreshold: string
 }
 
 interface ProductEditorDrawerProps {
@@ -104,6 +110,41 @@ export function ProductEditorDrawer({
   onImageChange,
   onSubmit,
 }: ProductEditorDrawerProps) {
+  const hasVariantMatrixDraft = Boolean(
+    productForm.sku.trim() || productForm.size.trim() || productForm.color.trim()
+  )
+  const variantMatrixInputs =
+    !isEditingProduct || hasVariantMatrixDraft
+      ? buildVariantMatrix({
+          color: productForm.color,
+          lowStockThreshold: isEditingProduct
+            ? productForm.variantLowStockThreshold
+            : productForm.lowStockThreshold,
+          productId: editingProductId || productForm.name || 'product',
+          size: productForm.size,
+          sku: productForm.sku,
+          stockQuantity: isEditingProduct
+            ? productForm.variantStockQuantity
+            : productForm.stockQuantity,
+        })
+      : []
+  const variantMatrixCopy = isEditingProduct
+    ? {
+        description:
+          'Update primary stock, or add new size/color variants without opening details.',
+        empty: 'Fill SKU prefix, sizes, or colors to add variants while saving.',
+        ready: 'new',
+        skuLabel: 'New SKU prefix',
+        stockLabel: 'New variant stock',
+      }
+    : {
+        description: 'Create the initial size and color matrix for this new product.',
+        empty: 'Add at least a SKU prefix, size, or color to create initial variants.',
+        ready: 'initial',
+        skuLabel: 'SKU prefix',
+        stockLabel: 'Initial stock',
+      }
+
   return (
     <Drawer isOpen={isOpen} onClose={onCancel} placement="right" size="lg">
       <DrawerOverlay />
@@ -409,44 +450,120 @@ export function ProductEditorDrawer({
                 </Grid>
               </ProductEditorSection>
 
-              <ProductEditorSection
-                title="Inventory"
-                description={
-                  isEditingProduct
-                    ? 'Update the primary stock record here; manage variants from product details.'
-                    : 'Set the first SKU and stock level for this new product.'
-                }
-              >
+              <ProductEditorSection title="Inventory" description={variantMatrixCopy.description}>
                 <Grid templateColumns={{ base: '1fr', md: '1fr 1fr' }} gap={3}>
-                  <FormControl>
-                    <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                      {isEditingProduct ? 'Stock' : 'Initial stock'}
-                    </FormLabel>
-                    <Input
-                      min={0}
-                      placeholder="0"
-                      type="number"
-                      value={productForm.stockQuantity}
-                      onChange={(event) => onFieldChange('stockQuantity', event.target.value)}
-                    />
-                    {isEditingProduct && !hasEditingInventoryItem ? (
-                      <Text color="neutral.500" fontSize="xs" mt={1}>
-                        This product has no inventory record yet.
-                      </Text>
-                    ) : null}
-                  </FormControl>
-                  {!isEditingProduct ? (
+                  {isEditingProduct ? (
                     <FormControl>
                       <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                        SKU
+                        Primary stock
                       </FormLabel>
                       <Input
-                        placeholder="OSAI-TEE-BLK"
+                        min={0}
+                        placeholder="0"
+                        type="number"
+                        value={productForm.stockQuantity}
+                        onChange={(event) => onFieldChange('stockQuantity', event.target.value)}
+                      />
+                      {!hasEditingInventoryItem ? (
+                        <Text color="neutral.500" fontSize="xs" mt={1}>
+                          This product has no inventory record yet.
+                        </Text>
+                      ) : null}
+                    </FormControl>
+                  ) : null}
+                  {isEditingProduct ? (
+                    <FormControl>
+                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                        Primary low alert
+                      </FormLabel>
+                      <Input
+                        min={0}
+                        placeholder="5"
+                        type="number"
+                        value={productForm.lowStockThreshold}
+                        onChange={(event) => onFieldChange('lowStockThreshold', event.target.value)}
+                      />
+                    </FormControl>
+                  ) : null}
+                  <>
+                    <FormControl>
+                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                        {variantMatrixCopy.skuLabel}
+                      </FormLabel>
+                      <Input
+                        placeholder="OSAI-TEE"
                         value={productForm.sku}
                         onChange={(event) => onFieldChange('sku', event.target.value)}
                       />
                     </FormControl>
-                  ) : null}
+                    <FormControl>
+                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                        Sizes
+                      </FormLabel>
+                      <Input
+                        placeholder="S, M, L"
+                        value={productForm.size}
+                        onChange={(event) => onFieldChange('size', event.target.value)}
+                      />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                        Colors
+                      </FormLabel>
+                      <Input
+                        placeholder="Black, White"
+                        value={productForm.color}
+                        onChange={(event) => onFieldChange('color', event.target.value)}
+                      />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                        {variantMatrixCopy.stockLabel}
+                      </FormLabel>
+                      <Input
+                        min={0}
+                        placeholder="0"
+                        type="number"
+                        value={
+                          isEditingProduct
+                            ? productForm.variantStockQuantity
+                            : productForm.stockQuantity
+                        }
+                        onChange={(event) =>
+                          onFieldChange(
+                            isEditingProduct ? 'variantStockQuantity' : 'stockQuantity',
+                            event.target.value
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormControl>
+                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
+                        Low alert
+                      </FormLabel>
+                      <Input
+                        min={0}
+                        placeholder="5"
+                        type="number"
+                        value={
+                          isEditingProduct
+                            ? productForm.variantLowStockThreshold
+                            : productForm.lowStockThreshold
+                        }
+                        onChange={(event) =>
+                          onFieldChange(
+                            isEditingProduct ? 'variantLowStockThreshold' : 'lowStockThreshold',
+                            event.target.value
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <Text color="neutral.600" fontSize="sm" alignSelf="end">
+                      {variantMatrixInputs.length > 0
+                        ? `${variantMatrixInputs.length} ${variantMatrixCopy.ready} variant${variantMatrixInputs.length === 1 ? '' : 's'} will be ${isEditingProduct ? 'added' : 'created'}.`
+                        : variantMatrixCopy.empty}
+                    </Text>
+                  </>
                 </Grid>
               </ProductEditorSection>
             </Stack>

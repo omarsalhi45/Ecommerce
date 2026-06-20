@@ -78,6 +78,32 @@ const readOptionalProductQuestions = (value: unknown) => {
   return questions.length > 0 ? questions : null
 }
 
+const readOptionalProductVariants = (value: unknown) => {
+  if (value === undefined || value === null) {
+    return undefined
+  }
+
+  if (!Array.isArray(value)) {
+    throw new ApiError(400, 'Product variants must be a list', 'VALIDATION_ERROR')
+  }
+
+  const variants = value.map((item) => {
+    if (!isRecord(item)) {
+      throw new ApiError(400, 'Product variant entries must be objects', 'VALIDATION_ERROR')
+    }
+
+    return {
+      sku: readString(item.sku, 'Variant SKU'),
+      size: readOptionalString(item.size),
+      color: readOptionalString(item.color),
+      stockQuantity: readOptionalNumber(item.stockQuantity, 'Stock quantity'),
+      lowStockThreshold: readOptionalNumber(item.lowStockThreshold, 'Low stock threshold'),
+    }
+  })
+
+  return variants.length > 0 ? variants : undefined
+}
+
 const readNumber = (value: unknown, fieldName: string): number => {
   if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
     throw new ApiError(400, `${fieldName} must be a positive number`, 'VALIDATION_ERROR')
@@ -165,6 +191,7 @@ export const postAdminProduct = async (req: Request, res: Response) => {
     stockQuantity: typeof req.body.stockQuantity === 'number' ? req.body.stockQuantity : undefined,
     lowStockThreshold:
       typeof req.body.lowStockThreshold === 'number' ? req.body.lowStockThreshold : undefined,
+    variants: readOptionalProductVariants(req.body.variants),
   })
 
   res.status(201).json(product)

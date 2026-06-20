@@ -373,6 +373,91 @@ describe('AdminDashboardPage', () => {
     expect(screen.getByText('Showing 1 of 2 products')).toBeInTheDocument()
   })
 
+  it('creates products with an initial size and color variant matrix', () => {
+    const createProduct = vi
+      .fn()
+      .mockReturnValue({ unwrap: vi.fn().mockResolvedValue(products[0]) })
+    mockUseCreateProductMutation.mockReturnValue([createProduct, {}] as unknown as ReturnType<
+      typeof useCreateProductMutation
+    >)
+
+    renderWithProviders(<AdminDashboardPage />, {
+      preloadedAuth: { token: 'test-token', user: adminUser },
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add product' }))
+    const dialog = screen.getByRole('dialog', { name: 'Add product' })
+
+    fireEvent.change(within(dialog).getByPlaceholderText('Oversized tee'), {
+      target: { value: 'Matrix Hoodie' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('Short product description'), {
+      target: { value: 'Matrix-ready hoodie' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('39.00'), {
+      target: { value: '64.99' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('https://example.com/product.jpg'), {
+      target: { value: 'https://example.com/matrix-hoodie.jpg' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('OSAI-TEE'), {
+      target: { value: 'OSAI-MATRIX' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('S, M, L'), {
+      target: { value: 'M, L' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('Black, White'), {
+      target: { value: 'Black, Grey' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('0'), {
+      target: { value: '10' },
+    })
+    fireEvent.change(within(dialog).getByPlaceholderText('5'), {
+      target: { value: '3' },
+    })
+
+    expect(within(dialog).getByText('4 initial variants will be created.')).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add product' }))
+
+    expect(createProduct).toHaveBeenCalledWith(
+      expect.objectContaining({
+        imageUrl: 'https://example.com/matrix-hoodie.jpg',
+        name: 'Matrix Hoodie',
+        price: 64.99,
+        variants: [
+          {
+            color: 'Black',
+            lowStockThreshold: 3,
+            size: 'M',
+            sku: 'OSAI-MATRIX-M-BLACK',
+            stockQuantity: 10,
+          },
+          {
+            color: 'Grey',
+            lowStockThreshold: 3,
+            size: 'M',
+            sku: 'OSAI-MATRIX-M-GREY',
+            stockQuantity: 10,
+          },
+          {
+            color: 'Black',
+            lowStockThreshold: 3,
+            size: 'L',
+            sku: 'OSAI-MATRIX-L-BLACK',
+            stockQuantity: 10,
+          },
+          {
+            color: 'Grey',
+            lowStockThreshold: 3,
+            size: 'L',
+            sku: 'OSAI-MATRIX-L-GREY',
+            stockQuantity: 10,
+          },
+        ],
+      })
+    )
+  })
+
   it('shows stock on products and edits inventory from the product detail drawer', () => {
     const updateInventory = vi.fn()
     const createInventoryVariant = vi.fn()
@@ -417,14 +502,14 @@ describe('AdminDashboardPage', () => {
       stockQuantity: 9,
     })
 
-    fireEvent.change(screen.getByPlaceholderText('OSAI-HOOD-BLK-L'), {
-      target: { value: 'OSAI-HOOD-BLK-L' },
+    fireEvent.change(screen.getByPlaceholderText('OSAI-HOOD'), {
+      target: { value: 'OSAI-HOOD' },
     })
-    fireEvent.change(screen.getByPlaceholderText('L'), {
-      target: { value: 'L' },
+    fireEvent.change(screen.getByPlaceholderText('S, M, L'), {
+      target: { value: 'L, XL' },
     })
-    fireEvent.change(screen.getByPlaceholderText('Black'), {
-      target: { value: 'Black' },
+    fireEvent.change(screen.getByPlaceholderText('Black, Grey'), {
+      target: { value: 'Black, White' },
     })
     fireEvent.change(screen.getByDisplayValue('0'), {
       target: { value: '6' },
@@ -432,14 +517,24 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(screen.getAllByDisplayValue('5').at(-1) as HTMLElement, {
       target: { value: '3' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Add variant' }))
+    expect(screen.getByText('4 new variants ready to add.')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Add variants' }))
 
-    expect(createInventoryVariant).toHaveBeenCalledWith({
+    expect(createInventoryVariant).toHaveBeenCalledTimes(4)
+    expect(createInventoryVariant).toHaveBeenNthCalledWith(1, {
       color: 'Black',
       lowStockThreshold: 3,
       productId: 'hoodie-001',
       size: 'L',
-      sku: 'OSAI-HOOD-BLK-L',
+      sku: 'OSAI-HOOD-L-BLACK',
+      stockQuantity: 6,
+    })
+    expect(createInventoryVariant).toHaveBeenNthCalledWith(4, {
+      color: 'White',
+      lowStockThreshold: 3,
+      productId: 'hoodie-001',
+      size: 'XL',
+      sku: 'OSAI-HOOD-XL-WHITE',
       stockQuantity: 6,
     })
 
@@ -452,12 +547,17 @@ describe('AdminDashboardPage', () => {
   })
 
   it('loads product values into the main editor before saving changes', async () => {
+    const createInventoryVariant = vi.fn()
     const updateProduct = vi
       .fn()
       .mockReturnValue({ unwrap: vi.fn().mockResolvedValue(products[0]) })
     const updateInventory = vi
       .fn()
       .mockReturnValue({ unwrap: vi.fn().mockResolvedValue(inventory[0]) })
+    mockUseCreateInventoryVariantMutation.mockReturnValue([
+      createInventoryVariant,
+      {},
+    ] as unknown as ReturnType<typeof useCreateInventoryVariantMutation>)
     mockUseUpdateProductMutation.mockReturnValue([updateProduct, {}] as unknown as ReturnType<
       typeof useUpdateProductMutation
     >)
@@ -470,10 +570,11 @@ describe('AdminDashboardPage', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit' }))
-    expect(screen.getByRole('dialog', { name: 'Edit Everyday Weight Hoodie' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Edit Everyday Weight Hoodie' })
+    expect(dialog).toBeInTheDocument()
     expect(screen.getByText('Product ID')).toBeInTheDocument()
     expect(screen.getByText('hoodie-001')).toBeInTheDocument()
-    expect(screen.queryByLabelText(/SKU/i)).not.toBeInTheDocument()
+    expect(within(dialog).getByLabelText('New SKU prefix')).toBeInTheDocument()
 
     fireEvent.change(screen.getByDisplayValue('Everyday Weight Hoodie'), {
       target: { value: 'Everyday Weight Hoodie V2' },
@@ -514,6 +615,22 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(screen.getByDisplayValue('Original answer one.'), {
       target: { value: 'Updated answer one.' },
     })
+    fireEvent.change(within(dialog).getByLabelText('New SKU prefix'), {
+      target: { value: 'OSAI-HOOD' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Sizes'), {
+      target: { value: 'L, XL' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Colors'), {
+      target: { value: 'Black' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('New variant stock'), {
+      target: { value: '6' },
+    })
+    fireEvent.change(within(dialog).getByLabelText('Low alert'), {
+      target: { value: '2' },
+    })
+    expect(within(dialog).getByText('2 new variants will be added.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
     expect(updateProduct).toHaveBeenCalledWith({
@@ -537,9 +654,27 @@ describe('AdminDashboardPage', () => {
     })
     await waitFor(() => {
       expect(updateInventory).toHaveBeenCalledWith({
+        lowStockThreshold: 5,
         productId: 'hoodie-001',
         stockQuantity: 7,
       })
+    })
+    expect(createInventoryVariant).toHaveBeenCalledTimes(2)
+    expect(createInventoryVariant).toHaveBeenNthCalledWith(1, {
+      color: 'Black',
+      lowStockThreshold: 2,
+      productId: 'hoodie-001',
+      size: 'L',
+      sku: 'OSAI-HOOD-L-BLACK',
+      stockQuantity: 6,
+    })
+    expect(createInventoryVariant).toHaveBeenNthCalledWith(2, {
+      color: 'Black',
+      lowStockThreshold: 2,
+      productId: 'hoodie-001',
+      size: 'XL',
+      sku: 'OSAI-HOOD-XL-BLACK',
+      stockQuantity: 6,
     })
   })
 

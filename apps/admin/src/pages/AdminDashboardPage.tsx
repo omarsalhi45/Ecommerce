@@ -45,6 +45,7 @@ import {
   useUpdateProductStatusMutation,
   useUploadProductImageMutation,
 } from '../api/adminApi'
+import { buildVariantMatrix } from '../catalog/variantMatrix'
 import {
   type OrderStatusFilter,
   OrdersPanel,
@@ -90,7 +91,12 @@ const emptyProductForm: ProductFormValues = {
   questionThree: '',
   answerThree: '',
   sku: '',
+  size: '',
+  color: '',
   stockQuantity: '0',
+  lowStockThreshold: '5',
+  variantStockQuantity: '0',
+  variantLowStockThreshold: '5',
 }
 const emptyImageSource = ''
 
@@ -308,6 +314,16 @@ export default function AdminDashboardPage() {
       ? Number(productForm.compareAtPrice)
       : undefined
     const stockQuantity = Number(productForm.stockQuantity)
+    const lowStockThreshold = Number(productForm.lowStockThreshold)
+    const hasVariantMatrixDraft = Boolean(
+      productForm.sku.trim() || productForm.size.trim() || productForm.color.trim()
+    )
+    const variantStockQuantity = Number(
+      editingProductId ? productForm.variantStockQuantity : productForm.stockQuantity
+    )
+    const variantLowStockThreshold = Number(
+      editingProductId ? productForm.variantLowStockThreshold : productForm.lowStockThreshold
+    )
 
     if (Number.isNaN(price) || price < 0) {
       setProductFormError('Price must be a positive number.')
@@ -319,12 +335,58 @@ export default function AdminDashboardPage() {
       return
     }
 
+    if (Number.isNaN(lowStockThreshold) || lowStockThreshold < 0) {
+      setProductFormError('Low stock alert must be zero or higher.')
+      return
+    }
+
+    if (
+      (!editingProductId || hasVariantMatrixDraft) &&
+      (Number.isNaN(variantStockQuantity) || variantStockQuantity < 0)
+    ) {
+      setProductFormError('Variant stock must be zero or higher.')
+      return
+    }
+
+    if (
+      (!editingProductId || hasVariantMatrixDraft) &&
+      (Number.isNaN(variantLowStockThreshold) || variantLowStockThreshold < 0)
+    ) {
+      setProductFormError('Variant low stock alert must be zero or higher.')
+      return
+    }
+
     if (compareAtPrice !== undefined && (Number.isNaN(compareAtPrice) || compareAtPrice <= price)) {
       setProductFormError('Original price must be higher than the current price.')
       return
     }
 
     const productQuestions = buildProductQuestions(productForm)
+    const existingVariantSkus = editingProductId
+      ? (inventoryByProductId.get(editingProductId) ?? []).map((item) => item.sku)
+      : []
+    const variantInputs =
+      !editingProductId || hasVariantMatrixDraft
+        ? buildVariantMatrix({
+            color: productForm.color,
+            existingSkus: existingVariantSkus,
+            lowStockThreshold: editingProductId
+              ? productForm.variantLowStockThreshold
+              : productForm.lowStockThreshold,
+            productId: editingProductId || productForm.name || 'product',
+            size: productForm.size,
+            sku: productForm.sku,
+            stockQuantity: editingProductId
+              ? productForm.variantStockQuantity
+              : productForm.stockQuantity,
+          }).map((variant) => ({
+            color: variant.color || undefined,
+            lowStockThreshold: Number(variant.lowStockThreshold),
+            size: variant.size || undefined,
+            sku: variant.sku,
+            stockQuantity: Number(variant.stockQuantity),
+          }))
+        : []
 
     try {
       if (editingProductId) {
@@ -348,10 +410,19 @@ export default function AdminDashboardPage() {
         }).unwrap()
         if (editingProductInventoryItem) {
           await updateInventory({
+            lowStockThreshold,
             productId: editingProductId,
             stockQuantity,
           }).unwrap()
         }
+        await Promise.all(
+          variantInputs.map((variant) =>
+            createInventoryVariant({
+              ...variant,
+              productId: editingProductId,
+            })
+          )
+        )
       } else {
         await createProduct({
           name: productForm.name.trim(),
@@ -367,8 +438,7 @@ export default function AdminDashboardPage() {
           careInstructions: productForm.careInstructions.trim() || undefined,
           productQuestions,
           productStory: productForm.productStory.trim() || undefined,
-          sku: productForm.sku.trim() || undefined,
-          stockQuantity,
+          variants: variantInputs,
         }).unwrap()
       }
       setProductForm(emptyProductForm)
@@ -406,7 +476,12 @@ export default function AdminDashboardPage() {
       questionThree: product.productQuestions?.[2]?.question ?? '',
       answerThree: product.productQuestions?.[2]?.answer ?? '',
       sku: '',
+      size: '',
+      color: '',
       stockQuantity: productInventoryItem?.stockQuantity.toString() ?? '0',
+      lowStockThreshold: productInventoryItem?.lowStockThreshold.toString() ?? '5',
+      variantStockQuantity: '0',
+      variantLowStockThreshold: '5',
     })
     setExternalImageUrl(product.imageUrl)
     setProductFormError(undefined)

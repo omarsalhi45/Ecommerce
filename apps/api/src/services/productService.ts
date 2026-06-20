@@ -67,9 +67,18 @@ export interface ProductReview {
   readonly createdAt: string
 }
 
-export interface CreateProductInput extends Omit<Product, 'id'> {
+export interface CreateProductInput extends Omit<Product, 'id' | 'variants'> {
   readonly id?: string
   readonly sku?: string
+  readonly size?: string
+  readonly color?: string
+  readonly stockQuantity?: number
+  readonly lowStockThreshold?: number
+  readonly variants?: CreateProductVariantInput[]
+}
+
+export interface CreateProductVariantInput {
+  readonly sku: string
   readonly size?: string
   readonly color?: string
   readonly stockQuantity?: number
@@ -757,14 +766,33 @@ export const createProduct = async (input: CreateProductInput): Promise<Product>
   }
 
   products.push(product)
-  inventory.push({
-    product,
-    sku: input.sku ?? productId.toUpperCase(),
-    size: input.size,
-    color: input.color,
-    stockQuantity: input.stockQuantity ?? 0,
-    lowStockThreshold: input.lowStockThreshold ?? 5,
-  })
+  const initialVariants =
+    input.variants && input.variants.length > 0
+      ? input.variants
+      : [
+          {
+            color: input.color,
+            lowStockThreshold: input.lowStockThreshold,
+            size: input.size,
+            sku: input.sku ?? productId.toUpperCase(),
+            stockQuantity: input.stockQuantity,
+          },
+        ]
+
+  for (const variant of initialVariants) {
+    if (inventory.some((item) => item.sku === variant.sku)) {
+      continue
+    }
+
+    inventory.push({
+      product,
+      sku: variant.sku,
+      size: variant.size,
+      color: variant.color,
+      stockQuantity: variant.stockQuantity ?? 0,
+      lowStockThreshold: variant.lowStockThreshold ?? 5,
+    })
+  }
 
   clearCacheByPrefix('products:')
 

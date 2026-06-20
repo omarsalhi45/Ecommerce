@@ -19,6 +19,7 @@ import {
   Text,
 } from '@chakra-ui/react'
 import { useState } from 'react'
+import { buildVariantMatrix } from '../catalog/variantMatrix'
 import type { InventoryItem, Product } from '../types'
 
 export interface InventoryVariantFormValues {
@@ -67,6 +68,13 @@ export function ProductDetailsDrawer({
   onSaveInventory,
 }: ProductDetailsDrawerProps) {
   const [variantForm, setVariantForm] = useState(emptyVariantForm)
+  const variantInputs = product
+    ? buildVariantMatrix({
+        ...variantForm,
+        existingSkus: inventoryItems.map((item) => item.sku),
+        productId: product.id,
+      })
+    : []
 
   const updateVariantForm = (field: keyof InventoryVariantFormValues, value: string) => {
     setVariantForm((current) => ({ ...current, [field]: value }))
@@ -214,35 +222,38 @@ export function ProductDetailsDrawer({
               <Divider />
               <Box>
                 <Text fontWeight="bold" mb={3}>
-                  Add variant
+                  Add variants
+                </Text>
+                <Text color="neutral.600" fontSize="sm" mb={3}>
+                  Enter comma-separated sizes and colors to generate every combination.
                 </Text>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                   <Box>
                     <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
-                      SKU
+                      SKU prefix
                     </Text>
                     <Input
-                      placeholder="OSAI-HOOD-BLK-L"
+                      placeholder="OSAI-HOOD"
                       value={variantForm.sku}
                       onChange={(event) => updateVariantForm('sku', event.target.value)}
                     />
                   </Box>
                   <Box>
                     <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
-                      Size
+                      Sizes
                     </Text>
                     <Input
-                      placeholder="L"
+                      placeholder="S, M, L"
                       value={variantForm.size}
                       onChange={(event) => updateVariantForm('size', event.target.value)}
                     />
                   </Box>
                   <Box>
                     <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
-                      Color
+                      Colors
                     </Text>
                     <Input
-                      placeholder="Black"
+                      placeholder="Black, Grey"
                       value={variantForm.color}
                       onChange={(event) => updateVariantForm('color', event.target.value)}
                     />
@@ -272,16 +283,21 @@ export function ProductDetailsDrawer({
                     />
                   </Box>
                 </SimpleGrid>
+                <Text color="neutral.600" fontSize="sm" mt={3}>
+                  {variantInputs.length > 0
+                    ? `${variantInputs.length} new variant${variantInputs.length === 1 ? '' : 's'} ready to add.`
+                    : 'No new variants to add yet.'}
+                </Text>
                 <Button
                   colorScheme="brand"
-                  isDisabled={!variantForm.sku.trim()}
+                  isDisabled={variantInputs.length === 0}
                   mt={3}
                   onClick={() => {
-                    onCreateVariant(variantForm)
+                    variantInputs.forEach(onCreateVariant)
                     setVariantForm(emptyVariantForm)
                   }}
                 >
-                  Add variant
+                  Add variants
                 </Button>
               </Box>
             </Stack>

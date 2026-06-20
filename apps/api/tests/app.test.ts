@@ -458,8 +458,22 @@ describe('api app', () => {
         productQuestions: [
           { question: 'How does this admin tee fit?', answer: 'Relaxed and easy.' },
         ],
-        sku: 'OSAI-ADMIN-TEE-M',
-        stockQuantity: 8,
+        variants: [
+          {
+            sku: 'OSAI-ADMIN-TEE-M',
+            size: 'M',
+            color: 'Grey',
+            stockQuantity: 8,
+            lowStockThreshold: 4,
+          },
+          {
+            sku: 'OSAI-ADMIN-TEE-S-BLK',
+            size: 'S',
+            color: 'Black',
+            stockQuantity: 5,
+            lowStockThreshold: 2,
+          },
+        ],
       }),
     })
 

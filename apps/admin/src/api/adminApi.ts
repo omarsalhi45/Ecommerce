@@ -46,11 +46,18 @@ export const adminApi = createApi({
     }),
     createProduct: builder.mutation<
       Product,
-      Omit<Product, 'id'> & {
+      Omit<Product, 'id' | 'variants'> & {
         id?: string
         sku?: string
         stockQuantity?: number
         lowStockThreshold?: number
+        variants?: Array<{
+          color?: string
+          lowStockThreshold?: number
+          size?: string
+          sku: string
+          stockQuantity?: number
+        }>
       }
     >({
       query: (body) => ({

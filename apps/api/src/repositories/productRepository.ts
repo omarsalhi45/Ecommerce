@@ -348,18 +348,35 @@ export const createProductInDb = async (input: CreateProductInput): Promise<Prod
     ]
   )
 
-  await query(
-    `INSERT INTO inventory (product_id, sku, size, color, stock_quantity, low_stock_threshold)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (sku) DO NOTHING`,
-    [
-      productId,
-      input.sku ?? productId.toUpperCase(),
-      input.size,
-      input.color,
-      input.stockQuantity ?? 0,
-      input.lowStockThreshold ?? 5,
-    ]
+  const initialVariants =
+    input.variants && input.variants.length > 0
+      ? input.variants
+      : [
+          {
+            color: input.color,
+            lowStockThreshold: input.lowStockThreshold,
+            size: input.size,
+            sku: input.sku ?? productId.toUpperCase(),
+            stockQuantity: input.stockQuantity,
+          },
+        ]
+
+  await Promise.all(
+    initialVariants.map((variant) =>
+      query(
+        `INSERT INTO inventory (product_id, sku, size, color, stock_quantity, low_stock_threshold)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         ON CONFLICT (sku) DO NOTHING`,
+        [
+          productId,
+          variant.sku,
+          variant.size,
+          variant.color,
+          variant.stockQuantity ?? 0,
+          variant.lowStockThreshold ?? 5,
+        ]
+      )
+    )
   )
 
   return mapProduct(result.rows[0])
