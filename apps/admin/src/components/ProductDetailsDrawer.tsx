@@ -20,20 +20,34 @@ import {
 } from '@chakra-ui/react'
 import { useState } from 'react'
 import { buildVariantMatrix } from '../catalog/variantMatrix'
+import { productColorOptions, productSizeOptions } from '../catalog/variantOptions'
 import type { InventoryItem, Product } from '../types'
+import { VariantValueList } from './VariantValueList'
 
 export interface InventoryVariantFormValues {
   sku: string
-  size: string
-  color: string
+  sizeDraft: string
+  colorDraft: string
+  sizes: string[]
+  colors: string[]
   stockQuantity: string
   lowStockThreshold: string
 }
 
+export interface InventoryVariantCreateInput {
+  color: string
+  lowStockThreshold: string
+  size: string
+  sku: string
+  stockQuantity: string
+}
+
 const emptyVariantForm: InventoryVariantFormValues = {
-  color: '',
+  colorDraft: '',
+  colors: [],
   lowStockThreshold: '5',
-  size: '',
+  sizeDraft: '',
+  sizes: [],
   sku: '',
   stockQuantity: '0',
 }
@@ -47,7 +61,7 @@ interface ProductDetailsDrawerProps {
   onClose: () => void
   onEditProduct: (product: Product) => void
   onInventoryDraftChange: (productId: string, value: string) => void
-  onCreateVariant: (input: InventoryVariantFormValues) => void
+  onCreateVariant: (input: InventoryVariantCreateInput) => void
   onDeleteVariant: (sku: string) => void
   onLowStockThresholdDraftChange: (sku: string, value: string) => void
   onSaveInventory: (sku: string, stockQuantity: number, lowStockThreshold: number) => void
@@ -71,13 +85,40 @@ export function ProductDetailsDrawer({
   const variantInputs = product
     ? buildVariantMatrix({
         ...variantForm,
+        color: variantForm.colors,
         existingSkus: inventoryItems.map((item) => item.sku),
         productId: product.id,
+        size: variantForm.sizes,
       })
     : []
 
-  const updateVariantForm = (field: keyof InventoryVariantFormValues, value: string) => {
+  const updateVariantForm = (
+    field: Exclude<keyof InventoryVariantFormValues, 'colors' | 'sizes'>,
+    value: string
+  ) => {
     setVariantForm((current) => ({ ...current, [field]: value }))
+  }
+
+  const addVariantValue = (field: 'colors' | 'sizes') => {
+    const draftField = field === 'sizes' ? 'sizeDraft' : 'colorDraft'
+    const nextValue = variantForm[draftField].trim()
+
+    if (!nextValue) {
+      return
+    }
+
+    setVariantForm((current) => ({
+      ...current,
+      [draftField]: '',
+      [field]: Array.from(new Set([...current[field], nextValue])),
+    }))
+  }
+
+  const removeVariantValue = (field: 'colors' | 'sizes', value: string) => {
+    setVariantForm((current) => ({
+      ...current,
+      [field]: current[field].filter((item) => item !== value),
+    }))
   }
 
   return (
@@ -225,7 +266,7 @@ export function ProductDetailsDrawer({
                   Add variants
                 </Text>
                 <Text color="neutral.600" fontSize="sm" mb={3}>
-                  Enter comma-separated sizes and colors to generate every combination.
+                  Add sizes and colors to generate every combination.
                 </Text>
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                   <Box>
@@ -238,26 +279,30 @@ export function ProductDetailsDrawer({
                       onChange={(event) => updateVariantForm('sku', event.target.value)}
                     />
                   </Box>
-                  <Box>
-                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
-                      Sizes
-                    </Text>
-                    <Input
-                      placeholder="S, M, L"
-                      value={variantForm.size}
-                      onChange={(event) => updateVariantForm('size', event.target.value)}
-                    />
-                  </Box>
-                  <Box>
-                    <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
-                      Colors
-                    </Text>
-                    <Input
-                      placeholder="Black, Grey"
-                      value={variantForm.color}
-                      onChange={(event) => updateVariantForm('color', event.target.value)}
-                    />
-                  </Box>
+                  <VariantValueList
+                    addButtonLabel="Add size"
+                    emptyLabel="No sizes added yet."
+                    inputLabel="Sizes"
+                    options={productSizeOptions}
+                    placeholder="Choose size"
+                    value={variantForm.sizeDraft}
+                    values={variantForm.sizes}
+                    onAdd={() => addVariantValue('sizes')}
+                    onChange={(value) => updateVariantForm('sizeDraft', value)}
+                    onRemove={(value) => removeVariantValue('sizes', value)}
+                  />
+                  <VariantValueList
+                    addButtonLabel="Add color"
+                    emptyLabel="No colors added yet."
+                    inputLabel="Colors"
+                    options={productColorOptions}
+                    placeholder="Choose color"
+                    value={variantForm.colorDraft}
+                    values={variantForm.colors}
+                    onAdd={() => addVariantValue('colors')}
+                    onChange={(value) => updateVariantForm('colorDraft', value)}
+                    onRemove={(value) => removeVariantValue('colors', value)}
+                  />
                   <Box>
                     <Text color="neutral.600" fontSize="xs" fontWeight="bold" mb={1}>
                       Stock

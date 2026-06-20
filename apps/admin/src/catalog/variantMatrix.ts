@@ -1,4 +1,12 @@
 export interface VariantMatrixInput {
+  readonly color: readonly string[] | string
+  readonly lowStockThreshold: string
+  readonly size: readonly string[] | string
+  readonly sku: string
+  readonly stockQuantity: string
+}
+
+export interface VariantMatrixOutput {
   readonly color: string
   readonly lowStockThreshold: string
   readonly size: string
@@ -6,15 +14,11 @@ export interface VariantMatrixInput {
   readonly stockQuantity: string
 }
 
-export const splitVariantValues = (value: string) =>
-  Array.from(
-    new Set(
-      value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-    )
-  )
+export const splitVariantValues = (value: readonly string[] | string) => {
+  const values: readonly string[] = typeof value === 'string' ? value.split(',') : value
+
+  return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)))
+}
 
 export const formatSkuPart = (value: string) =>
   value
@@ -34,7 +38,7 @@ export const buildVariantMatrix = ({
 }: VariantMatrixInput & {
   readonly existingSkus?: string[]
   readonly productId: string
-}) => {
+}): VariantMatrixOutput[] => {
   const sizes = splitVariantValues(size)
   const colors = splitVariantValues(color)
   const sizeValues = sizes.length > 0 ? sizes : ['']

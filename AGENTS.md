@@ -353,6 +353,9 @@ This file defines the AI agents, custom skills, and development roadmap that gui
 - [x] Add SKU-based inventory updates for stock and low-stock threshold from the admin product details drawer.
 - [x] Add variant-level inventory editing for size, color, SKU, stock, low-stock threshold, and sold-out states.
 - [x] Use the same size/color variant matrix during product creation and later inventory editing.
+- [x] Replace comma-separated size/color variant entry with list controls in admin product creation and details.
+- [x] Use select-based size/color variant controls with predefined apparel options.
+- [x] Count admin product stock across all product variants instead of only the primary inventory row.
 - [x] Add admin-managed product detail content fields such as fit, material, care, model info, Q&A, and "why this piece".
 - [x] Generate product IDs automatically from product names so admins do not invent slugs manually.
 - [ ] Add admin product gallery management for multiple images and optional product video.

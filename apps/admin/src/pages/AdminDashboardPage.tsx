@@ -58,7 +58,12 @@ import {
   recentOrderLimit,
 } from '../components/OrdersPanel'
 import { ProductDetailsDrawer } from '../components/ProductDetailsDrawer'
-import { ProductEditorDrawer, type ProductFormValues } from '../components/ProductEditorDrawer'
+import {
+  ProductEditorDrawer,
+  type ProductFormTextField,
+  type ProductFormValues,
+  type ProductVariantListField,
+} from '../components/ProductEditorDrawer'
 import {
   ProductManagementPanel,
   type ProductStatusFilter,
@@ -91,8 +96,10 @@ const emptyProductForm: ProductFormValues = {
   questionThree: '',
   answerThree: '',
   sku: '',
-  size: '',
-  color: '',
+  sizeDraft: '',
+  colorDraft: '',
+  sizes: [],
+  colors: [],
   stockQuantity: '0',
   lowStockThreshold: '5',
   variantStockQuantity: '0',
@@ -166,10 +173,27 @@ export default function AdminDashboardPage() {
   const orders = ordersData?.orders ?? []
   const products = productsData?.products ?? []
   const inventoryItems = inventoryData?.inventory ?? []
-  const inventoryByProductId = inventoryItems.reduce((itemsByProductId, item) => {
-    const productItems = itemsByProductId.get(item.product.id) ?? []
-    productItems.push(item)
-    itemsByProductId.set(item.product.id, productItems)
+  const inventoryByProductId = products.reduce((itemsByProductId, product) => {
+    const productItemsBySku = new Map<string, InventoryItem>()
+
+    for (const variant of product.variants ?? []) {
+      productItemsBySku.set(variant.sku, {
+        product,
+        sku: variant.sku,
+        size: variant.size,
+        color: variant.color,
+        stockQuantity: variant.stockQuantity,
+        lowStockThreshold: 0,
+      })
+    }
+
+    for (const item of inventoryItems.filter(
+      (inventoryItem) => inventoryItem.product.id === product.id
+    )) {
+      productItemsBySku.set(item.sku, item)
+    }
+
+    itemsByProductId.set(product.id, Array.from(productItemsBySku.values()))
     return itemsByProductId
   }, new Map<string, InventoryItem[]>())
   const selectedProduct = selectedProductId
@@ -287,8 +311,30 @@ export default function AdminDashboardPage() {
     setImageStatus(value.trim() ? 'External image ready.' : undefined)
   }
 
-  const updateProductFormField = (field: keyof ProductFormValues, value: string) => {
+  const updateProductFormField = (field: ProductFormTextField, value: string) => {
     setProductForm((current) => ({ ...current, [field]: value }))
+  }
+
+  const addProductFormVariantValue = (field: ProductVariantListField) => {
+    const draftField = field === 'sizes' ? 'sizeDraft' : 'colorDraft'
+    const nextValue = productForm[draftField].trim()
+
+    if (!nextValue) {
+      return
+    }
+
+    setProductForm((current) => ({
+      ...current,
+      [draftField]: '',
+      [field]: Array.from(new Set([...current[field], nextValue])),
+    }))
+  }
+
+  const removeProductFormVariantValue = (field: ProductVariantListField, value: string) => {
+    setProductForm((current) => ({
+      ...current,
+      [field]: current[field].filter((item) => item !== value),
+    }))
   }
 
   const handleProductFormSubmit = async (event: FormEvent<HTMLDivElement>) => {
@@ -316,7 +362,7 @@ export default function AdminDashboardPage() {
     const stockQuantity = Number(productForm.stockQuantity)
     const lowStockThreshold = Number(productForm.lowStockThreshold)
     const hasVariantMatrixDraft = Boolean(
-      productForm.sku.trim() || productForm.size.trim() || productForm.color.trim()
+      productForm.sku.trim() || productForm.sizes.length > 0 || productForm.colors.length > 0
     )
     const variantStockQuantity = Number(
       editingProductId ? productForm.variantStockQuantity : productForm.stockQuantity
@@ -368,13 +414,13 @@ export default function AdminDashboardPage() {
     const variantInputs =
       !editingProductId || hasVariantMatrixDraft
         ? buildVariantMatrix({
-            color: productForm.color,
+            color: productForm.colors,
             existingSkus: existingVariantSkus,
             lowStockThreshold: editingProductId
               ? productForm.variantLowStockThreshold
               : productForm.lowStockThreshold,
             productId: editingProductId || productForm.name || 'product',
-            size: productForm.size,
+            size: productForm.sizes,
             sku: productForm.sku,
             stockQuantity: editingProductId
               ? productForm.variantStockQuantity
@@ -476,8 +522,10 @@ export default function AdminDashboardPage() {
       questionThree: product.productQuestions?.[2]?.question ?? '',
       answerThree: product.productQuestions?.[2]?.answer ?? '',
       sku: '',
-      size: '',
-      color: '',
+      sizeDraft: '',
+      colorDraft: '',
+      sizes: [],
+      colors: [],
       stockQuantity: productInventoryItem?.stockQuantity.toString() ?? '0',
       lowStockThreshold: productInventoryItem?.lowStockThreshold.toString() ?? '5',
       variantStockQuantity: '0',
@@ -825,6 +873,8 @@ export default function AdminDashboardPage() {
         onExternalImageUrlChange={handleExternalImageUrlChange}
         onFieldChange={updateProductFormField}
         onImageChange={handleProductImageChange}
+        onVariantValueAdd={addProductFormVariantValue}
+        onVariantValueRemove={removeProductFormVariantValue}
         onSubmit={handleProductFormSubmit}
       />
 

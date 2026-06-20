@@ -23,6 +23,8 @@ import {
 } from '@chakra-ui/react'
 import type { FormEventHandler, ReactNode } from 'react'
 import { buildVariantMatrix } from '../catalog/variantMatrix'
+import { productColorOptions, productSizeOptions } from '../catalog/variantOptions'
+import { VariantValueList } from './VariantValueList'
 
 export interface ProductFormValues {
   id: string
@@ -45,13 +47,18 @@ export interface ProductFormValues {
   questionThree: string
   answerThree: string
   sku: string
-  size: string
-  color: string
+  sizeDraft: string
+  colorDraft: string
+  sizes: string[]
+  colors: string[]
   stockQuantity: string
   lowStockThreshold: string
   variantStockQuantity: string
   variantLowStockThreshold: string
 }
+
+export type ProductFormTextField = Exclude<keyof ProductFormValues, 'colors' | 'sizes'>
+export type ProductVariantListField = 'colors' | 'sizes'
 
 interface ProductEditorDrawerProps {
   editingProductId?: string
@@ -66,8 +73,10 @@ interface ProductEditorDrawerProps {
   productFormError?: string
   onCancel: () => void
   onExternalImageUrlChange: (value: string) => void
-  onFieldChange: (field: keyof ProductFormValues, value: string) => void
+  onFieldChange: (field: ProductFormTextField, value: string) => void
   onImageChange: (file: File | undefined) => void
+  onVariantValueAdd: (field: ProductVariantListField) => void
+  onVariantValueRemove: (field: ProductVariantListField, value: string) => void
   onSubmit: FormEventHandler<HTMLDivElement>
 }
 
@@ -108,20 +117,22 @@ export function ProductEditorDrawer({
   onExternalImageUrlChange,
   onFieldChange,
   onImageChange,
+  onVariantValueAdd,
+  onVariantValueRemove,
   onSubmit,
 }: ProductEditorDrawerProps) {
   const hasVariantMatrixDraft = Boolean(
-    productForm.sku.trim() || productForm.size.trim() || productForm.color.trim()
+    productForm.sku.trim() || productForm.sizes.length > 0 || productForm.colors.length > 0
   )
   const variantMatrixInputs =
     !isEditingProduct || hasVariantMatrixDraft
       ? buildVariantMatrix({
-          color: productForm.color,
+          color: productForm.colors,
           lowStockThreshold: isEditingProduct
             ? productForm.variantLowStockThreshold
             : productForm.lowStockThreshold,
           productId: editingProductId || productForm.name || 'product',
-          size: productForm.size,
+          size: productForm.sizes,
           sku: productForm.sku,
           stockQuantity: isEditingProduct
             ? productForm.variantStockQuantity
@@ -134,12 +145,14 @@ export function ProductEditorDrawer({
           'Update primary stock, or add new size/color variants without opening details.',
         empty: 'Fill SKU prefix, sizes, or colors to add variants while saving.',
         ready: 'new',
+        lowAlertLabel: 'New variant low alert',
         skuLabel: 'New SKU prefix',
         stockLabel: 'New variant stock',
       }
     : {
         description: 'Create the initial size and color matrix for this new product.',
         empty: 'Add at least a SKU prefix, size, or color to create initial variants.',
+        lowAlertLabel: 'Low alert',
         ready: 'initial',
         skuLabel: 'SKU prefix',
         stockLabel: 'Initial stock',
@@ -496,26 +509,30 @@ export function ProductEditorDrawer({
                         onChange={(event) => onFieldChange('sku', event.target.value)}
                       />
                     </FormControl>
-                    <FormControl>
-                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                        Sizes
-                      </FormLabel>
-                      <Input
-                        placeholder="S, M, L"
-                        value={productForm.size}
-                        onChange={(event) => onFieldChange('size', event.target.value)}
-                      />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                        Colors
-                      </FormLabel>
-                      <Input
-                        placeholder="Black, White"
-                        value={productForm.color}
-                        onChange={(event) => onFieldChange('color', event.target.value)}
-                      />
-                    </FormControl>
+                    <VariantValueList
+                      addButtonLabel="Add size"
+                      emptyLabel="No sizes added yet."
+                      inputLabel="Sizes"
+                      options={productSizeOptions}
+                      placeholder="Choose size"
+                      value={productForm.sizeDraft}
+                      values={productForm.sizes}
+                      onAdd={() => onVariantValueAdd('sizes')}
+                      onChange={(value) => onFieldChange('sizeDraft', value)}
+                      onRemove={(value) => onVariantValueRemove('sizes', value)}
+                    />
+                    <VariantValueList
+                      addButtonLabel="Add color"
+                      emptyLabel="No colors added yet."
+                      inputLabel="Colors"
+                      options={productColorOptions}
+                      placeholder="Choose color"
+                      value={productForm.colorDraft}
+                      values={productForm.colors}
+                      onAdd={() => onVariantValueAdd('colors')}
+                      onChange={(value) => onFieldChange('colorDraft', value)}
+                      onRemove={(value) => onVariantValueRemove('colors', value)}
+                    />
                     <FormControl>
                       <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
                         {variantMatrixCopy.stockLabel}
@@ -539,7 +556,7 @@ export function ProductEditorDrawer({
                     </FormControl>
                     <FormControl>
                       <FormLabel color="neutral.600" fontSize="sm" fontWeight="bold">
-                        Low alert
+                        {variantMatrixCopy.lowAlertLabel}
                       </FormLabel>
                       <Input
                         min={0}

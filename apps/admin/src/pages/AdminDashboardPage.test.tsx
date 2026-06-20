@@ -86,6 +86,20 @@ const products: Product[] = [
       { question: 'Original question one?', answer: 'Original answer one.' },
       { question: 'Original question two?', answer: 'Original answer two.' },
     ],
+    variants: [
+      {
+        sku: 'OSAI-HOOD-GRY-M',
+        size: 'M',
+        color: 'Grey',
+        stockQuantity: 4,
+      },
+      {
+        sku: 'OSAI-HOOD-BLK-L',
+        size: 'L',
+        color: 'Black',
+        stockQuantity: 11,
+      },
+    ],
   },
 ]
 
@@ -403,12 +417,22 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(within(dialog).getByPlaceholderText('OSAI-TEE'), {
       target: { value: 'OSAI-MATRIX' },
     })
-    fireEvent.change(within(dialog).getByPlaceholderText('S, M, L'), {
-      target: { value: 'M, L' },
+    fireEvent.change(within(dialog).getByLabelText('Sizes'), {
+      target: { value: 'M' },
     })
-    fireEvent.change(within(dialog).getByPlaceholderText('Black, White'), {
-      target: { value: 'Black, Grey' },
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add size' }))
+    fireEvent.change(within(dialog).getByLabelText('Sizes'), {
+      target: { value: 'L' },
     })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add size' }))
+    fireEvent.change(within(dialog).getByLabelText('Colors'), {
+      target: { value: 'Black' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add color' }))
+    fireEvent.change(within(dialog).getByLabelText('Colors'), {
+      target: { value: 'Grey' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add color' }))
     fireEvent.change(within(dialog).getByPlaceholderText('0'), {
       target: { value: '10' },
     })
@@ -479,7 +503,7 @@ describe('AdminDashboardPage', () => {
       preloadedAuth: { token: 'test-token', user: adminUser },
     })
 
-    expect(screen.getByText('4 in stock')).toBeInTheDocument()
+    expect(screen.getByText('15 in stock')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Details' }))
 
@@ -505,13 +529,23 @@ describe('AdminDashboardPage', () => {
     fireEvent.change(screen.getByPlaceholderText('OSAI-HOOD'), {
       target: { value: 'OSAI-HOOD' },
     })
-    fireEvent.change(screen.getByPlaceholderText('S, M, L'), {
-      target: { value: 'L, XL' },
+    fireEvent.change(screen.getByLabelText('Sizes'), {
+      target: { value: 'L' },
     })
-    fireEvent.change(screen.getByPlaceholderText('Black, Grey'), {
-      target: { value: 'Black, White' },
+    fireEvent.click(screen.getByRole('button', { name: 'Add size' }))
+    fireEvent.change(screen.getByLabelText('Sizes'), {
+      target: { value: 'XL' },
     })
-    fireEvent.change(screen.getByDisplayValue('0'), {
+    fireEvent.click(screen.getByRole('button', { name: 'Add size' }))
+    fireEvent.change(screen.getByLabelText('Colors'), {
+      target: { value: 'Black' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add color' }))
+    fireEvent.change(screen.getByLabelText('Colors'), {
+      target: { value: 'White' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add color' }))
+    fireEvent.change(screen.getAllByDisplayValue('0').at(-1) as HTMLElement, {
       target: { value: '6' },
     })
     fireEvent.change(screen.getAllByDisplayValue('5').at(-1) as HTMLElement, {
@@ -619,15 +653,21 @@ describe('AdminDashboardPage', () => {
       target: { value: 'OSAI-HOOD' },
     })
     fireEvent.change(within(dialog).getByLabelText('Sizes'), {
-      target: { value: 'L, XL' },
+      target: { value: 'L' },
     })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add size' }))
+    fireEvent.change(within(dialog).getByLabelText('Sizes'), {
+      target: { value: 'XL' },
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add size' }))
     fireEvent.change(within(dialog).getByLabelText('Colors'), {
       target: { value: 'Black' },
     })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Add color' }))
     fireEvent.change(within(dialog).getByLabelText('New variant stock'), {
       target: { value: '6' },
     })
-    fireEvent.change(within(dialog).getByLabelText('Low alert'), {
+    fireEvent.change(within(dialog).getByLabelText('New variant low alert'), {
       target: { value: '2' },
     })
     expect(within(dialog).getByText('2 new variants will be added.')).toBeInTheDocument()
